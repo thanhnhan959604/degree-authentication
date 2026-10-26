@@ -11,32 +11,37 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
-
+import os # Thư viện os để làm việc với các biến môi trường
+from dotenv import load_dotenv # Thư viện dotenv để load các biến môi trường từ file .env
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+ENV_PATH = BASE_DIR.parent / '.env' # Đường dẫn tới file .env nằm ở thư mục cha của BASE_DIR
+load_dotenv(ENV_PATH) # Load các biến môi trường từ file .env
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-snz_r&bu5-0oxp)vl2_h$p-!6xv@i22ygr*n)w6r7rkd_2v3w!'
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*'] # Lấy giá trị từ biến môi trường ALLOWED_HOSTS trong file .env
 
 
-# Application definition
+
+# Là một danh sách các ứng dụng được cài đặt trong dự án Django. Mỗi ứng dụng có thể cung cấp các tính năng và chức năng riêng biệt. Dưới đây là giải thích chi tiết về từng ứng dụng trong danh sách INSTALLED_APPS:
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
+    'django.contrib.admin', 
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'certificates', # Ứng dụng quản lý chứng chỉ
 ]
 
 MIDDLEWARE = [
@@ -54,7 +59,8 @@ ROOT_URLCONF = 'web.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'], # Khai báo thư mục chứa các template HTML
+
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -74,8 +80,12 @@ WSGI_APPLICATION = 'web.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('POSTGRES_DB'),
+        'USER': os.getenv('POSTGRES_USER'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
+        'HOST': os.getenv('POSTGRES_HOST'),
+        'PORT': os.getenv('POSTGRES_PORT'),
     }
 }
 
@@ -115,8 +125,13 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATICFILES_DIRS = [
+    BASE_DIR / 'static', # Khai báo thư mục chứa CSS/JS
+]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+LOGIN_REDIRECT_URL = '/dashboard/' # Khi người dùng đăng nhập thành công, họ sẽ được chuyển hướng đến trang dashboard
+LOGOUT_REDIRECT_URL = '/' # Khi người dùng đăng xuất, họ sẽ được chuyển hướng đến trang chủ
