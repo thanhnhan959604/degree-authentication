@@ -1,0 +1,369 @@
+/* ==========================================================================
+   HỆ THỐNG XÁC THỰC VĂN BẰNG & CHỨNG CHỈ SỐ - BLOCKCHAIN BESU
+   Phong cách thiết kế: Basic, Chuẩn mực Giáo dục & Cổng Dịch vụ công
+   ========================================================================== */
+
+:root {
+    --primary-navy: #0b3b60;
+    --primary-navy-dark: #07253d;
+    --primary-blue: #0d6efd;
+    --accent-gold: #c59b27;
+    --bg-page: #f4f7fb;
+    --card-border: #e2e8f0;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --success-green: #15803d;
+    --warning-orange: #b45309;
+    --danger-red: #b91c1c;
+}
+
+body {
+    background-color: var(--bg-page);
+    color: var(--text-main);
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
+}
+
+/* ==========================================================================
+   NAVBAR & HEADER
+   ========================================================================== */
+.navbar-custom {
+    background: linear-gradient(135deg, var(--primary-navy-dark) 0%, var(--primary-navy) 100%);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    border-bottom: 2px solid var(--accent-gold);
+}
+
+.navbar-brand-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    color: #ffffff !important;
+}
+
+.navbar-brand-subtitle {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.75);
+    display: block;
+    font-weight: 400;
+}
+
+.node-status-pill {
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 50px;
+    padding: 4px 12px;
+    font-size: 0.8rem;
+    color: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.status-dot-pulse {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #22c55e;
+    box-shadow: 0 0 0 rgba(34, 197, 94, 0.4);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+    70% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
+
+/* ==========================================================================
+   CARDS & CONTAINERS
+   ========================================================================== */
+.custom-card {
+    background: #ffffff;
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.custom-card-header {
+    background-color: #ffffff;
+    border-bottom: 1px solid var(--card-border);
+    padding: 1rem 1.25rem;
+    font-weight: 600;
+    color: var(--primary-navy);
+}
+
+.stat-card {
+    border-left: 4px solid var(--primary-navy);
+}
+.stat-card.stat-pending-qlsv { border-left-color: #d97706; }
+.stat-card.stat-pending-daotao { border-left-color: #0284c7; }
+.stat-card.stat-pending-rector { border-left-color: #0d6efd; }
+.stat-card.stat-issued { border-left-color: #16a34a; }
+.stat-card.stat-rejected { border-left-color: #dc2626; }
+
+/* ==========================================================================
+   TABLES & BADGES
+   ========================================================================== */
+.table-custom th {
+    background-color: #f8fafc;
+    color: #475569;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid var(--card-border);
+    padding: 12px 14px;
+}
+
+.table-custom td {
+    padding: 14px;
+    vertical-align: middle;
+    font-size: 0.92rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.table-custom tbody tr:hover {
+    background-color: #f8fafc;
+}
+
+/* Badge styles */
+.badge-status {
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.8rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.badge-status-pending { background-color: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+.badge-status-issued { background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+.badge-status-revoked { background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+.badge-status-rejected { background-color: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+
+/* ==========================================================================
+   TIMELINE & STEPPER (3-STEP APPROVAL)
+   ========================================================================== */
+.approval-steps {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.step-indicator {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.step-done {
+    background-color: #16a34a;
+    color: #ffffff;
+}
+
+.step-waiting {
+    background-color: #f59e0b;
+    color: #ffffff;
+}
+
+.step-idle {
+    background-color: #e2e8f0;
+    color: #94a3b8;
+}
+
+.step-rejected {
+    background-color: #dc2626;
+    color: #ffffff;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.25);
+    font-weight: 800;
+}
+
+.step-line {
+    width: 14px;
+    height: 2px;
+    background-color: #cbd5e1;
+}
+
+.step-line.done {
+    background-color: #16a34a;
+}
+
+/* ==========================================================================
+   DIGITAL DIPLOMA VIEW (PHÔI VĂN BẰNG ĐẠI HỌC)
+   ========================================================================== */
+.diploma-card {
+    background-color: #ffffff;
+    border: 3px double #b8860b;
+    outline: 8px solid #fdfbf7;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    position: relative;
+    padding: 2.5rem;
+    border-radius: 4px;
+    background-image: radial-gradient(#faf6ee 15%, transparent 16%);
+    background-size: 20px 20px;
+}
+
+.diploma-header {
+    text-align: center;
+    border-bottom: 2px solid #b8860b;
+    padding-bottom: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.diploma-republic {
+    font-size: 1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #1a202c;
+    margin-bottom: 2px;
+}
+
+.diploma-motto {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #4a5568;
+    margin-bottom: 12px;
+}
+
+.diploma-university {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--primary-navy);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.diploma-title {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: #8b0000;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin: 1.5rem 0 1rem 0;
+    text-align: center;
+}
+
+.diploma-body {
+    font-size: 1rem;
+    line-height: 1.8;
+}
+
+.diploma-body strong {
+    color: #1a202c;
+}
+
+.diploma-student-name {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--primary-navy);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-align: center;
+    margin: 1rem 0;
+}
+
+.diploma-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-top: 2rem;
+    padding-top: 1rem;
+}
+
+.diploma-seal {
+    width: 90px;
+    height: 90px;
+    border: 2px dashed #dc2626;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #dc2626;
+    font-weight: 700;
+    font-size: 0.72rem;
+    text-align: center;
+    padding: 6px;
+    text-transform: uppercase;
+    transform: rotate(-10deg);
+}
+
+.code-font {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+    font-size: 0.85rem;
+    background-color: #f1f5f9;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #0f172a;
+    word-break: break-all;
+}
+
+/* ==========================================================================
+   BLOCKCHAIN AUDIT ACCORDION / BOX
+   ========================================================================== */
+.blockchain-box {
+    background-color: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 1.25rem;
+}
+
+.blockchain-box-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--primary-navy);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 1rem;
+}
+
+/* Quick Fill Buttons */
+.quick-fill-btn {
+    font-size: 0.8rem;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    color: #334155;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.quick-fill-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+    border-color: #94a3b8;
+}
+
+/* ==========================================================================
+   PRINT STYLES
+   ========================================================================== */
+@media print {
+    body {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+    }
+    .no-print, .navbar, footer, .btn, .breadcrumb, .alert {
+        display: none !important;
+    }
+    .diploma-card {
+        border: 2px solid #000000 !important;
+        box-shadow: none !important;
+        padding: 1.5rem !important;
+        page-break-inside: avoid;
+    }
+}
