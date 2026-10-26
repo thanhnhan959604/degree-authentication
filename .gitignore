@@ -1,0 +1,17 @@
+# Môi trường Python & biến môi trường
+venv/
+.venv/
+.env
+Pipfile
+Pipfile.lock
+__pycache__/
+*.pyc
+.vscode
+
+# Dữ liệu chạy của Besu (sổ cái và khóa sinh tự động)
+besu/data/
+besu/config/networkFiles/
+
+# File sinh ra khi chạy Django
+media/
+db.sqlite3
