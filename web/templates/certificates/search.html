@@ -1,0 +1,258 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Tra cứu Văn bằng - Cổng Xác Thực Blockchain{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <!-- Hero Search Section -->
+    <div class="col-lg-9 col-md-11">
+        <div class="custom-card p-4 p-md-5 mb-4 text-center">
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 mb-3 rounded-pill fw-semibold">
+                <i class="bi bi-shield-check me-1"></i> Xác thực dữ liệu toàn vẹn bằng Hyperledger Besu
+            </span>
+            <h2 class="fw-bold text-dark mb-2">Cổng Tra Cứu & Xác Thực Văn Bằng</h2>
+            <p class="text-muted mx-auto mb-4" style="max-width: 650px;">
+                Nhập <strong>Số hiệu văn bằng</strong> (ví dụ: <code>VB-2026-001</code>), <strong>Mã sinh viên</strong> hoặc <strong>Họ tên người học</strong> để đối chiếu trực tiếp dữ liệu với sổ cái Blockchain.
+            </p>
+
+            <!-- Search Form -->
+            <form method="get" action="{% url 'search' %}" id="searchForm" class="d-flex flex-column flex-sm-row justify-content-center gap-2 max-w-700 mx-auto">
+                <div class="input-group input-group-lg shadow-sm">
+                    <span class="input-group-text bg-white border-end-0 text-muted">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input 
+                        type="text" 
+                        name="q" 
+                        id="searchInput"
+                        class="form-control border-start-0 ps-0" 
+                        placeholder="Nhập số hiệu văn bằng, mã sinh viên hoặc họ tên..." 
+                        value="{{ query|default:'' }}" 
+                        required 
+                        autocomplete="off"
+                    >
+                    <button type="submit" class="btn btn-primary px-4 fw-bold">
+                        Tra Cứu Ngay
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Search Results Area -->
+{% if query %}
+<div class="row justify-content-center">
+    <div class="col-lg-10 col-md-11">
+        {% if result %}
+            <!-- Status Alert Banner (Chỉ cảnh báo khi bị thu hồi) -->
+            {% if result.status == 'REVOKED' %}
+                <div class="alert alert-danger d-flex align-items-center shadow-sm p-3 mb-4" role="alert">
+                    <i class="bi bi-exclamation-octagon-fill fs-2 me-3 text-danger"></i>
+                    <div>
+                        <h5 class="alert-heading mb-1 fw-bold">CẢNH BÁO: VĂN BẰNG NÀY ĐÃ BỊ THU HỒI HIỆU LỰC</h5>
+                        <p class="mb-0 small">
+                            Văn bằng mang số hiệu <strong>{{ result.serial_number }}</strong> đã bị cơ sở giáo dục thu hồi theo biên bản xác nhận của 3 phòng ban.
+                            {% if result.revoke_reason %}<br><strong>Lý do thu hồi:</strong> {{ result.revoke_reason }}{% endif %}
+                        </p>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- DIGITAL DIPLOMA PREVIEW (BẢN THỂ HIỆN PHÔI VĂN BẰNG ĐẠI HỌC) -->
+            <div class="diploma-card mb-4" id="diplomaPrintArea">
+                <!-- Header -->
+                <div class="diploma-header">
+                    <div class="diploma-republic">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
+                    <div class="diploma-motto">Độc lập - Tự do - Hạnh phúc</div>
+                    <div class="diploma-university">TRƯỜNG ĐẠI HỌC CÔNG NGHỆ & ĐÀO TẠO</div>
+                    <div class="text-muted small">CƠ SỞ GIÁO DỤC ĐẠI HỌC QUỐC GIA</div>
+                </div>
+
+                <!-- Degree Title -->
+                <div class="diploma-title">{{ result.degree_type|upper }}</div>
+                <div class="text-center text-muted fst-italic mb-3">Hiệu trưởng trường Đại học công nhận học vị cho:</div>
+
+                <!-- Student Name -->
+                <div class="diploma-student-name">{{ result.student_name }}</div>
+
+                <!-- Information Grid -->
+                <div class="row diploma-body justify-content-center my-3">
+                    <div class="col-md-5">
+                        <p class="mb-2"><strong>Mã sinh viên:</strong> {{ result.student_id|default:"Chưa cập nhật" }}</p>
+                        <p class="mb-2"><strong>Ngày sinh:</strong> {{ result.date_of_birth|date:"d/m/Y" }}</p>
+                        <p class="mb-2"><strong>Ngành đào tạo:</strong> {{ result.major }}</p>
+                    </div>
+                    <div class="col-md-5">
+                        <p class="mb-2"><strong>Năm tốt nghiệp:</strong> {{ result.graduation_year }}</p>
+                        <p class="mb-2"><strong>Xếp loại tốt nghiệp:</strong> <span class="badge bg-primary">{{ result.classification }}</span></p>
+                        <p class="mb-2"><strong>Ngày cấp văn bằng:</strong> {{ result.issue_date|default:result.created_at|date:"d/m/Y" }}</p>
+                    </div>
+                </div>
+
+                <!-- Diploma Footer (Seal, QR, Signatures) -->
+                <div class="diploma-footer border-top pt-3">
+                    <!-- Left: Serial & Book numbers -->
+                    <div>
+                        <p class="mb-1 text-muted small">Số hiệu văn bằng: <strong class="text-dark">{{ result.serial_number }}</strong></p>
+                        <p class="mb-1 text-muted small">Số vào sổ cấp bằng: <strong class="text-dark">VB-{{ result.graduation_year }}-{{ result.id }}</strong></p>
+                        <p class="mb-0 text-muted small">Trạng thái: 
+                            {% if result.status == 'ISSUED' %}
+                                <span class="text-success fw-bold">Hiệu lực On-Chain</span>
+                            {% elif result.status == 'REVOKED' %}
+                                <span class="text-danger fw-bold">Đã thu hồi</span>
+                            {% else %}
+                                <span class="text-warning fw-bold">Chờ duyệt</span>
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    <!-- Center: Digital Red Seal -->
+                    <div class="text-center">
+                        <div class="diploma-seal mx-auto mb-1">
+                            <span>CHỨNG THỰC SỐ<br>BLOCKCHAIN<br>VERIFIED</span>
+                        </div>
+                        <span class="text-muted" style="font-size: 0.7rem;">Dấu Mộc Điện Tử</span>
+                    </div>
+
+                    <!-- Right: QR Code & Rector Signature -->
+                    <div class="text-center">
+                        {% if qr_data %}
+                            <img src="{{ qr_data }}" alt="Mã QR Xác thực" style="width: 85px; height: 85px;" class="border p-1 rounded bg-white shadow-sm mb-1">
+                            <div class="text-muted" style="font-size: 0.7rem;">Quét để xác thực</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- ACTION BUTTONS -->
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2 no-print">
+                <div class="d-flex gap-2">
+                    <a href="{% url 'certificate_print' result.pk %}" target="_blank" class="btn btn-outline-primary">
+                        <i class="bi bi-printer me-1"></i> In Phôi Văn Bằng
+                    </a>
+                    <button type="button" class="btn btn-outline-secondary btn-copy" data-copy="{{ result.data_hash }}">
+                        <i class="bi bi-clipboard me-1"></i> Sao chép Data Hash
+                    </button>
+                </div>
+                <div>
+                    <span class="text-muted small">Tra cứu lúc: {% now "H:i:s d/m/Y" %}</span>
+                </div>
+            </div>
+
+            <!-- BLOCKCHAIN AUDIT & INTEGRITY VERIFICATION CARD -->
+            <div class="custom-card p-4 mb-5">
+                <div class="blockchain-box-title">
+                    <i class="bi bi-link-45deg fs-4 text-primary"></i>
+                    <span>Thông Số Kỹ Thuật Đối Chiếu Trên Mạng Hyperledger Besu</span>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-12">
+                        <label class="form-label text-muted small fw-bold mb-1">Dấu băm dữ liệu gốc (SHA-256 Data Hash):</label>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="code-font flex-grow-1 p-2">{{ result.data_hash|default:"Chưa tính toán hash" }}</span>
+                            <button type="button" class="btn btn-sm btn-outline-secondary btn-copy" data-copy="{{ result.data_hash }}" title="Sao chép">
+                                <i class="bi bi-copy"></i>
+                            </button>
+                        </div>
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle"></i> Chuỗi băm chuẩn hóa: <code>{{ result.serial_number }}|{{ result.student_id }}|{{ result.student_name }}|{{ result.date_of_birth|date:'Y-m-d' }}|{{ result.major }}|{{ result.graduation_year }}|{{ result.classification }}</code>
+                        </small>
+                    </div>
+
+                    <div class="col-md-12">
+                        <label class="form-label text-muted small fw-bold mb-1">Mã giao dịch phát hành (Transaction Hash):</label>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="code-font flex-grow-1 p-2">{{ result.tx_hash|default:"Chưa ghi nhận mã giao dịch On-Chain" }}</span>
+                            {% if result.tx_hash %}
+                            <button type="button" class="btn btn-sm btn-outline-secondary btn-copy" data-copy="{{ result.tx_hash }}" title="Sao chép">
+                                <i class="bi bi-copy"></i>
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- 3 Department Approvals Timeline -->
+                    <div class="col-md-12 mt-3">
+                        <label class="form-label text-muted small fw-bold mb-2">Quy trình thẩm định 3 phòng ban cơ sở giáo dục:</label>
+                        <div class="row g-2">
+                            <div class="col-md-4">
+                                <div class="p-3 border rounded bg-white h-100">
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        {% if result.student_affairs_approved %}
+                                            <i class="bi bi-check-circle-fill text-success fs-5"></i>
+                                            <strong class="text-success small">1. Phòng QLSV đã duyệt</strong>
+                                        {% else %}
+                                            <i class="bi bi-clock-history text-warning fs-5"></i>
+                                            <strong class="text-warning small">1. Chờ QLSV duyệt</strong>
+                                        {% endif %}
+                                    </div>
+                                    <p class="mb-0 text-muted" style="font-size: 0.8rem;">
+                                        Xác thực danh tính học sinh & Mã số sinh viên.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="p-3 border rounded bg-white h-100">
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        {% if result.academic_affairs_approved %}
+                                            <i class="bi bi-check-circle-fill text-success fs-5"></i>
+                                            <strong class="text-success small">2. Phòng Đào tạo đã duyệt</strong>
+                                        {% else %}
+                                            <i class="bi bi-clock-history text-secondary fs-5"></i>
+                                            <strong class="text-secondary small">2. Chờ Đào tạo duyệt</strong>
+                                        {% endif %}
+                                    </div>
+                                    <p class="mb-0 text-muted" style="font-size: 0.8rem;">
+                                        Thẩm định chương trình, điểm rèn luyện & điều kiện tốt nghiệp.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="p-3 border rounded bg-white h-100">
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        {% if result.rector_approved %}
+                                            <i class="bi bi-check-circle-fill text-success fs-5"></i>
+                                            <strong class="text-success small">3. Hiệu trưởng đã ký</strong>
+                                        {% else %}
+                                            <i class="bi bi-clock-history text-secondary fs-5"></i>
+                                            <strong class="text-secondary small">3. Chờ Hiệu trưởng ký</strong>
+                                        {% endif %}
+                                    </div>
+                                    <p class="mb-0 text-muted" style="font-size: 0.8rem;">
+                                        Ký số phát hành chính thức lên Blockchain Besu.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        {% else %}
+            <!-- Not Found Card -->
+            <div class="custom-card p-5 text-center mb-5">
+                <i class="bi bi-search text-muted display-4 mb-3 d-block"></i>
+                <h4 class="fw-bold text-dark mb-2">Không tìm thấy thông tin văn bằng</h4>
+                <p class="text-muted mb-4 mx-auto" style="max-width: 500px;">
+                    Không có bản ghi nào khớp với từ khóa <strong>"{{ query }}"</strong> trong cơ sở dữ liệu và sổ cái Blockchain.
+                </p>
+                <div class="alert alert-light border mx-auto text-start small" style="max-width: 550px;">
+                    <strong class="text-dark d-block mb-1"><i class="bi bi-question-circle text-primary me-1"></i> Hướng dẫn xử lý:</strong>
+                    <ul class="mb-0 ps-3 text-muted">
+                        <li>Kiểm tra lại số hiệu văn bằng trên góc văn bằng (ví dụ: <code>VB-2026-001</code>).</li>
+                        <li>Đảm bảo mã sinh viên hoặc họ tên được gõ chính xác không kèm ký tự lạ.</li>
+                        <li>Nếu văn bằng mới được trao, vui lòng liên hệ Phòng Đào tạo để kiểm tra trạng thái cập nhật On-Chain.</li>
+                    </ul>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
