@@ -1,0 +1,161 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bản Sao Văn Bằng - {{ cert.serial_number }} - {{ cert.student_name }}</title>
+    
+    <!-- Bootstrap 5.3.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+
+    <style>
+        body {
+            background-color: #525659;
+            padding: 20px 0;
+            font-family: 'Be Vietnam Pro', serif;
+        }
+
+        .print-container {
+            max-width: 960px;
+            margin: 0 auto;
+        }
+
+        .action-bar {
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 12px 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .diploma-sheet {
+            background: #ffffff;
+            width: 100%;
+            min-height: 620px;
+            padding: 50px 60px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            border: 4px double #b8860b;
+            outline: 14px solid #fdfbf7;
+            position: relative;
+            margin: 0 auto;
+        }
+
+        .diploma-title-fancy {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #8b0000;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-align: center;
+            margin: 20px 0 10px 0;
+        }
+
+        @media print {
+            body {
+                background: none !important;
+                padding: 0 !important;
+            }
+            .action-bar {
+                display: none !important;
+            }
+            .diploma-sheet {
+                box-shadow: none !important;
+                border: 2px solid #b8860b !important;
+                outline: none !important;
+                padding: 30px !important;
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="print-container">
+        <!-- Floating Action Bar -->
+        <div class="action-bar d-flex justify-content-between align-items-center no-print">
+            <div>
+                <a href="{% url 'dashboard' %}" class="btn btn-sm btn-outline-secondary me-2">
+                    <i class="bi bi-arrow-left"></i> Quay lại Dashboard
+                </a>
+                <a href="{% url 'search' %}?q={{ cert.serial_number }}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-search"></i> Xem trang tra cứu
+                </a>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="text-muted small">Khổ giấy: A4 Landscape / In trực tiếp</span>
+                <button type="button" class="btn btn-sm btn-primary fw-bold" onclick="window.print()">
+                    <i class="bi bi-printer-fill me-1"></i> In Phôi Bằng
+                </button>
+            </div>
+        </div>
+
+        <!-- Official Diploma Sheet -->
+        <div class="diploma-sheet">
+            <!-- Header -->
+            <div class="text-center pb-3 border-bottom border-warning">
+                <div class="fw-bold fs-6 text-uppercase" style="letter-spacing: 1.5px;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
+                <div class="fw-semibold text-muted small mb-2">Độc lập - Tự do - Hạnh phúc</div>
+                <div class="fw-bold text-uppercase fs-5 text-dark mt-2">TRƯỜNG ĐẠI HỌC CÔNG NGHỆ & ĐÀO TẠO</div>
+                <div class="text-muted small">HỆ THỐNG QUẢN LÝ VĂN BẰNG SỐ BLOCKCHAIN</div>
+            </div>
+
+            <!-- Title -->
+            <div class="diploma-title-fancy">{{ cert.degree_type }}</div>
+            <div class="text-center text-muted fst-italic mb-3">Hiệu trưởng trường Đại học công nhận học vị:</div>
+
+            <!-- Student Name -->
+            <div class="text-center fs-2 fw-bold text-uppercase text-dark mb-3" style="letter-spacing: 1.5px;">
+                {{ cert.student_name }}
+            </div>
+
+            <!-- Information Body -->
+            <div class="row justify-content-center my-4 fs-6" style="line-height: 2;">
+                <div class="col-md-5">
+                    <div><strong>Mã sinh viên:</strong> {{ cert.student_id|default:"---" }}</div>
+                    <div><strong>Ngày sinh:</strong> {{ cert.date_of_birth|date:"d/m/Y" }}</div>
+                    <div><strong>Ngành đào tạo:</strong> {{ cert.major }}</div>
+                </div>
+                <div class="col-md-5">
+                    <div><strong>Năm tốt nghiệp:</strong> {{ cert.graduation_year }}</div>
+                    <div><strong>Xếp loại tốt nghiệp:</strong> {{ cert.classification }}</div>
+                    <div><strong>Ngày cấp bằng:</strong> {{ cert.issue_date|default:cert.created_at|date:"d/m/Y" }}</div>
+                </div>
+            </div>
+
+            <!-- Footer: Seal, QR, Rector signature -->
+            <div class="row align-items-end pt-4 mt-3 border-top">
+                <div class="col-4">
+                    <div class="small text-muted">Số hiệu văn bằng: <strong class="text-dark">{{ cert.serial_number }}</strong></div>
+                    <div class="small text-muted">Số vào sổ: <strong class="text-dark">VB-{{ cert.graduation_year }}-{{ cert.id }}</strong></div>
+                    <div class="small text-muted text-break mt-1">Data Hash: <code>{{ cert.data_hash|truncatechars:20 }}</code></div>
+                </div>
+
+                <div class="col-4 text-center">
+                    <div class="diploma-seal mx-auto mb-1">
+                        <span>CHỨNG THỰC SỐ<br>BLOCKCHAIN<br>VERIFIED</span>
+                    </div>
+                    <span class="text-muted" style="font-size: 0.7rem;">Mộc Số Điện Tử</span>
+                </div>
+
+                <div class="col-4 text-center">
+                    {% if qr_data %}
+                        <img src="{{ qr_data }}" alt="QR" style="width: 85px; height: 85px;" class="border p-1 bg-white mb-1">
+                        <div class="text-muted" style="font-size: 0.7rem;">Quét để xác thực gốc</div>
+                    {% endif %}
+                    <div class="fw-bold mt-2 text-dark small">HIỆU TRƯỞNG</div>
+                    <div class="text-muted fst-italic" style="font-size: 0.75rem;">(Đã ký duyệt điện tử On-Chain)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

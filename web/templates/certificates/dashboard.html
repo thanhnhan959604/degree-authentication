@@ -1,0 +1,993 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Bảng Điều Khiển & Hàng Đợi Phê Duyệt Văn Bằng{% endblock %}
+
+{% block content %}
+<!-- Top Identity & Actions Header -->
+<div class="custom-card p-4 mb-4">
+    <div class="row align-items-center gy-3">
+        <div class="col-lg-7">
+            <div class="d-flex align-items-center gap-3">
+                <div class="bg-primary text-white p-3 rounded-circle d-flex align-items-center justify-content-center" style="width: 54px; height: 54px;">
+                    <i class="bi bi-person-badge fs-3"></i>
+                </div>
+                <div>
+                    <h4 class="fw-bold mb-1 text-dark">
+                        Bảng Điều Khiển 
+                        {% if role == 'qlsv' %}Phòng Quản Lý Sinh Viên
+                        {% elif role == 'daotao' %}Phòng Đào Tạo
+                        {% elif role == 'hieutruong' %}Ban Giám Hiệu / Hiệu Trưởng
+                        {% elif role == 'admin' %}Quản Trị Viên Hệ Thống
+                        {% else %}Cán Bộ Khảo Thí{% endif %}
+                    </h4>
+                    <p class="text-muted small mb-0">
+                        {% if role == 'qlsv' %}
+                            Nhiệm vụ: Nhập hồ sơ, Import Excel, xác nhận thông tin danh tính & Mã sinh viên (Bước 1/3).
+                        {% elif role == 'daotao' %}
+                            Nhiệm vụ: Thẩm định hồ sơ học vụ, chương trình, xếp loại và điều kiện tốt nghiệp (Bước 2/3).
+                        {% elif role == 'hieutruong' %}
+                            Nhiệm vụ: Phê duyệt tối cao, ký số và phát hành văn bằng lên Blockchain Besu (Bước 3/3).
+                        {% else %}
+                            Toàn quyền giám sát quy trình cấp phát và thu hồi văn bằng số.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5 text-lg-end">
+            <div class="d-flex flex-wrap justify-content-lg-end gap-2">
+                {% if role == 'qlsv' or role == 'admin' %}
+                    <button type="button" class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#createModal">
+                        <i class="bi bi-plus-circle me-1"></i> + Thêm Hồ Sơ Mới
+                    </button>
+                    <button type="button" class="btn btn-outline-success shadow-sm" data-bs-toggle="modal" data-bs-target="#excelModal">
+                        <i class="bi bi-file-earmark-excel me-1"></i> Nhập Từ Excel
+                    </button>
+                {% endif %}
+                <a href="{% url 'download_excel_template' %}" class="btn btn-outline-secondary" title="Tải file mẫu để nhập liệu">
+                    <i class="bi bi-download me-1"></i> Mẫu Excel
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- KPI Metrics Summary Cards -->
+<div class="row g-3 mb-4">
+    {% if role == 'qlsv' %}
+        <!-- Dành cho Phòng Quản lý Sinh viên -->
+        <div class="col-md-2 col-sm-4 col-6">
+            <a href="?filter=all" class="text-decoration-none">
+                <div class="custom-card p-3 stat-card h-100 {% if filter_type == 'all' %}border-primary shadow-sm bg-light{% endif %}">
+                    <span class="text-muted small fw-semibold d-block mb-1">Tổng Hồ Sơ Quản Lý</span>
+                    <h3 class="fw-bold mb-0 text-dark">{{ total_count }}</h3>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3 col-sm-4 col-6">
+            <a href="?filter=pending_qlsv" class="text-decoration-none">
+                <div class="custom-card p-3 stat-card stat-pending-qlsv h-100 {% if filter_type == 'pending_qlsv' %}border-warning shadow-sm bg-light{% endif %}">
+                    <span class="text-warning-emphasis small fw-semibold d-block mb-1">1. Chờ QLSV Duyệt</span>
+                    <h3 class="fw-bold mb-0 text-warning-emphasis">{{ pending_qlsv_count }}</h3>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3 col-sm-4 col-6">
+            <a href="?filter=returned" class="text-decoration-none">
+                <div class="custom-card p-3 stat-card h-100 {% if returned_to_qlsv_count > 0 %}border-danger bg-danger-subtle{% endif %} {% if filter_type == 'returned' %}shadow-sm{% endif %}">
+                    <span class="{% if returned_to_qlsv_count > 0 %}text-danger{% else %}text-muted{% endif %} small fw-bold d-block mb-1">
+                        <i class="bi bi-arrow-return-left"></i> Cấp Trên Trả Về Cần Sửa
+                    </span>
+                    <h3 class="fw-bold mb-0 {% if returned_to_qlsv_count > 0 %}text-danger{% else %}text-dark{% endif %}">{{ returned_to_qlsv_count }}</h3>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-2 col-sm-4 col-6">
+            <a href="?filter=forwarded" class="text-decoration-none">
+                <div class="custom-card p-3 stat-card h-100 {% if filter_type == 'forwarded' %}border-info shadow-sm bg-light{% endif %}">
+                    <span class="text-info-emphasis small fw-semibold d-block mb-1">Đã Chuyển Đào Tạo</span>
+                    <h3 class="fw-bold mb-0 text-info-emphasis">{{ pending_daotao_count|add:pending_hieutruong_count }}</h3>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-2 col-sm-4 col-6">
+            <a href="?filter=issued" class="text-decoration-none">
+                <div class="custom-card p-3 stat-card stat-issued h-100 {% if filter_type == 'issued' %}border-success shadow-sm bg-light{% endif %}">
+                    <span class="text-success small fw-semibold d-block mb-1">Đã Phát Hành</span>
+                    <h3 class="fw-bold mb-0 text-success">{{ issued_count }}</h3>
+                </div>
+            </a>
+        </div>
+
+    {% elif role == 'daotao' %}
+        <!-- Dành cho Phòng Đào tạo (Chỉ thấy hồ sơ sau khi QLSV duyệt) -->
+        <div class="col-md-2 col-sm-4 col-6">
+            <a href="?filter=all" class="text-decoration-none">
+                <div class="custom-card p-3 stat-card h-100 {% if filter_type == 'all' %}border-primary shadow-sm bg-light{% endif %}">
+                    <span class="text-muted small fw-semibold d-block mb-1">Tiếp Nhận Từ QLSV</span>
+                    <h3 class="fw-bold mb-0 text-dark">{{ total_count }}</h3>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3 col-sm-4 col-6">
+            <a href="?filter=pending_daotao" class="text-decoration-none">
+                <div class="custom-card p-3 stat-card stat-pending-daotao h-100 {% if filter_type == 'pending_daotao' %}border-info shadow-sm bg-light{% endif %}">
+                    <span class="text-info-emphasis small fw-semibold d-block mb-1">2. Chờ Đào Tạo Duyệt</span>
+                    <h3 class="fw-bold mb-0 text-info-emphasis">{{ pending_daotao_count }}</h3>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3 col-sm-4 col-6">
+            <a href="?filter=returned" class="text-decoration-none">
+                <div class="custom-card p-3 stat-card h-100 {% if returned_to_daotao_count > 0 %}border-warning bg-warning-subtle{% endif %} {% if filter_type == 'returned' %}shadow-sm{% endif %}">
+                    <span class="{% if returned_to_daotao_count > 0 %}text-warning-emphasis{% else %}text-muted{% endif %} small fw-bold d-block mb-1">
+                        <i class="bi bi-arrow-return-left"></i> Hiệu Trưởng Trả Về
+                    </span>
+                    <h3 class="fw-bold mb-0 {% if returned_to_daotao_count > 0 %}text-warning-emphasis{% else %}text-dark{% endif %}">{{ returned_to_daotao_count }}</h3>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-2 col-sm-4 col-6">
+            <a href="?filter=forwarded" class="text-decoration-none">
+                <div class="custom-card p-3 stat-card stat-pending-rector h-100 {% if filter_type == 'forwarded' %}border-primary shadow-sm bg-light{% endif %}">
+                    <span class="text-primary small fw-semibold d-block mb-1">Đã Chuyển Hiệu Trưởng</span>
+                    <h3 class="fw-bold mb-0 text-primary">{{ pending_hieutruong_count }}</h3>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-2 col-sm-4 col-6">
+            <a href="?filter=issued" class="text-decoration-none">
+                <div class="custom-card p-3 stat-card stat-issued h-100 {% if filter_type == 'issued' %}border-success shadow-sm bg-light{% endif %}">
+                    <span class="text-success small fw-semibold d-block mb-1">Đã Cấp On-Chain</span>
+                    <h3 class="fw-bold mb-0 text-success">{{ issued_count }}</h3>
+                </div>
+            </a>
+        </div>
+
+    {% elif role == 'hieutruong' %}
+        <!-- Dành cho Hiệu trưởng (Chỉ thấy hồ sơ cả 2 phòng đã duyệt) -->
+        <div class="col-md-3 col-sm-6 col-6">
+            <a href="?filter=pending_hieutruong" class="text-decoration-none">
+                <div class="custom-card p-3 stat-card stat-pending-rector h-100 {% if filter_type == 'pending_hieutruong' or filter_type == 'my_queue' %}border-primary shadow-sm bg-light{% endif %}">
+                    <span class="text-primary small fw-semibold d-block mb-1">3. Chờ Hiệu Trưởng Ký</span>
+                    <h3 class="fw-bold mb-0 text-primary">{{ pending_hieutruong_count }}</h3>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3 col-sm-6 col-6">
+            <a href="?filter=issued" class="text-decoration-none">
+                <div class="custom-card p-3 stat-card stat-issued h-100 {% if filter_type == 'issued' %}border-success shadow-sm bg-light{% endif %}">
+                    <span class="text-success small fw-semibold d-block mb-1">Đã Ký Phát Hành On-Chain</span>
+                    <h3 class="fw-bold mb-0 text-success">{{ issued_count }}</h3>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3 col-sm-6 col-6">
+            <a href="?filter=all" class="text-decoration-none">
+                <div class="custom-card p-3 stat-card h-100 {% if filter_type == 'all' %}border-dark shadow-sm bg-light{% endif %}">
+                    <span class="text-muted small fw-semibold d-block mb-1">Tiếp Nhận Đã Đủ 2 Cấp</span>
+                    <h3 class="fw-bold mb-0 text-dark">{{ total_count }}</h3>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3 col-sm-6 col-6">
+            <a href="?filter=returned" class="text-decoration-none">
+                <div class="custom-card p-3 stat-card h-100 {% if filter_type == 'returned' %}border-secondary shadow-sm bg-light{% endif %}">
+                    <span class="text-secondary small fw-semibold d-block mb-1">Đã Trả Về Đào Tạo</span>
+                    <h3 class="fw-bold mb-0 text-secondary">{{ returned_to_daotao_count }}</h3>
+                </div>
+            </a>
+        </div>
+
+    {% else %}
+        <!-- Dành cho Admin (Toàn hệ thống) -->
+        <div class="col-md-2 col-sm-4 col-6">
+            <a href="?filter=all" class="text-decoration-none">
+                <div class="custom-card p-3 stat-card h-100 {% if filter_type == 'all' %}border-primary shadow-sm bg-light{% endif %}">
+                    <span class="text-muted small fw-semibold d-block mb-1">Tổng Hồ Sơ</span>
+                    <h3 class="fw-bold mb-0 text-dark">{{ total_count }}</h3>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-2 col-sm-4 col-6">
+            <a href="?filter=pending_qlsv" class="text-decoration-none">
+                <div class="custom-card p-3 stat-card stat-pending-qlsv h-100 {% if filter_type == 'pending_qlsv' %}border-warning shadow-sm bg-light{% endif %}">
+                    <span class="text-warning-emphasis small fw-semibold d-block mb-1">1. Chờ QLSV</span>
+                    <h3 class="fw-bold mb-0 text-warning-emphasis">{{ pending_qlsv_count }}</h3>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-2 col-sm-4 col-6">
+            <a href="?filter=pending_daotao" class="text-decoration-none">
+                <div class="custom-card p-3 stat-card stat-pending-daotao h-100 {% if filter_type == 'pending_daotao' %}border-info shadow-sm bg-light{% endif %}">
+                    <span class="text-info-emphasis small fw-semibold d-block mb-1">2. Chờ Đào Tạo</span>
+                    <h3 class="fw-bold mb-0 text-info-emphasis">{{ pending_daotao_count }}</h3>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-2 col-sm-4 col-6">
+            <a href="?filter=pending_hieutruong" class="text-decoration-none">
+                <div class="custom-card p-3 stat-card stat-pending-rector h-100 {% if filter_type == 'pending_hieutruong' %}border-primary shadow-sm bg-light{% endif %}">
+                    <span class="text-primary small fw-semibold d-block mb-1">3. Chờ Hiệu Trưởng</span>
+                    <h3 class="fw-bold mb-0 text-primary">{{ pending_hieutruong_count }}</h3>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-2 col-sm-4 col-6">
+            <a href="?filter=issued" class="text-decoration-none">
+                <div class="custom-card p-3 stat-card stat-issued h-100 {% if filter_type == 'issued' %}border-success shadow-sm bg-light{% endif %}">
+                    <span class="text-success small fw-semibold d-block mb-1">Đã Phát Hành</span>
+                    <h3 class="fw-bold mb-0 text-success">{{ issued_count }}</h3>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-2 col-sm-4 col-6">
+            <a href="?filter=rejected" class="text-decoration-none">
+                <div class="custom-card p-3 stat-card stat-rejected h-100 {% if filter_type == 'rejected' %}border-danger shadow-sm bg-light{% endif %}">
+                    <span class="text-danger small fw-semibold d-block mb-1">Bị Trả Về / Từ Chối</span>
+                    <h3 class="fw-bold mb-0 text-danger">{{ rejected_total_count }}</h3>
+                </div>
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Filters Toolbar & Search -->
+<div class="custom-card p-3 mb-4">
+    <div class="row align-items-center g-3">
+        <!-- Filter Tabs -->
+        <div class="col-lg-8">
+            <ul class="nav nav-pills small gap-1">
+                <li class="nav-item">
+                    <a class="nav-link py-1 px-3 {% if filter_type == 'all' %}active bg-primary{% endif %}" href="?filter=all">
+                        Tất cả ({{ total_count }})
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link py-1 px-3 {% if filter_type == 'my_queue' %}active bg-dark text-white{% else %}text-dark{% endif %}" href="?filter=my_queue">
+                        <i class="bi bi-bell-fill text-warning me-1"></i> Cần tôi xử lý
+                    </a>
+                </li>
+
+                {% if role == 'qlsv' %}
+                    <li class="nav-item">
+                        <a class="nav-link py-1 px-3 {% if filter_type == 'pending_qlsv' %}active bg-warning text-dark{% endif %}" href="?filter=pending_qlsv">
+                            Chờ QLSV duyệt ({{ pending_qlsv_count }})
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link py-1 px-3 {% if filter_type == 'returned' %}active bg-danger text-white{% endif %}" href="?filter=returned">
+                            Bị cấp trên trả về ({{ returned_to_qlsv_count }})
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link py-1 px-3 {% if filter_type == 'forwarded' %}active bg-info text-white{% endif %}" href="?filter=forwarded">
+                            Đã chuyển Đào tạo
+                        </a>
+                    </li>
+                {% elif role == 'daotao' %}
+                    <li class="nav-item">
+                        <a class="nav-link py-1 px-3 {% if filter_type == 'pending_daotao' %}active bg-info text-white{% endif %}" href="?filter=pending_daotao">
+                            Chờ Đào tạo duyệt ({{ pending_daotao_count }})
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link py-1 px-3 {% if filter_type == 'returned' %}active bg-warning text-dark{% endif %}" href="?filter=returned">
+                            Hiệu trưởng trả về ({{ returned_to_daotao_count }})
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link py-1 px-3 {% if filter_type == 'forwarded' %}active bg-primary text-white{% endif %}" href="?filter=forwarded">
+                            Đã chuyển HT ({{ pending_hieutruong_count }})
+                        </a>
+                    </li>
+                {% elif role == 'hieutruong' %}
+                    <li class="nav-item">
+                        <a class="nav-link py-1 px-3 {% if filter_type == 'pending_hieutruong' %}active bg-primary text-white{% endif %}" href="?filter=pending_hieutruong">
+                            Chờ ký ({{ pending_hieutruong_count }})
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link py-1 px-3 {% if filter_type == 'returned' %}active bg-secondary text-white{% endif %}" href="?filter=returned">
+                            Đã trả về Đào tạo ({{ returned_to_daotao_count }})
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link py-1 px-3 {% if filter_type == 'pending_qlsv' %}active bg-warning text-dark{% endif %}" href="?filter=pending_qlsv">
+                            Chờ QLSV ({{ pending_qlsv_count }})
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link py-1 px-3 {% if filter_type == 'pending_daotao' %}active bg-info text-white{% endif %}" href="?filter=pending_daotao">
+                            Chờ Đào tạo ({{ pending_daotao_count }})
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link py-1 px-3 {% if filter_type == 'pending_hieutruong' %}active bg-primary text-white{% endif %}" href="?filter=pending_hieutruong">
+                            Chờ HT ký ({{ pending_hieutruong_count }})
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link py-1 px-3 {% if filter_type == 'rejected' %}active bg-danger text-white{% endif %}" href="?filter=rejected">
+                            Bị trả về ({{ rejected_total_count }})
+                        </a>
+                    </li>
+                {% endif %}
+
+                <li class="nav-item">
+                    <a class="nav-link py-1 px-3 {% if filter_type == 'issued' %}active bg-success text-white{% endif %}" href="?filter=issued">
+                        Đã cấp on-chain ({{ issued_count }})
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="col-lg-4">
+            <form method="get" action="{% url 'dashboard' %}" class="d-flex">
+                <input type="hidden" name="filter" value="{{ filter_type }}">
+                <div class="input-group input-group-sm">
+                    <input type="text" name="s" class="form-control" placeholder="Tìm theo số hiệu, tên, mã SV..." value="{{ search_kw|default:'' }}">
+                    <button class="btn btn-outline-secondary" type="submit">
+                        <i class="bi bi-search"></i>
+                    </button>
+                    {% if search_kw %}
+                        <a href="?filter={{ filter_type }}" class="btn btn-outline-danger" title="Xóa tìm kiếm">✕</a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Main Table Card -->
+<div class="custom-card shadow-sm overflow-hidden mb-5">
+    <div class="table-responsive">
+        <table class="table table-custom align-middle mb-0">
+            <thead>
+                <tr>
+                    <th class="ps-4">Số Hiệu VB</th>
+                    <th>Thông Tin Sinh Viên</th>
+                    <th>Chuyên Ngành & Xếp Loại</th>
+                    <th class="text-center">Tiến Trình Duyệt (3 Bước)</th>
+                    <th class="text-center">Trạng Thái</th>
+                    <th class="text-end pe-4">Thao Tác Nghiệp Vụ</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cert in certificates %}
+                <tr>
+                    <!-- Số hiệu văn bằng -->
+                    <td class="ps-4">
+                        <strong class="text-primary text-uppercase">{{ cert.serial_number }}</strong>
+                        <div class="text-muted small">{{ cert.degree_type }}</div>
+                    </td>
+
+                    <!-- Sinh viên -->
+                    <td>
+                        <div class="fw-bold text-dark">{{ cert.student_name }}</div>
+                        <div class="text-muted small">
+                            MSSV: <code class="text-dark">{{ cert.student_id|default:"---" }}</code> • NS: {{ cert.date_of_birth|date:"d/m/Y" }}
+                        </div>
+                    </td>
+
+                    <!-- Ngành & Xếp loại -->
+                    <td>
+                        <div>{{ cert.major }}</div>
+                        <div class="text-muted small">
+                            Năm {{ cert.graduation_year }} • 
+                            <span class="badge {% if cert.classification == 'Xuất sắc' or cert.classification == 'Giỏi' %}bg-primary-subtle text-primary border border-primary-subtle{% else %}bg-secondary-subtle text-secondary{% endif %}">
+                                {{ cert.classification }}
+                            </span>
+                        </div>
+                    </td>
+
+                    <!-- Tiến trình duyệt 3 bước (QLSV -> Đào tạo -> Hiệu trưởng) -->
+                    <td class="text-center">
+                        {% if cert.status == 'REVOKED' %}
+                            <span class="badge bg-danger text-white">Đã thu hồi</span>
+                        {% else %}
+                            <div class="approval-steps justify-content-center" title="Quy trình: 1. QLSV -> 2. Đào tạo -> 3. Hiệu trưởng">
+                                <!-- Step 1: QLSV -->
+                                <span class="step-indicator {% if cert.student_affairs_approved %}step-done{% elif cert.is_rejected and cert.rejected_by == 'daotao' %}step-rejected{% else %}step-waiting{% endif %}" title="1. Phòng QLSV: {% if cert.student_affairs_approved %}Đã duyệt{% elif cert.is_rejected and cert.rejected_by == 'daotao' %}Bị Đào tạo trả về{% else %}Chờ duyệt{% endif %}">
+                                    {% if cert.student_affairs_approved %}✓{% elif cert.is_rejected and cert.rejected_by == 'daotao' %}!{% else %}1{% endif %}
+                                </span>
+                                <span class="step-line {% if cert.student_affairs_approved %}done{% endif %}"></span>
+
+                                <!-- Step 2: Đào tạo -->
+                                <span class="step-indicator {% if cert.academic_affairs_approved %}step-done{% elif cert.student_affairs_approved and cert.is_rejected and cert.rejected_by == 'hieutruong' %}step-rejected{% elif cert.student_affairs_approved %}step-waiting{% else %}step-idle{% endif %}" title="2. Phòng Đào tạo: {% if cert.academic_affairs_approved %}Đã duyệt{% elif cert.is_rejected and cert.rejected_by == 'hieutruong' %}Bị Hiệu trưởng trả về{% elif cert.student_affairs_approved %}Chờ Đào tạo duyệt{% else %}Chưa tới bước này{% endif %}">
+                                    {% if cert.academic_affairs_approved %}✓{% elif cert.student_affairs_approved and cert.is_rejected and cert.rejected_by == 'hieutruong' %}!{% else %}2{% endif %}
+                                </span>
+                                <span class="step-line {% if cert.academic_affairs_approved %}done{% endif %}"></span>
+
+                                <!-- Step 3: Hiệu trưởng -->
+                                <span class="step-indicator {% if cert.rector_approved %}step-done{% elif cert.student_affairs_approved and cert.academic_affairs_approved and not cert.is_rejected %}step-waiting{% else %}step-idle{% endif %}" title="3. Hiệu trưởng: {% if cert.rector_approved %}Đã ký duyệt phát hành{% elif cert.academic_affairs_approved %}Chờ Hiệu trưởng ký{% else %}Chưa tới bước này{% endif %}">
+                                    {% if cert.rector_approved %}✓{% else %}3{% endif %}
+                                </span>
+                            </div>
+                            <div class="mt-1" style="font-size: 0.72rem;">
+                                {% if cert.is_rejected %}
+                                    <span class="text-danger fw-semibold">{{ cert.current_step_info.name }}</span>
+                                {% else %}
+                                    <span class="text-muted">{{ cert.current_step_info.name }}</span>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </td>
+
+                    <!-- Trạng thái -->
+                    <td class="text-center">
+                        {% if cert.status == 'ISSUED' %}
+                            <span class="badge-status badge-status-issued">
+                                <i class="bi bi-check-circle-fill"></i> Đã cấp on-chain
+                            </span>
+                        {% elif cert.status == 'REVOKED' %}
+                            <span class="badge-status badge-status-revoked">
+                                <i class="bi bi-slash-circle-fill"></i> Đã thu hồi
+                            </span>
+                        {% elif cert.is_rejected %}
+                            {% if cert.rejected_by == 'hieutruong' %}
+                                <span class="badge bg-warning text-dark border border-warning" title="{{ cert.rejection_reason }}">
+                                    <i class="bi bi-arrow-return-left"></i> HT trả về Đào tạo
+                                </span>
+                                <div class="text-danger small mt-1 text-truncate" style="max-width: 140px; font-size: 0.72rem;" title="{{ cert.rejection_reason }}">
+                                    {{ cert.rejection_reason }}
+                                </div>
+                            {% elif cert.rejected_by == 'daotao' %}
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle" title="{{ cert.rejection_reason }}">
+                                    <i class="bi bi-arrow-return-left"></i> Đào tạo trả về QLSV
+                                </span>
+                                <div class="text-danger small mt-1 text-truncate" style="max-width: 140px; font-size: 0.72rem;" title="{{ cert.rejection_reason }}">
+                                    {{ cert.rejection_reason }}
+                                </div>
+                            {% else %}
+                                <span class="badge bg-secondary text-white" title="{{ cert.rejection_reason }}">
+                                    <i class="bi bi-x-circle"></i> Bị từ chối
+                                </span>
+                                <div class="text-danger small mt-1 text-truncate" style="max-width: 140px; font-size: 0.72rem;" title="{{ cert.rejection_reason }}">
+                                    {{ cert.rejection_reason }}
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <span class="badge-status badge-status-pending">
+                                <i class="bi bi-hourglass-split"></i> Chờ duyệt
+                            </span>
+                        {% endif %}
+                    </td>
+
+                    <!-- Thao tác hành động theo thẩm quyền -->
+                    <td class="text-end pe-4">
+                        <div class="d-inline-flex gap-1 align-items-center">
+                            <!-- NÚT DUYỆT BƯỚC 1: DÀNH CHO PHÒNG QLSV -->
+                            {% if role == 'qlsv' or role == 'admin' %}
+                                {% if cert.status == 'PENDING' and not cert.student_affairs_approved %}
+                                    <form method="post" action="{% url 'certificate_approve' cert.pk %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-warning fw-semibold shadow-sm text-dark" title="Xác thực danh tính và mã sinh viên">
+                                            <i class="bi bi-check2"></i> Duyệt QLSV
+                                        </button>
+                                    </form>
+                                {% endif %}
+                                <!-- Nút sửa đối với hồ sơ bị từ chối / trả về QLSV -->
+                                {% if cert.is_rejected and not cert.student_affairs_approved %}
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-primary"
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#editModal"
+                                            data-cert-id="{{ cert.pk }}"
+                                            data-cert-serial="{{ cert.serial_number }}"
+                                            data-cert-studentid="{{ cert.student_id }}"
+                                            data-cert-name="{{ cert.student_name }}"
+                                            data-cert-dob="{{ cert.date_of_birth|date:'Y-m-d' }}"
+                                            data-cert-major="{{ cert.major }}"
+                                            data-cert-year="{{ cert.graduation_year }}"
+                                            data-cert-classification="{{ cert.classification }}"
+                                            data-cert-degreetype="{{ cert.degree_type }}"
+                                            data-cert-rejectreason="{{ cert.rejection_reason }}">
+                                        <i class="bi bi-pencil-square"></i> Sửa & Gửi Lại
+                                    </button>
+                                {% endif %}
+                            {% endif %}
+
+                            <!-- NÚT DUYỆT BƯỚC 2: DÀNH CHO PHÒNG ĐÀO TẠO -->
+                            {% if role == 'daotao' or role == 'admin' %}
+                                {% if cert.status == 'PENDING' and cert.student_affairs_approved and not cert.academic_affairs_approved %}
+                                    <form method="post" action="{% url 'certificate_approve' cert.pk %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-info text-white fw-semibold shadow-sm" title="Xác nhận chương trình học & điều kiện tốt nghiệp">
+                                            {% if cert.is_rejected and cert.rejected_by == 'hieutruong' %}
+                                                <i class="bi bi-check2-all"></i> Duyệt Lại & Gửi HT
+                                            {% else %}
+                                                <i class="bi bi-check2-all"></i> Duyệt Đào Tạo
+                                            {% endif %}
+                                        </button>
+                                    </form>
+                                    <!-- Nếu bị Hiệu trưởng trả về, Đào tạo cũng có thể sửa nhanh -->
+                                    {% if cert.is_rejected and cert.rejected_by == 'hieutruong' %}
+                                        <button type="button" 
+                                                class="btn btn-sm btn-outline-primary"
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#editModal"
+                                                data-cert-id="{{ cert.pk }}"
+                                                data-cert-serial="{{ cert.serial_number }}"
+                                                data-cert-studentid="{{ cert.student_id }}"
+                                                data-cert-name="{{ cert.student_name }}"
+                                                data-cert-dob="{{ cert.date_of_birth|date:'Y-m-d' }}"
+                                                data-cert-major="{{ cert.major }}"
+                                                data-cert-year="{{ cert.graduation_year }}"
+                                                data-cert-classification="{{ cert.classification }}"
+                                                data-cert-degreetype="{{ cert.degree_type }}"
+                                                data-cert-rejectreason="{{ cert.rejection_reason }}"
+                                                title="Chỉnh sửa thông tin đào tạo theo yêu cầu Hiệu trưởng">
+                                            <i class="bi bi-pencil"></i> Sửa
+                                        </button>
+                                    {% endif %}
+                                {% endif %}
+                            {% endif %}
+
+                            <!-- NÚT DUYỆT BƯỚC 3: DÀNH CHO HIỆU TRƯỞNG / BAN GIÁM HIỆU -->
+                            {% if role == 'hieutruong' or role == 'admin' %}
+                                {% if cert.status == 'PENDING' and cert.student_affairs_approved and cert.academic_affairs_approved and not cert.rector_approved and not cert.is_rejected %}
+                                    <form method="post" action="{% url 'certificate_approve' cert.pk %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-success fw-bold shadow-sm" title="Ký duyệt phát hành chính thức lên Blockchain">
+                                            <i class="bi bi-feather"></i> Ký Hiệu Trưởng
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            {% endif %}
+
+                            <!-- NÚT HOÀN TRẢ / TỪ CHỐI (Theo trình tự trả về phòng trước đó) -->
+                            {% if cert.status == 'PENDING' %}
+                                {% if role == 'hieutruong' and cert.student_affairs_approved and cert.academic_affairs_approved and not cert.rector_approved and not cert.is_rejected %}
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-danger" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#rejectModal"
+                                            data-cert-id="{{ cert.pk }}"
+                                            data-cert-serial="{{ cert.serial_number }}"
+                                            data-cert-name="{{ cert.student_name }}"
+                                            title="Hoàn trả hồ sơ về Phòng Đào tạo">
+                                        <i class="bi bi-arrow-return-left"></i> Trả về Đào tạo
+                                    </button>
+                                {% elif role == 'daotao' and cert.student_affairs_approved and not cert.academic_affairs_approved %}
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-danger" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#rejectModal"
+                                            data-cert-id="{{ cert.pk }}"
+                                            data-cert-serial="{{ cert.serial_number }}"
+                                            data-cert-name="{{ cert.student_name }}"
+                                            title="Hoàn trả hồ sơ về Phòng QLSV">
+                                        <i class="bi bi-arrow-return-left"></i> Trả về QLSV
+                                    </button>
+                                {% elif role == 'qlsv' and not cert.student_affairs_approved and not cert.is_rejected %}
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-danger" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#rejectModal"
+                                            data-cert-id="{{ cert.pk }}"
+                                            data-cert-serial="{{ cert.serial_number }}"
+                                            data-cert-name="{{ cert.student_name }}"
+                                            title="Từ chối hồ sơ đầu vào">
+                                        <i class="bi bi-x"></i> Từ chối
+                                    </button>
+                                {% elif role == 'admin' and not cert.is_rejected %}
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-danger" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#rejectModal"
+                                            data-cert-id="{{ cert.pk }}"
+                                            data-cert-serial="{{ cert.serial_number }}"
+                                            data-cert-name="{{ cert.student_name }}"
+                                            title="Từ chối / Hoàn trả">
+                                        <i class="bi bi-x"></i> Trả về / Từ chối
+                                    </button>
+                                {% endif %}
+                            {% endif %}
+
+                            <!-- NÚT THU HỒI VĂN BẰNG (Khi đã cấp) -->
+                            {% if cert.status == 'ISSUED' %}
+                                <button type="button" 
+                                        class="btn btn-sm btn-outline-danger" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#revokeModal"
+                                        data-cert-id="{{ cert.pk }}"
+                                        data-cert-serial="{{ cert.serial_number }}"
+                                        data-cert-name="{{ cert.student_name }}"
+                                        title="Yêu cầu thu hồi văn bằng có lý do">
+                                    <i class="bi bi-shield-x"></i> Thu hồi
+                                </button>
+                            {% endif %}
+
+                            <!-- NÚT XEM TRA CỨU & IN -->
+                            <a href="{% url 'search' %}?q={{ cert.serial_number }}" target="_blank" class="btn btn-sm btn-outline-secondary" title="Xem trang tra cứu công khai">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="{% url 'certificate_print' cert.pk %}" target="_blank" class="btn btn-sm btn-outline-secondary" title="In phôi văn bằng">
+                                <i class="bi bi-printer"></i>
+                            </a>
+
+                            <!-- NÚT XEM CHI TIẾT & LOG BLOCKCHAIN -->
+                            <button type="button" 
+                                    class="btn btn-sm btn-outline-secondary" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#detailModal"
+                                    data-cert-serial="{{ cert.serial_number }}"
+                                    data-cert-studentid="{{ cert.student_id }}"
+                                    data-cert-name="{{ cert.student_name }}"
+                                    data-cert-major="{{ cert.major }}"
+                                    data-cert-hash="{{ cert.data_hash }}"
+                                    data-cert-tx="{{ cert.tx_hash|default:'' }}"
+                                    data-cert-status="{{ cert.get_status_display }}"
+                                    data-cert-date="{{ cert.created_at|date:'d/m/Y H:i' }}"
+                                    title="Xem chi tiết kỹ thuật">
+                                <i class="bi bi-info-circle"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center py-5 text-muted">
+                        <i class="bi bi-inbox fs-1 d-block mb-2 text-secondary"></i>
+                        Không có hồ sơ văn bằng nào phù hợp với bộ lọc hiện tại.
+                        {% if role == 'qlsv' or role == 'admin' %}
+                            <div class="mt-2">
+                                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#createModal">
+                                    + Thêm hồ sơ đầu tiên
+                                </button>
+                            </div>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==========================================================================
+     MODAL 1: THÊM MỚI HỒ SƠ THỦ CÔNG (CREATE MODAL)
+     ========================================================================== -->
+<div class="modal fade" id="createModal" tabindex="-1" aria-labelledby="createModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold" id="createModalLabel">
+                    <i class="bi bi-plus-circle me-1"></i> Thêm Hồ Sơ Văn Bằng Mới
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'certificate_create' %}">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Số hiệu văn bằng (*):</label>
+                            <input type="text" name="serial_number" class="form-control" placeholder="Ví dụ: VB-2026-001" required>
+                            <div class="form-text">Mã định danh duy nhất trên văn bằng.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Mã số sinh viên (*):</label>
+                            <input type="text" name="student_id" class="form-control" placeholder="Ví dụ: B21DCCN001" required>
+                        </div>
+                        <div class="col-md-7">
+                            <label class="form-label small fw-bold">Họ và tên sinh viên (*):</label>
+                            <input type="text" name="student_name" class="form-control text-uppercase" placeholder="Ví dụ: NGUYỄN VĂN AN" required>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label small fw-bold">Ngày sinh (*):</label>
+                            <input type="date" name="date_of_birth" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Ngành đào tạo (*):</label>
+                            <input type="text" name="major" class="form-control" placeholder="Ví dụ: Công nghệ thông tin" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">Năm tốt nghiệp (*):</label>
+                            <input type="number" name="graduation_year" class="form-control" value="2026" min="1990" max="2050" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">Xếp loại (*):</label>
+                            <select name="classification" class="form-select" required>
+                                <option value="Xuất sắc">Xuất sắc</option>
+                                <option value="Giỏi" selected>Giỏi</option>
+                                <option value="Khá">Khá</option>
+                                <option value="Trung bình">Trung bình</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Loại văn bằng:</label>
+                            <input type="text" name="degree_type" class="form-control" value="Bằng Cử nhân">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Ngày cấp bằng:</label>
+                            <input type="date" name="issue_date" class="form-control">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy bỏ</button>
+                    <button type="submit" class="btn btn-primary fw-bold">Lưu Hồ Sơ & Đưa Vào Hàng Đợi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ==========================================================================
+     MODAL 2: NHẬP DANH SÁCH TỪ EXCEL (EXCEL MODAL)
+     ========================================================================== -->
+<div class="modal fade" id="excelModal" tabindex="-1" aria-labelledby="excelModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title fw-bold" id="excelModalLabel">
+                    <i class="bi bi-file-earmark-excel me-1"></i> Nhập Dữ Liệu Từ Excel
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'import_excel' %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <div class="alert alert-info small mb-3">
+                        <i class="bi bi-info-circle me-1"></i> <strong>Quy định tệp Excel:</strong>
+                        <ul class="mb-0 ps-3 mt-1">
+                            <li>Định dạng chuẩn tệp <code>.xlsx</code> theo mẫu của nhà trường.</li>
+                            <li>Hệ thống sẽ kiểm tra từng dòng: không được thiếu thông tin bắt buộc, không được trùng số hiệu văn bằng.</li>
+                        </ul>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Chọn tệp Excel (.xlsx):</label>
+                        <input type="file" name="excel_file" class="form-control" accept=".xlsx, .xls" required>
+                    </div>
+
+                    <div class="text-end">
+                        <a href="{% url 'download_excel_template' %}" class="small text-decoration-none text-success">
+                            <i class="bi bi-download me-1"></i> Chưa có tệp mẫu? Tải về tại đây
+                        </a>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-success fw-bold">Tải Lên & Xử Lý Dữ Liệu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ==========================================================================
+     MODAL 3: HOÀN TRẢ / TỪ CHỐI HỒ SƠ (REJECT MODAL)
+     ========================================================================== -->
+<div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title fw-bold" id="rejectModalLabel">
+                    <i class="bi bi-arrow-return-left me-1"></i> 
+                    {% if role == 'hieutruong' %}
+                        Hoàn Trả Hồ Sơ Về Phòng Đào Tạo
+                    {% elif role == 'daotao' %}
+                        Hoàn Trả Hồ Sơ Về Phòng QLSV
+                    {% elif role == 'qlsv' %}
+                        Từ Chối Hồ Sơ Đầu Vào
+                    {% else %}
+                        Hoàn Trả / Từ Chối Hồ Sơ
+                    {% endif %}
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" id="rejectForm">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <p class="mb-2">Văn bằng thực hiện hoàn trả: <strong id="rejectCertInfo" class="text-danger"></strong></p>
+                    <div class="alert alert-warning small mb-3">
+                        <i class="bi bi-info-circle me-1"></i>
+                        {% if role == 'hieutruong' %}
+                            <strong>Quy trình hoàn trả:</strong> Hồ sơ sẽ được chuyển ngược về cho <strong>Phòng Đào tạo</strong> để kiểm tra lại học vụ theo ý kiến của Hiệu trưởng.
+                        {% elif role == 'daotao' %}
+                            <strong>Quy trình hoàn trả:</strong> Hồ sơ sẽ được chuyển ngược về cho <strong>Phòng Quản lý Sinh viên</strong> để rà soát và chỉnh sửa lại thông tin sinh viên.
+                        {% elif role == 'qlsv' %}
+                            <strong>Quy trình hoàn trả:</strong> Hồ sơ sẽ bị từ chối và giữ lại tại Phòng QLSV để kiểm tra chỉnh sửa hoặc hủy bỏ.
+                        {% else %}
+                            Hồ sơ sẽ được hoàn trả về cho phòng ban liền trước đó trong quy trình phê duyệt.
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Lý do hoàn trả / từ chối (*):</label>
+                        <textarea name="reason" class="form-control" rows="3" placeholder="Nhập chi tiết sai sót hoặc yêu cầu chỉnh sửa..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-danger fw-bold">
+                        {% if role == 'hieutruong' %}
+                            <i class="bi bi-arrow-return-left me-1"></i> Xác Nhận Trả Về Đào Tạo
+                        {% elif role == 'daotao' %}
+                            <i class="bi bi-arrow-return-left me-1"></i> Xác Nhận Trả Về QLSV
+                        {% else %}
+                            <i class="bi bi-check2 me-1"></i> Xác Nhận Hoàn Trả
+                        {% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ==========================================================================
+     MODAL 4: THU HỒI VĂN BẰNG (REVOKE MODAL)
+     ========================================================================== -->
+<div class="modal fade" id="revokeModal" tabindex="-1" aria-labelledby="revokeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title fw-bold" id="revokeModalLabel">
+                    <i class="bi bi-shield-x me-1 text-danger"></i> Thu Hồi Hiệu Lực Văn Bằng
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" id="revokeForm">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <div class="alert alert-danger small mb-3">
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i> 
+                        <strong>Cảnh báo:</strong> Việc thu hồi văn bằng yêu cầu cả 3 phòng ban (QLSV, Đào tạo, Hiệu trưởng) cùng xác nhận. Trạng thái thu hồi sẽ được ghi vĩnh viễn lên Blockchain.
+                    </div>
+
+                    <p class="mb-2">Văn bằng thu hồi: <strong id="revokeCertInfo" class="text-dark"></strong></p>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Lý do thu hồi (*):</label>
+                        <textarea name="reason" class="form-control" rows="3" placeholder="Nhập lý do thu hồi căn cứ theo quyết định số..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-danger fw-bold">Xác Nhận Biểu Quyết Thu Hồi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ==========================================================================
+     MODAL 5: CHỈNH SỬA HỒ SƠ BỊ TỪ CHỐI (EDIT MODAL)
+     ========================================================================== -->
+<div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold" id="editModalLabel">
+                    <i class="bi bi-pencil-square me-1"></i> Chỉnh Sửa Hồ Sơ Hoàn Trả
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" id="editForm">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <div class="alert alert-warning small mb-3">
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i> <strong>Ý kiến / Lý do hoàn trả:</strong> <span id="editRejectReasonAlert"></span>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Số hiệu văn bằng (Không thể đổi):</label>
+                            <input type="text" id="editSerial" class="form-control bg-light" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Mã số sinh viên (*):</label>
+                            <input type="text" name="student_id" id="editStudentId" class="form-control" required>
+                        </div>
+                        <div class="col-md-7">
+                            <label class="form-label small fw-bold">Họ và tên sinh viên (*):</label>
+                            <input type="text" name="student_name" id="editName" class="form-control text-uppercase" required>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label small fw-bold">Ngày sinh (*):</label>
+                            <input type="date" name="date_of_birth" id="editDob" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Ngành đào tạo (*):</label>
+                            <input type="text" name="major" id="editMajor" class="form-control" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">Năm tốt nghiệp (*):</label>
+                            <input type="number" name="graduation_year" id="editYear" class="form-control" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">Xếp loại (*):</label>
+                            <select name="classification" id="editClassification" class="form-select" required>
+                                <option value="Xuất sắc">Xuất sắc</option>
+                                <option value="Giỏi">Giỏi</option>
+                                <option value="Khá">Khá</option>
+                                <option value="Trung bình">Trung bình</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Loại văn bằng:</label>
+                            <input type="text" name="degree_type" id="editDegreeType" class="form-control">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary fw-bold">Cập Nhật & Đẩy Lại Vào Hàng Đợi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ==========================================================================
+     MODAL 6: CHI TIẾT KỸ THUẬT & HASH (DETAIL MODAL)
+     ========================================================================== -->
+<div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title fw-bold" id="detailModalLabel">
+                    <i class="bi bi-cpu me-1"></i> Thông Số Kỹ Thuật Đối Chiếu Blockchain
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <span class="text-muted small d-block">Số hiệu văn bằng:</span>
+                        <strong id="detailSerial" class="fs-5 text-primary"></strong>
+                    </div>
+                    <div class="col-md-6">
+                        <span class="text-muted small d-block">Trạng thái:</span>
+                        <span id="detailStatus" class="badge bg-secondary"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <span class="text-muted small d-block">Người học:</span>
+                        <strong id="detailStudent"></strong>
+                    </div>
+                    <div class="col-md-6">
+                        <span class="text-muted small d-block">Ngành học:</span>
+                        <span id="detailMajor"></span>
+                    </div>
+
+                    <div class="col-12 mt-3">
+                        <label class="form-label text-muted small fw-bold mb-1">Dấu băm dữ liệu gốc (SHA-256 Data Hash):</label>
+                        <div class="d-flex align-items-center gap-2">
+                            <span id="detailDataHash" class="code-font flex-grow-1 p-2"></span>
+                            <button type="button" id="btnCopyDataHash" class="btn btn-sm btn-outline-secondary btn-copy" title="Sao chép">
+                                <i class="bi bi-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label text-muted small fw-bold mb-1">Mã giao dịch (Tx Hash):</label>
+                        <div class="d-flex align-items-center gap-2">
+                            <span id="detailTxHash" class="code-font flex-grow-1 p-2"></span>
+                            <button type="button" id="btnCopyTxHash" class="btn btn-sm btn-outline-secondary btn-copy" title="Sao chép">
+                                <i class="bi bi-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <span class="text-muted small d-block">Ngày tạo hồ sơ:</span>
+                        <span id="detailDate"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
