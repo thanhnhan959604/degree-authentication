@@ -589,3 +589,71 @@ def import_excel(request):
 
     messages.success(request, f"Đã nhập thành công {success_count} hồ sơ văn bằng từ tệp Excel!")
     return redirect('dashboard')
+
+
+def download_excel_template(request):
+    """Tải tệp mẫu Excel chuẩn"""
+    output = generate_sample_excel()
+    response = HttpResponse(
+        output.getvalue(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response['Content-Disposition'] = 'attachment; filename="Mau_Nhap_Ho_So_Van_Bang.xlsx"'
+    return response
+
+
+def certificate_print_view(request, pk):
+    """Trang xem và in phôi văn bằng chuẩn A4 có mã QR"""
+    cert = get_object_or_404(Certificate, pk=pk)
+    verify_url = request.build_absolute_uri(f"/?q={cert.serial_number}")
+    qr_data = generate_qr_base64(verify_url)
+
+    return render(request, 'certificates/print_view.html', {
+        'cert': cert,
+        'qr_data': qr_data,
+        'verify_url': verify_url
+    })
+
+
+
+@ensure_csrf_cookie
+def login_view(request):
+    """Xử lý đăng nhập phân biệt chính xác chữ hoa / chữ thường theo chuẩn Django"""
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+
+    error_msg = None
+    if request.method == 'POST':
+        raw_u = request.POST.get('username', '').strip()
+        p = request.POST.get('password', '').strip()
+
+        # Kiểm tra nếu đăng nhập bằng email chính xác
+        matched_user = User.objects.filter(email=raw_u).first()
+        actual_username = matched_user.username if matched_user else raw_u
+
+        # Xác thực với Django (PostgreSQL so khớp phân biệt chính xác hoa/thường)
+        user = authenticate(request, username=actual_username, password=p)
+
+        if user is not None:
+            auth_login(request, user)
+            next_url = request.POST.get('next') or request.GET.get('next') or '/dashboard/'
+            messages.success(request, f"Đăng nhập thành công với tài khoản: {user.username}")
+            return redirect(next_url)
+        else:
+            # Phát hiện nếu người dùng gõ sai quy cách chữ hoa/thường
+            wrong_case_user = User.objects.filter(username__iexact=raw_u).first()
+            if wrong_case_user and wrong_case_user.username != raw_u:
+                error_msg = f"Tên đăng nhập có phân biệt chữ hoa/thường. Vui lòng nhập chính xác '{wrong_case_user.username}'."
+            elif not User.objects.filter(Q(username=actual_username) | Q(email=raw_u)).exists():
+                error_msg = f"Tài khoản '{raw_u}' không tồn tại trong hệ thống."
+            else:
+                error_msg = f"Mật khẩu không chính xác cho tài khoản '{raw_u}'."
+
+    return render(request, 'certificates/login.html', {'error_msg': error_msg})
+
+
+def logout_view(request):
+    """Đăng xuất người dùng linh hoạt bằng cả GET và POST"""
+    auth_logout(request)
+    messages.info(request, "Đã đăng xuất khỏi hệ thống thành công.")
+    return redirect('search')
