@@ -403,3 +403,67 @@ def certificate_approve(request, pk):
         messages.error(request, "Tài khoản của bạn không có thẩm quyền duyệt ở bước này.")
 
     return redirect('dashboard')
+
+    
+@login_required(login_url='login')
+def certificate_reject(request, pk):
+    """Từ chối hồ sơ kèm lý do, trả về đúng phòng ban liền trước đó"""
+    if request.method != 'POST':
+        return redirect('dashboard')
+
+    cert = get_object_or_404(Certificate, pk=pk)
+    reason = request.POST.get('reason', 'Thông tin chưa chính xác, yêu cầu kiểm tra lại').strip()
+    role = get_role(request.user)
+
+    cert.is_rejected = True
+    cert.rejection_reason = reason
+    cert.rejected_by = role
+
+    # XỬ LÝ THEO TRÌNH TỰ TRẢ VỀ PHÒNG TRƯỚC ĐÓ:
+    if role == 'hieutruong' or (role == 'admin' and cert.academic_affairs_approved and not cert.rector_approved):
+        # Hiệu trưởng từ chối -> Trả về Phòng Đào tạo (Bước 2)
+        cert.rector_approved = False
+        cert.academic_affairs_approved = False
+        # Giữ nguyên cert.student_affairs_approved = True
+        cert.save()
+
+        ApprovalLog.objects.create(
+            certificate=cert,
+            action="HIỆU TRƯỞNG TRẢ VỀ ĐÀO TẠO",
+            actor=role,
+            comment=f"Hiệu trưởng từ chối và hoàn trả Phòng Đào tạo xem xét lại. Lý do: {reason}"
+        )
+        messages.warning(request, f"Đã hoàn trả hồ sơ '{cert.serial_number}' về Phòng Đào tạo. Lý do: {reason}")
+
+    elif role == 'daotao' or (role == 'admin' and cert.student_affairs_approved and not cert.academic_affairs_approved):
+        # Phòng Đào tạo từ chối -> Trả về Phòng Quản lý sinh viên (Bước 1)
+        cert.academic_affairs_approved = False
+        cert.student_affairs_approved = False
+        cert.save()
+
+        ApprovalLog.objects.create(
+            certificate=cert,
+            action="ĐÀO TẠO TRẢ VỀ QLSV",
+            actor=role,
+            comment=f"Phòng Đào tạo từ chối và hoàn trả Phòng QLSV chỉnh sửa lại. Lý do: {reason}"
+        )
+        messages.warning(request, f"Đã hoàn trả hồ sơ '{cert.serial_number}' về Phòng QLSV. Lý do: {reason}")
+
+    elif role == 'qlsv' or role == 'admin':
+        # Phòng QLSV từ chối hồ sơ đầu vào
+        cert.student_affairs_approved = False
+        cert.academic_affairs_approved = False
+        cert.rector_approved = False
+        cert.save()
+
+        ApprovalLog.objects.create(
+            certificate=cert,
+            action="QLSV TỪ CHỐI HỒ SƠ",
+            actor=role,
+            comment=f"Phòng QLSV từ chối hồ sơ đầu vào. Lý do: {reason}"
+        )
+        messages.warning(request, f"Phòng QLSV đã từ chối hồ sơ '{cert.serial_number}'. Lý do: {reason}")
+    else:
+        messages.error(request, "Bạn không có quyền thực hiện thao tác này.")
+
+    return redirect('dashboard')
