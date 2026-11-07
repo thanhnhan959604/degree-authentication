@@ -312,3 +312,94 @@ def certificate_edit(request, pk):
         return redirect('dashboard')
 
     return redirect('dashboard')
+
+
+@login_required(login_url='login')
+def certificate_approve(request, pk):
+    """Xử lý phê duyệt hồ sơ theo đúng 3 bước vai trò tuần tự"""
+    if request.method != 'POST':
+        return redirect('dashboard')
+
+    cert = get_object_or_404(Certificate, pk=pk)
+    role = get_role(request.user)
+
+    now = timezone.now()
+    tx_hash = None
+
+    if role == 'qlsv' or (role == 'admin' and not cert.student_affairs_approved):
+        # Bước 1: Phòng QLSV xác nhận danh tính & Mã sinh viên
+        cert.student_affairs_approved = True
+        cert.student_affairs_approved_at = now
+        cert.is_rejected = False
+        cert.rejection_reason = None
+        cert.rejected_by = None
+        cert.save()
+
+        tx_hash = approve_onchain(cert.serial_number, cert.data_hash, 'qlsv')
+
+        ApprovalLog.objects.create(
+            certificate=cert,
+            action="QLSV XÁC NHẬN DANH TÍNH",
+            actor=role,
+            comment="Đã xác thực thông tin cá nhân và Mã sinh viên trùng khớp hồ sơ. Chuyển hồ sơ sang Phòng Đào tạo.",
+            tx_hash=tx_hash
+        )
+        messages.success(request, f"✓ Phòng QLSV đã duyệt văn bằng '{cert.serial_number}'. Hồ sơ đã hiển thị trên giao diện Phòng Đào tạo.")
+
+    elif role == 'daotao' or (role == 'admin' and cert.student_affairs_approved and not cert.academic_affairs_approved):
+        # Bước 2: Phòng Đào tạo xác nhận điều kiện học vụ
+        if not cert.student_affairs_approved:
+            messages.error(request, "Cần Phòng QLSV xác nhận danh tính trước.")
+            return redirect('dashboard')
+
+        cert.academic_affairs_approved = True
+        cert.academic_affairs_approved_at = now
+        cert.is_rejected = False
+        cert.rejection_reason = None
+        cert.rejected_by = None
+        cert.save()
+
+        tx_hash = approve_onchain(cert.serial_number, cert.data_hash, 'daotao')
+
+        ApprovalLog.objects.create(
+            certificate=cert,
+            action="ĐÀO TẠO XÁC NHẬN HỌC VỤ",
+            actor=role,
+            comment="Đã thẩm định điểm rèn luyện, chương trình đào tạo và điều kiện tốt nghiệp. Chuyển hồ sơ lên Ban Giám hiệu.",
+            tx_hash=tx_hash
+        )
+        messages.success(request, f"✓ Phòng Đào tạo đã duyệt văn bằng '{cert.serial_number}'. Hồ sơ đã hiển thị trên giao diện Hiệu trưởng.")
+
+    elif role == 'hieutruong' or (role == 'admin' and cert.student_affairs_approved and cert.academic_affairs_approved and not cert.rector_approved):
+        # Bước 3: Ban Giám hiệu / Hiệu trưởng ký duyệt và phát hành lên Blockchain
+        if not (cert.student_affairs_approved and cert.academic_affairs_approved):
+            messages.error(request, "Hồ sơ chưa đủ 2 bước duyệt của Phòng QLSV và Phòng Đào tạo.")
+            return redirect('dashboard')
+
+        cert.rector_approved = True
+        cert.rector_approved_at = now
+        cert.is_rejected = False
+        cert.rejection_reason = None
+        cert.rejected_by = None
+        cert.status = 'ISSUED'
+        if not cert.issue_date:
+            cert.issue_date = now.date()
+
+        tx_hash = approve_onchain(cert.serial_number, cert.data_hash, 'hieutruong')
+        if tx_hash:
+            cert.tx_hash = tx_hash
+        cert.save()
+
+        ApprovalLog.objects.create(
+            certificate=cert,
+            action="HIỆU TRƯỞNG KÝ DUYỆT PHÁT HÀNH",
+            actor=role,
+            comment="Hiệu trưởng ký số phát hành chính thức văn bằng lên Blockchain Besu",
+            tx_hash=tx_hash or cert.tx_hash
+        )
+        messages.success(request, f"Hiệu trưởng đã ký duyệt thành công! Văn bằng '{cert.serial_number}' đã được phát hành On-Chain.")
+
+    else:
+        messages.error(request, "Tài khoản của bạn không có thẩm quyền duyệt ở bước này.")
+
+    return redirect('dashboard')
