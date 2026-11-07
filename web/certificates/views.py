@@ -535,3 +535,57 @@ def certificate_revoke(request, pk):
 
     cert.save()
     return redirect('dashboard')
+
+
+@login_required(login_url='login')
+def import_excel(request):
+    """Nhập danh sách văn bằng từ file Excel (.xlsx) với kiểm tra tính toàn vẹn"""
+    if request.method != 'POST':
+        return redirect('dashboard')
+
+    if request.user.username not in ['qlsv', 'admin']:
+        messages.error(request, "Bạn không có quyền nhập file Excel.")
+        return redirect('dashboard')
+
+    excel_file = request.FILES.get('excel_file')
+    if not excel_file:
+        messages.error(request, "Vui lòng chọn tệp Excel (.xlsx).")
+        return redirect('dashboard')
+
+    if not excel_file.name.endswith(('.xlsx', '.xls')):
+        messages.error(request, "Định dạng tệp không hợp lệ. Vui lòng tải lên tệp .xlsx.")
+        return redirect('dashboard')
+
+    valid_records, errors = process_excel_upload(excel_file)
+
+    if errors:
+        error_msg = f"Phát hiện {len(errors)} lỗi trong tệp Excel: " + " | ".join(errors[:5])
+        if len(errors) > 5:
+            error_msg += f" (và {len(errors) - 5} lỗi khác...)"
+        messages.error(request, error_msg)
+        return redirect('dashboard')
+
+    success_count = 0
+    for item in valid_records:
+        cert = Certificate(**item)
+        cert.status = 'PENDING'
+        cert.data_hash = cert.calculate_data_hash()
+        cert.save()
+
+        # Đăng ký on-chain
+        tx = register_onchain(cert.serial_number, cert.data_hash)
+        if tx:
+            cert.tx_hash = tx
+            cert.save()
+
+        ApprovalLog.objects.create(
+            certificate=cert,
+            action="NHẬP TỪ EXCEL",
+            actor=request.user.username,
+            comment=f"Nhập hàng loạt từ tệp {excel_file.name}",
+            tx_hash=tx
+        )
+        success_count += 1
+
+    messages.success(request, f"Đã nhập thành công {success_count} hồ sơ văn bằng từ tệp Excel!")
+    return redirect('dashboard')
