@@ -57,6 +57,8 @@ def search_view(request):
     })
 
 
+
+
 @login_required(login_url='login')
 def dashboard(request):
     """Bảng điều khiển nội bộ và Hàng đợi duyệt hồ sơ theo đúng phân quyền tuần tự"""
@@ -167,7 +169,7 @@ def dashboard(request):
                 Q(status='PENDING', is_rejected=True, student_affairs_approved=False)
             )
         elif role == 'daotao':
-            # Chờ Đào tạo duyệt (QLSV đã duyệt, Đào tạo chưa duyệt, chưa bị trả về)
+            # Chờ Đào tạo duyệt (QLSV đã duyệt, Đà0o tạo chưa duyệt, chưa bị trả về)
             qs = qs.filter(status='PENDING', is_rejected=False, student_affairs_approved=True, academic_affairs_approved=False)
         elif role == 'hieutruong':
             # Chờ Hiệu trưởng ký (cả 2 phòng đã duyệt, chưa bị từ chối)
@@ -189,3 +191,67 @@ def dashboard(request):
         'revoked_count': revoked_count,
     })
 
+
+@login_required(login_url='login')
+def certificate_create(request):
+    """Tạo mới hồ sơ văn bằng thủ công (QLSV hoặc Admin)"""
+    if request.method != 'POST':
+        return redirect('dashboard')
+
+    if get_role(request.user) not in ['qlsv', 'admin']:
+        messages.error(request, "Bạn không có quyền thêm mới hồ sơ văn bằng.")
+        return redirect('dashboard')
+
+    serial_number = request.POST.get('serial_number', '').strip()
+    student_id = request.POST.get('student_id', '').strip()
+    student_name = request.POST.get('student_name', '').strip()
+    date_of_birth = request.POST.get('date_of_birth', '').strip()
+    major = request.POST.get('major', '').strip()
+    graduation_year = request.POST.get('graduation_year', '').strip()
+    classification = request.POST.get('classification', '').strip()
+    degree_type = request.POST.get('degree_type', 'Bằng Cử nhân').strip()
+    issue_date = request.POST.get('issue_date', '').strip() or None
+
+    if not all([serial_number, student_id, student_name, date_of_birth, major, graduation_year, classification]):
+        messages.error(request, "Vui lòng điền đầy đủ các trường thông tin bắt buộc (*).")
+        return redirect('dashboard')
+
+    if Certificate.objects.filter(serial_number=serial_number).exists():
+        messages.error(request, f"Số hiệu văn bằng '{serial_number}' đã tồn tại trong hệ thống.")
+        return redirect('dashboard')
+
+    try:
+        cert = Certificate(
+            serial_number=serial_number,
+            student_id=student_id,
+            student_name=student_name,
+            date_of_birth=date_of_birth,
+            major=major,
+            graduation_year=int(graduation_year),
+            classification=classification,
+            degree_type=degree_type,
+            issue_date=issue_date,
+            status='PENDING'
+        )
+        cert.data_hash = cert.calculate_data_hash()
+        cert.save()
+
+        # Thử đăng ký on-chain bằng ví QLSV nếu Besu online
+        tx_hash = register_onchain(cert.serial_number, cert.data_hash)
+        if tx_hash:
+            cert.tx_hash = tx_hash
+            cert.save()
+
+        ApprovalLog.objects.create(
+            certificate=cert,
+            action="TẠO MỚI HỒ SƠ",
+            actor=request.user.username,
+            comment="Nhập hồ sơ văn bằng thủ công lên hệ thống",
+            tx_hash=tx_hash
+        )
+
+        messages.success(request, f"Đã thêm hồ sơ văn bằng '{serial_number}' thành công! Hồ sơ đang ở hàng đợi chờ QLSV duyệt.")
+    except Exception as e:
+        messages.error(request, f"Lỗi tạo hồ sơ: {str(e)}")
+
+    return redirect('dashboard')
