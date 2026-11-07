@@ -255,3 +255,60 @@ def certificate_create(request):
         messages.error(request, f"Lỗi tạo hồ sơ: {str(e)}")
 
     return redirect('dashboard')
+
+
+@login_required(login_url='login')
+def certificate_edit(request, pk):
+    """Chỉnh sửa hồ sơ bị từ chối và gửi duyệt lại"""
+    cert = get_object_or_404(Certificate, pk=pk)
+
+    if get_role(request.user) not in ['qlsv', 'daotao', 'admin']:
+        messages.error(request, "Bạn không có quyền chỉnh sửa hồ sơ này.")
+        return redirect('dashboard')
+
+    if request.method == 'POST':
+        cert.student_id = request.POST.get('student_id', cert.student_id).strip()
+        cert.student_name = request.POST.get('student_name', cert.student_name).strip()
+        cert.date_of_birth = request.POST.get('date_of_birth', cert.date_of_birth)
+        cert.major = request.POST.get('major', cert.major).strip()
+        cert.graduation_year = int(request.POST.get('graduation_year', cert.graduation_year))
+        cert.classification = request.POST.get('classification', cert.classification).strip()
+        cert.degree_type = request.POST.get('degree_type', cert.degree_type).strip()
+
+        # Reset lại cờ từ chối
+        cert.is_rejected = False
+        cert.rejection_reason = None
+        cert.rejected_by = None
+        cert.data_hash = cert.calculate_data_hash()
+
+        if get_role(request.user) == 'daotao':
+            # Nếu Đào tạo sửa sau khi Hiệu trưởng trả về: giữ xác nhận QLSV
+            cert.academic_affairs_approved = False
+            cert.rector_approved = False
+        else:
+            # QLSV sửa: đưa về chờ QLSV duyệt
+            cert.student_affairs_approved = False
+            cert.academic_affairs_approved = False
+            cert.rector_approved = False
+
+        cert.status = 'PENDING'
+        cert.save()
+
+        # Đăng ký lại on-chain
+        tx_hash = register_onchain(cert.serial_number, cert.data_hash)
+        if tx_hash:
+            cert.tx_hash = tx_hash
+            cert.save()
+
+        ApprovalLog.objects.create(
+            certificate=cert,
+            action="CHỈNH SỬA & GỬI LẠI",
+            actor=request.user.username,
+            comment=f"Cán bộ {request.user.username} đã cập nhật thông tin và đưa lại vào hàng đợi duyệt",
+            tx_hash=tx_hash
+        )
+
+        messages.success(request, f"Đã cập nhật hồ sơ '{cert.serial_number}' thành công.")
+        return redirect('dashboard')
+
+    return redirect('dashboard')
