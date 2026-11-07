@@ -467,3 +467,71 @@ def certificate_reject(request, pk):
         messages.error(request, "Bạn không có quyền thực hiện thao tác này.")
 
     return redirect('dashboard')
+
+
+@login_required(login_url='login')
+def certificate_revoke(request, pk):
+    """Quy trình thu hồi văn bằng (Cần cả 3 phòng ban xác nhận)"""
+    if request.method != 'POST':
+        return redirect('dashboard')
+
+    cert = get_object_or_404(Certificate, pk=pk)
+    if cert.status != 'ISSUED':
+        messages.error(request, "Chỉ có thể thu hồi văn bằng đã phát hành chính thức.")
+        return redirect('dashboard')
+
+    role = get_role(request.user)
+    reason = request.POST.get('reason', 'Phát hiện sai sót trong hồ sơ gốc').strip()
+
+    if not cert.revoke_reason:
+        cert.revoke_reason = reason
+
+    now = timezone.now()
+    tx_hash = None
+
+    if role == 'qlsv' or role == 'admin':
+        cert.student_affairs_revoke = True
+        tx_hash = revoke_onchain(cert.serial_number, reason, 'qlsv')
+        ApprovalLog.objects.create(
+            certificate=cert,
+            action="QLSV XÁC NHẬN THU HỒI",
+            actor=role,
+            comment=f"Lý do: {reason}",
+            tx_hash=tx_hash
+        )
+
+    if role == 'daotao' or role == 'admin':
+        cert.academic_affairs_revoke = True
+        tx_hash = revoke_onchain(cert.serial_number, reason, 'daotao')
+        ApprovalLog.objects.create(
+            certificate=cert,
+            action="ĐÀO TẠO XÁC NHẬN THU HỒI",
+            actor=role,
+            comment=f"Lý do: {reason}",
+            tx_hash=tx_hash
+        )
+
+    if role == 'hieutruong' or role == 'admin':
+        cert.rector_revoke = True
+        tx_hash = revoke_onchain(cert.serial_number, reason, 'hieutruong')
+        ApprovalLog.objects.create(
+            certificate=cert,
+            action="HIỆU TRƯỞNG XÁC NHẬN THU HỒI",
+            actor=role,
+            comment=f"Lý do: {reason}",
+            tx_hash=tx_hash
+        )
+
+    # Nếu cả 3 bên đã xác nhận (hoặc admin ép thu hồi)
+    if (cert.student_affairs_revoke and cert.academic_affairs_revoke and cert.rector_revoke) or role == 'admin':
+        cert.status = 'REVOKED'
+        cert.revoked_at = now
+        cert.student_affairs_revoke = True
+        cert.academic_affairs_revoke = True
+        cert.rector_revoke = True
+        messages.error(request, f"Văn bằng '{cert.serial_number}' đã chính thức bị THU HỒI hiệu lực trên toàn hệ thống.")
+    else:
+        messages.info(request, f"Đã ghi nhận ý kiến thu hồi từ {role}. Cần đủ 3 phòng ban xác nhận để hoàn tất thu hồi.")
+
+    cert.save()
+    return redirect('dashboard')
