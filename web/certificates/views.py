@@ -30,3 +30,28 @@ def get_role(user):
     except UserProfile.DoesNotExist:
         pass
     return user.username
+
+def search_view(request):
+    """Trang tra cứu công khai văn bằng - ai cũng có thể truy cập"""
+    query = request.GET.get('q', '').strip()
+    result = None
+    qr_data = None
+
+    if query:
+        # Tra cứu theo: Số hiệu văn bằng, Mã sinh viên, hoặc Họ và tên
+        result = Certificate.objects.filter(
+            Q(serial_number__iexact=query) |
+            Q(student_id__iexact=query) |
+            Q(student_name__icontains=query)
+        ).first()
+
+        if result:
+            # Sinh mã QR chứa link tra cứu trực tiếp
+            verify_url = request.build_absolute_uri(f"/?q={result.serial_number}")
+            qr_data = generate_qr_base64(verify_url)
+
+    return render(request, 'certificates/search.html', {
+        'result': result,
+        'query': query,
+        'qr_data': qr_data,
+    })
