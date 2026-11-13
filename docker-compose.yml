@@ -12,7 +12,8 @@ services:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 40s #khởi tạo pgdata lần đầu trên ổ Windows có thể mất >25s
     networks:
       degree_net:
         ipv4_address: 172.16.239.10
