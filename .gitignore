@@ -15,3 +15,5 @@ besu/config/networkFiles/
 # File sinh ra khi chạy Django
 media/
 db.sqlite3
+# Dữ liệu PostgreSQL của docker compose
+pgdata/
