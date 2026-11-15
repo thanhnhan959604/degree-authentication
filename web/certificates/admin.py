@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from .models import Certificate, ApprovalLog, UserProfile
 
 
-# ── Inline: hiển thị phân quyền ngay trong trang chỉnh sửa User 
+# ── Inline: hiển thị phân quyền ngay trong trang chỉnh sửa User ──────────────
 
 class UserProfileInline(admin.StackedInline):
     model = UserProfile
@@ -33,7 +33,7 @@ admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
 
 
-# ── Hồ sơ phân quyền 
+# ── Hồ sơ phân quyền (xem độc lập nếu cần) ───────────────────────────────────
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
@@ -43,7 +43,7 @@ class UserProfileAdmin(admin.ModelAdmin):
     search_fields = ('user__username', 'user__email')
 
 
-# ── Văn bằng và Nhật ký 
+# ── Văn bằng & Nhật ký ────────────────────────────────────────────────────────
 
 @admin.register(Certificate)
 class CertificateAdmin(admin.ModelAdmin):
