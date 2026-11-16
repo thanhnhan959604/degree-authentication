@@ -17,3 +17,18 @@ media/
 db.sqlite3
 # Dữ liệu PostgreSQL của docker compose
 pgdata/
+
+# Tài liệu & hình ảnh minh hoạ (không đưa lên git)
+docs/images/
+README.md
+
+# Bản sao / biến thể của file bí mật .env (vd .env.bak, .env.local) — chứa khoá ví, CCCD_PEPPER, mật khẩu SMTP
+.env.*
+# File mẫu không chứa khoá thật: cho phép đưa lên git
+!.env.example
+
+# Ảnh văn bằng gốc và bản công khai (dữ liệu cá nhân) — chỉ phân phối qua view có kiểm tra quyền, KHÔNG commit
+private_media/
+
+# Ảnh chụp giao diện tham khảo của sản phẩm khác (giấy phép riêng, không đưa lên git)
+docs/CTUT_UI_RESEARCH/screenshots/
