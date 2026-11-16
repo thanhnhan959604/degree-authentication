@@ -1,0 +1,17 @@
+{% load static %}
+{# Update: Footer nhận diện CTUT dùng chung cho mọi layout #}
+<footer class="ds-footer">
+    <div class="ds-footer-inner">
+        <div class="ds-footer-brand">
+            <img src="{% static INSTITUTION.logo %}" alt="Logo {{ INSTITUTION.short }}" width="36" height="36">
+            <div>
+                <strong>{{ INSTITUTION.name }} ({{ INSTITUTION.short }})</strong>
+                <div>{{ INSTITUTION.name_en }} · Cổng tra cứu và xác minh văn bằng</div>
+            </div>
+        </div>
+        <nav class="ds-footer-links" aria-label="Liên kết chân trang">
+            <a href="{% url 'search' %}">Tra cứu văn bằng</a>
+            {% if not user.is_authenticated and request.resolver_match.url_name != 'login' %}<a href="{% url 'login' %}">Đăng nhập</a>{% endif %}
+        </nav>
+    </div>
+</footer>

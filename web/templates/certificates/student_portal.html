@@ -1,0 +1,294 @@
+{% extends 'layouts/portal.html' %}{# Update: dùng Portal Layout (sidebar sinh viên; trang đặt / quên mật khẩu không có sidebar) #}
+{% load tz %}
+{# Update: File giao diện mới (P2/P3) cho khu vực SINH VIÊN #}
+
+{% block title %}{% if mode == 'portal' %}Văn bằng của tôi{% elif mode == 'forgot' %}Nhận lại link đặt mật khẩu{% else %}Đặt mật khẩu{% endif %}{% endblock %}
+
+{# Update: breadcrumb + tiêu đề trang chỉ hiện ở trang "Văn bằng của tôi" #}
+{% block breadcrumb_wrap %}{% if mode == 'portal' %}{{ block.super }}{% endif %}{% endblock %}
+{% block page_header_wrap %}{% if mode == 'portal' %}{{ block.super }}{% endif %}{% endblock %}
+{% block breadcrumb %}<li class="breadcrumb-item"><a href="{% url 'student_portal' %}">Cổng sinh viên</a></li><li class="breadcrumb-item active" aria-current="page">Văn bằng của tôi</li>{% endblock %}
+{% block page_title %}Văn bằng của tôi{% endblock %}
+{% block page_subtitle %}Xin chào {{ user.first_name|default:"bạn" }}. Xem văn bằng, lấy mã xác minh và chia sẻ cho nhà tuyển dụng.{% endblock %}
+{% block page_actions %}<a class="btn btn-outline-secondary" href="{% url 'search' %}" target="_blank" rel="noopener"><i class="bi bi-search me-1"></i>Tra cứu công khai</a>{% endblock %}
+
+{% block content %}
+{# Update: CSS của trang đã chuyển vào static/css/design-system.css #}
+{% timezone "Asia/Ho_Chi_Minh" %}
+
+{% if mode == 'activate' %}
+<!-- ===================== ĐẶT MẬT KHẨU ===================== -->
+<div class="row justify-content-center my-4">
+    <div class="col-lg-5 col-md-7">
+        <div class="custom-card sp-card p-4 p-md-5">
+            <h4 class="fw-bold text-dark mb-1"><i class="bi bi-key me-1 text-primary"></i> Đặt mật khẩu</h4>
+            <p class="text-muted small mb-4">Sau khi đặt mật khẩu, bạn đăng nhập bằng <strong>số CCCD</strong> và mật khẩu này để xem văn bằng của mình.</p>
+            <form method="post">
+                {% csrf_token %}
+                {% if form.non_field_errors %}<div class="alert alert-danger small py-2">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+                <div class="mb-3">
+                    <label class="form-label small fw-bold" for="id_new_password1">Mật khẩu mới</label>
+                    <input type="password" name="new_password1" id="id_new_password1" class="form-control" autocomplete="new-password" required>
+                    {% for e in form.new_password1.errors %}<div class="text-danger small mt-1">{{ e }}</div>{% endfor %}
+                    <div class="form-text">Ít nhất 8 ký tự, không quá đơn giản, không toàn số.</div>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label small fw-bold" for="id_new_password2">Nhập lại mật khẩu</label>
+                    <input type="password" name="new_password2" id="id_new_password2" class="form-control" autocomplete="new-password" required>
+                    {% for e in form.new_password2.errors %}<div class="text-danger small mt-1">{{ e }}</div>{% endfor %}
+                </div>
+                <button type="submit" class="btn btn-primary w-100 fw-bold">Lưu mật khẩu & vào trang của tôi</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% elif mode == 'link_invalid' %}
+<!-- ===================== LINK KHÔNG HỢP LỆ ===================== -->
+<div class="row justify-content-center my-4">
+    <div class="col-lg-6">
+        <div class="custom-card sp-card p-5 text-center">
+            <i class="bi bi-link-45deg display-4 text-secondary d-block mb-2"></i>
+            <h4 class="fw-bold text-dark">Liên kết không còn hiệu lực</h4>
+            <p class="text-muted">Liên kết đặt mật khẩu đã hết hạn, đã được dùng, hoặc không đúng.</p>
+            <a href="{% url 'student_forgot' %}" class="btn btn-primary">Nhận liên kết mới</a>
+        </div>
+    </div>
+</div>
+
+{% elif mode == 'forgot' %}
+<!-- ===================== QUÊN MẬT KHẨU / CHƯA KÍCH HOẠT ===================== -->
+<div class="row justify-content-center my-4">
+    <div class="col-lg-5 col-md-7">
+        <div class="custom-card sp-card p-4 p-md-5">
+            <h4 class="fw-bold text-dark mb-1"><i class="bi bi-envelope me-1 text-primary"></i> Nhận link đặt mật khẩu</h4>
+            <p class="text-muted small mb-4">Nhập số CCCD bạn đã đăng ký với nhà trường. Nếu hợp lệ, hệ thống sẽ gửi liên kết đặt mật khẩu tới email của bạn.</p>
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-4">
+                    <label class="form-label small fw-bold">Số CCCD</label>
+                    <input type="text" name="national_id" class="form-control" inputmode="numeric" maxlength="15" placeholder="12 chữ số" required autocomplete="off">
+                </div>
+                <button type="submit" class="btn btn-primary w-100 fw-bold">Gửi liên kết</button>
+            </form>
+            <div class="text-center small mt-3"><a href="{% url 'login' %}" class="text-decoration-none">Quay lại đăng nhập</a></div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<!-- ===================== TRANG "VĂN BẰNG CỦA TÔI" ===================== -->
+{# Update: khối tổng quan + thông tin tài khoản thay cho thẻ tiêu đề cũ #}
+<div class="row g-3 mb-4 sp-summary">
+    <div class="col-sm-6 col-lg-3"><div class="ds-card ds-stat ds-stat--issued h-100"><div class="ds-stat-label">Văn bằng đã cấp</div><div class="ds-stat-value">{{ certs|length }}</div></div></div>
+    <div class="col-sm-6 col-lg-3"><div class="ds-card ds-stat ds-stat--pending h-100"><div class="ds-stat-label">Hồ sơ đang xét duyệt</div><div class="ds-stat-value">{{ pending_count }}</div></div></div>
+    <div class="col-lg-6" id="tai-khoan">
+        <div class="ds-card ds-stat ds-stat--account h-100">
+            <div class="ds-stat-label mb-1">Thông tin tài khoản</div>
+            <div class="fw-semibold">{{ user.first_name|default:"Sinh viên" }}</div>
+            <div class="small text-muted">Đăng nhập bằng số CCCD{% if user.email %} · Email nhận thông báo: {{ user.email }}{% endif %}</div>
+            <div class="small text-muted">{{ INSTITUTION.name }} ({{ INSTITUTION.short }})</div>
+        </div>
+    </div>
+</div>
+
+{% if pending_count %}
+<div class="alert alert-info small"><i class="bi bi-hourglass-split me-1"></i> Bạn có {{ pending_count }} hồ sơ văn bằng đang được nhà trường xét duyệt. Văn bằng sẽ hiện ở đây khi được cấp.</div>
+{% endif %}
+
+{% if new_share %}
+<!-- Liên kết vừa tạo: chỉ hiện 1 lần -->
+<div class="custom-card sp-card p-4 mb-4 border border-success">
+    <div class="d-flex flex-wrap gap-4 align-items-center">
+        <img src="{{ new_share.qr }}" alt="Mã QR liên kết chia sẻ" class="sp-qr border rounded p-1 bg-white">
+        <div class="flex-grow-1">
+            <div class="fw-bold text-success mb-1"><i class="bi bi-check-circle-fill me-1"></i> Liên kết chia sẻ cho văn bằng {{ new_share.serial }}</div>
+            <div class="small text-muted mb-2">Hãy sao chép hoặc gửi mã QR này ngay. <strong>Vì lý do bảo mật, liên kết chỉ hiện một lần</strong>; nếu làm mất, bạn có thể tạo liên kết mới.</div>
+            <div class="input-group">
+                <input type="text" class="form-control" value="{{ new_share.url }}" readonly>
+                <button type="button" class="btn btn-outline-success btn-copy" data-copy="{{ new_share.url }}"><i class="bi bi-copy me-1"></i> Sao chép</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% for c in certs %}
+<div class="custom-card sp-card p-4 mb-4" {% if forloop.first %}id="van-bang"{% endif %}>
+    <!-- Đầu thẻ: tên văn bằng + trạng thái -->
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+        <div>
+            <div class="fs-5 fw-bold text-dark">{{ c.degree_type }} · {{ c.major }}</div>
+            <div class="text-muted small">Số hiệu {{ c.serial_number }}{% if c.issue_date %} · cấp ngày {{ c.issue_date|date:"d/m/Y" }}{% endif %}</div>
+        </div>
+        {% include 'components/status_badge.html' with cert=c %}{# Update: badge trạng thái dùng chung #}
+    </div>
+
+    <div class="row g-4">
+        <!-- Thông tin đầy đủ (của chính sinh viên) -->
+        <div class="col-lg-7">
+            <div class="sp-section-title mb-2">Thông tin trên văn bằng</div>
+            <div class="row g-2">
+                <div class="col-sm-6"><div class="sp-label">Họ và tên</div><div class="sp-value">{{ c.student_name }}</div></div>
+                <div class="col-sm-6"><div class="sp-label">Ngày sinh</div><div class="sp-value">{{ c.date_of_birth|date:"d/m/Y" }}</div></div>
+                <div class="col-sm-6"><div class="sp-label">Mã sinh viên</div><div class="sp-value">{{ c.student_id }}</div></div>
+                <div class="col-sm-6"><div class="sp-label">Xếp loại tốt nghiệp</div><div class="sp-value">{{ c.classification }}</div></div>
+                <div class="col-sm-6"><div class="sp-label">Năm tốt nghiệp</div><div class="sp-value">{{ c.graduation_year }}</div></div>
+                {# Update: Số CCCD: mặc định che, bấm con mắt để hiện số đầy đủ (tự che lại sau 30 giây) #}
+                <div class="col-sm-6">
+                    <div class="sp-label">Số CCCD</div>
+                    <div class="sp-value d-flex align-items-center gap-2">
+                        <span class="cccd-text font-monospace" data-masked="{{ c.national_id_masked }}" data-full="{{ c.national_id_full }}">{{ c.national_id_masked|default:"—" }}</span>
+                        {% if c.national_id_full %}
+                        <button type="button" class="btn btn-link btn-sm p-0 text-secondary cccd-toggle" title="Hiện / ẩn số CCCD" aria-label="Hiện số CCCD" aria-pressed="false">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                        {% elif c.national_id_masked %}
+                        <i class="bi bi-info-circle text-muted small" title="Nhà trường chưa lưu số đầy đủ cho văn bằng này. Liên hệ Phòng Quản lý sinh viên nếu cần cập nhật."></i>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Mã xác minh công khai -->
+        <div class="col-lg-5">
+            <div class="sp-section-title mb-2">Mã xác minh công khai</div>
+            <div class="d-flex gap-3 align-items-center sp-verification">
+                <img src="{{ c.qr }}" alt="Mã QR xác minh" class="sp-qr border rounded p-1 bg-white">
+                <div>
+                    <div class="font-monospace fs-5 fw-bold">{{ c.verify_code_display }}</div>
+                    <div class="small text-muted mb-2">Mã in trên văn bằng. Ai có mã này chỉ xem được thông tin cơ bản (trạng thái, họ tên đã che, ngành, ngày cấp).</div>
+                    <a href="{{ c.verify_url }}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i> Xem như người tra cứu</a>
+                    <a href="{% url 'certificate_print' c.pk %}" target="_blank" class="btn btn-sm btn-outline-secondary"><i class="bi bi-printer"></i> In bản sao</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Update: Ảnh văn bằng ĐẦY ĐỦ của chính sinh viên (backend chỉ phát cho chủ sở hữu), có tải xuống -->
+    <div class="mt-4">
+        {% url 'owner_diploma_image' c.pk as owner_img %}
+        {% include 'certificates/_diploma_viewer.html' with dv_src=owner_img dv_download=owner_img|add:"?download=1" dv_title="Văn bằng của tôi" dv_badge="Bản đầy đủ – chỉ bạn xem được" dv_alt="Ảnh văn bằng đầy đủ" dv_caption="Đây là bản đầy đủ chỉ hiển thị cho bạn. Người tra cứu công khai chỉ thấy bản đã che ngày sinh và xếp loại." %}
+    </div>
+
+    <hr class="my-4">
+
+    <!-- Update: Chia sẻ có thời hạn -->
+    <div class="sp-section-title mb-2" {% if forloop.first %}id="chia-se"{% endif %}>Chia sẻ cho nhà tuyển dụng / đơn vị xác minh</div>
+    {% if c.status == 'ISSUED' %}
+    <form method="post" action="{% url 'student_share_create' c.pk %}" class="row g-2 align-items-end mb-3 sp-share-form">
+        {% csrf_token %}
+        <div class="col-md-4">
+            <label class="form-label small">Gửi cho (không bắt buộc)</label>
+            <input type="text" name="recipient" class="form-control form-control-sm" maxlength="120" placeholder="Ví dụ: Công ty ABC - Phòng nhân sự">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small">Hiệu lực</label>
+            <select name="days" class="form-select form-select-sm">
+                <option value="1">1 ngày</option>
+                <option value="3">3 ngày</option>
+                <option value="7" selected>7 ngày</option>
+                {% if share_max_days >= 14 %}<option value="14">14 ngày</option>{% endif %}
+                {% if share_max_days >= 30 %}<option value="30">30 ngày</option>{% endif %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small">Số lượt xem tối đa</label>
+            <input type="number" name="max_views" class="form-control form-control-sm" min="1" max="1000" placeholder="Không giới hạn">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label small d-block">Cho phép xem thêm</label>
+            <div class="small">
+                <label class="me-2"><input type="checkbox" name="show_full_name" value="1" checked> Họ tên đầy đủ</label>
+                <label class="me-2"><input type="checkbox" name="show_dob" value="1"> Ngày sinh</label>
+                <label class="me-2"><input type="checkbox" name="show_student_id" value="1"> Mã sinh viên</label>
+                <label><input type="checkbox" name="show_classification" value="1"> Xếp loại</label>
+            </div>
+        </div>
+        <div class="col-12 text-end">
+            <button type="submit" class="btn btn-sm btn-primary fw-bold"><i class="bi bi-share me-1"></i> Tạo liên kết chia sẻ</button>
+        </div>
+    </form>
+    {% else %}
+    <div class="small text-muted mb-3">Văn bằng không còn hiệu lực nên không thể chia sẻ.</div>
+    {% endif %}
+
+    {% if c.share_list %}
+    <div class="table-responsive mb-3">
+        <table class="table table-sm align-middle small mb-0">
+            <thead class="text-muted"><tr><th>Gửi cho</th><th>Được xem thêm</th><th>Hết hạn</th><th>Lượt xem</th><th>Trạng thái</th><th></th></tr></thead>
+            <tbody>
+            {% for s in c.share_list %}
+                <tr>
+                    <td>{{ s.recipient|default:"(không ghi)" }}</td>
+                    <td>{% if s.show_full_name %}Họ tên{% endif %}{% if s.show_dob %} · Ngày sinh{% endif %}{% if s.show_student_id %} · Mã SV{% endif %}{% if s.show_classification %} · Xếp loại{% endif %}{% if not s.show_full_name and not s.show_dob and not s.show_student_id and not s.show_classification %}Chỉ thông tin cơ bản{% endif %}</td>
+                    <td>{{ s.expires_at|date:"H:i d/m/Y" }}</td>
+                    <td>{{ s.view_count }}{% if s.max_views %}/{{ s.max_views }}{% endif %}</td>
+                    <td>{% if s.is_active %}<span class="text-success fw-semibold">{{ s.state_display }}</span>{% else %}<span class="text-muted">{{ s.state_display }}</span>{% endif %}</td>
+                    <td class="text-end">
+                        {% if s.is_active %}
+                        <form method="post" action="{% url 'student_share_revoke' s.pk %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Thu hồi</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- Update: Lịch sử xác minh -->
+    <details {% if forloop.first %}id="lich-su"{% endif %}>
+        <summary class="sp-section-title" style="cursor:pointer;">Ai đã xem văn bằng này ({{ c.recent_logs|length }} lượt gần nhất)</summary>
+        {% if c.recent_logs %}
+        <ul class="list-unstyled small mt-2 mb-0">
+            {% for log in c.recent_logs %}
+            <li class="py-1 border-bottom">
+                <i class="bi bi-clock me-1 text-muted"></i>{{ log.created_at|date:"H:i d/m/Y" }} —
+                {% if log.channel == 'share' %}Mở liên kết chia sẻ{% if log.share.recipient %} gửi cho <strong>{{ log.share.recipient }}</strong>{% endif %}{% else %}{{ log.get_channel_display }}{% endif %}
+                {% if log.outcome == 'denied' %}<span class="text-danger">(bị từ chối vì liên kết hết hiệu lực)</span>{% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <div class="small text-muted mt-2">Chưa có ai xác minh văn bằng này.</div>
+        {% endif %}
+    </details>
+</div>
+{% empty %}
+<div class="custom-card sp-card p-5 text-center text-muted">
+    <i class="bi bi-inbox display-5 d-block mb-2"></i>
+    Chưa có văn bằng nào được cấp cho tài khoản của bạn.
+</div>
+{% endfor %}
+
+<script>
+    // Update: Nút con mắt hiện / ẩn số CCCD
+    document.querySelectorAll('.cccd-toggle').forEach(function (btn) {
+        let timer = null;
+        const text = btn.parentElement.querySelector('.cccd-text');
+        const icon = btn.querySelector('i');
+        function show(visible) {
+            const full = text.dataset.full;
+            text.textContent = visible ? full.replace(/(\d{3})(?=\d)/g, '$1 ') : text.dataset.masked;  // 001 203 000 001
+            icon.className = visible ? 'bi bi-eye-slash' : 'bi bi-eye';
+            btn.setAttribute('aria-pressed', visible ? 'true' : 'false');
+            btn.setAttribute('aria-label', visible ? 'Ẩn số CCCD' : 'Hiện số CCCD');
+            clearTimeout(timer);
+            if (visible) { timer = setTimeout(function () { show(false); }, 30000); }
+        }
+        btn.addEventListener('click', function () { show(btn.getAttribute('aria-pressed') !== 'true'); });
+    });
+</script>
+
+<div class="alert alert-light border small d-flex gap-2">
+    <i class="bi bi-shield-lock-fill text-primary fs-5"></i>
+    <div>Ngày sinh, mã sinh viên và xếp loại của bạn <strong>không hiện</strong> trên trang xác minh công khai. Nhà tuyển dụng chỉ xem được khi bạn tạo liên kết chia sẻ và chọn cho phép. Bạn có thể thu hồi liên kết bất cứ lúc nào.</div>
+</div>
+{% endif %}
+
+{% endtimezone %}
+{% endblock %}

@@ -1,0 +1,60 @@
+{# Update: Sidebar dùng chung cho cổng sinh viên và cán bộ; mục hiển thị theo vai trò (UserProfile.role), mọi liên kết là URL / bộ lọc có sẵn ở backend. Quyền vẫn được kiểm tra ở view. #}
+{% with r=user.profile.role|default:user.username url=request.resolver_match.url_name f=request.GET.filter|default:'all' %}
+<aside class="ds-sidebar" id="ds-sidebar" aria-label="Menu nghiệp vụ">
+<div class="ds-sidebar-inner">
+    {% if r == 'student' %}
+        <div class="ds-nav-group">
+            <div class="ds-nav-label">Sinh viên</div>
+            <a class="ds-nav-link {% if url == 'student_portal' %}active{% endif %}" href="{% url 'student_portal' %}"><i class="bi bi-house"></i>Tổng quan</a>
+            <a class="ds-nav-link" href="{% url 'student_portal' %}#van-bang"><i class="bi bi-mortarboard"></i>Văn bằng của tôi</a>
+            <a class="ds-nav-link" href="{% url 'student_portal' %}#chia-se"><i class="bi bi-share"></i>Chia sẻ văn bằng</a>
+            <a class="ds-nav-link" href="{% url 'student_portal' %}#lich-su"><i class="bi bi-clock-history"></i>Lịch sử xác minh</a>
+            <a class="ds-nav-link" href="{% url 'student_portal' %}#tai-khoan"><i class="bi bi-person-vcard"></i>Thông tin tài khoản</a>
+        </div>
+    {% else %}
+        <div class="ds-nav-group">
+            <div class="ds-nav-label">Hồ sơ văn bằng</div>
+            <a class="ds-nav-link {% if url == 'dashboard' and f == 'all' %}active{% endif %}" href="{% url 'dashboard' %}?filter=all"><i class="bi bi-grid"></i>Tổng quan{% if total_count %}<span class="ds-nav-count">{{ total_count }}</span>{% endif %}</a>
+            <a class="ds-nav-link {% if url == 'dashboard' and f == 'my_queue' %}active{% endif %}" href="{% url 'dashboard' %}?filter=my_queue"><i class="bi bi-inbox"></i>Cần tôi xử lý</a>
+            {% if r == 'qlsv' %}
+            <a class="ds-nav-link {% if url == 'dashboard' and f == 'pending_qlsv' %}active{% endif %}" href="{% url 'dashboard' %}?filter=pending_qlsv"><i class="bi bi-hourglass-split"></i>Chờ QLSV duyệt{% if pending_qlsv_count %}<span class="ds-nav-count">{{ pending_qlsv_count }}</span>{% endif %}</a>
+            <a class="ds-nav-link {% if url == 'dashboard' and f == 'returned' %}active{% endif %}" href="{% url 'dashboard' %}?filter=returned"><i class="bi bi-arrow-return-left"></i>Bị trả về{% if returned_to_qlsv_count %}<span class="ds-nav-count">{{ returned_to_qlsv_count }}</span>{% endif %}</a>
+            <a class="ds-nav-link {% if url == 'dashboard' and f == 'forwarded' %}active{% endif %}" href="{% url 'dashboard' %}?filter=forwarded"><i class="bi bi-send"></i>Đã chuyển Đào tạo</a>
+            {% elif r == 'daotao' %}
+            <a class="ds-nav-link {% if url == 'dashboard' and f == 'pending_daotao' %}active{% endif %}" href="{% url 'dashboard' %}?filter=pending_daotao"><i class="bi bi-hourglass-split"></i>Chờ Đào tạo duyệt{% if pending_daotao_count %}<span class="ds-nav-count">{{ pending_daotao_count }}</span>{% endif %}</a>
+            <a class="ds-nav-link {% if url == 'dashboard' and f == 'returned' %}active{% endif %}" href="{% url 'dashboard' %}?filter=returned"><i class="bi bi-arrow-return-left"></i>Hiệu trưởng trả về{% if returned_to_daotao_count %}<span class="ds-nav-count">{{ returned_to_daotao_count }}</span>{% endif %}</a>
+            <a class="ds-nav-link {% if url == 'dashboard' and f == 'forwarded' %}active{% endif %}" href="{% url 'dashboard' %}?filter=forwarded"><i class="bi bi-send"></i>Đã chuyển Hiệu trưởng</a>
+            {% elif r == 'hieutruong' %}
+            <a class="ds-nav-link {% if url == 'dashboard' and f == 'pending_hieutruong' %}active{% endif %}" href="{% url 'dashboard' %}?filter=pending_hieutruong"><i class="bi bi-pen"></i>Chờ ký phát hành{% if pending_hieutruong_count %}<span class="ds-nav-count">{{ pending_hieutruong_count }}</span>{% endif %}</a>
+            <a class="ds-nav-link {% if url == 'dashboard' and f == 'returned' %}active{% endif %}" href="{% url 'dashboard' %}?filter=returned"><i class="bi bi-arrow-return-left"></i>Đã trả về Đào tạo</a>
+            {% else %}
+            <a class="ds-nav-link {% if url == 'dashboard' and f == 'pending_qlsv' %}active{% endif %}" href="{% url 'dashboard' %}?filter=pending_qlsv"><i class="bi bi-1-circle"></i>Chờ QLSV</a>
+            <a class="ds-nav-link {% if url == 'dashboard' and f == 'pending_daotao' %}active{% endif %}" href="{% url 'dashboard' %}?filter=pending_daotao"><i class="bi bi-2-circle"></i>Chờ Đào tạo</a>
+            <a class="ds-nav-link {% if url == 'dashboard' and f == 'pending_hieutruong' %}active{% endif %}" href="{% url 'dashboard' %}?filter=pending_hieutruong"><i class="bi bi-3-circle"></i>Chờ Hiệu trưởng</a>
+            <a class="ds-nav-link {% if url == 'dashboard' and f == 'rejected' %}active{% endif %}" href="{% url 'dashboard' %}?filter=rejected"><i class="bi bi-arrow-return-left"></i>Bị trả về</a>
+            {% endif %}
+            <a class="ds-nav-link {% if url == 'dashboard' and f == 'issued' %}active{% endif %}" href="{% url 'dashboard' %}?filter=issued"><i class="bi bi-patch-check"></i>Đã cấp{% if issued_count %}<span class="ds-nav-count">{{ issued_count }}</span>{% endif %}</a>
+            <a class="ds-nav-link {% if url == 'dashboard' and f == 'revoked' %}active{% endif %}" href="{% url 'dashboard' %}?filter=revoked"><i class="bi bi-slash-circle"></i>Thu hồi / hủy / thay thế</a>
+        </div>
+        {% if r == 'qlsv' or r == 'admin' %}
+        <div class="ds-nav-group">
+            <div class="ds-nav-label">Nhập liệu</div>
+            <a class="ds-nav-link" href="{% url 'dashboard' %}?action=create"><i class="bi bi-plus-square"></i>Tạo hồ sơ</a>
+            <a class="ds-nav-link" href="{% url 'dashboard' %}?action=excel"><i class="bi bi-file-earmark-arrow-up"></i>Nhập từ Excel</a>
+            <a class="ds-nav-link" href="{% url 'download_excel_template' %}"><i class="bi bi-file-earmark-spreadsheet"></i>Tải mẫu Excel</a>
+        </div>
+        {% endif %}
+        <div class="ds-nav-group">
+            <div class="ds-nav-label">Hệ thống</div>
+            <a class="ds-nav-link" href="{% url 'search' %}" target="_blank" rel="noopener"><i class="bi bi-search"></i>Tra cứu công khai</a>
+            {% if user.is_staff %}<a class="ds-nav-link" href="{% url 'admin:index' %}"><i class="bi bi-gear"></i>Quản trị (Django Admin)</a>{% endif %}
+        </div>
+    {% endif %}
+    <div class="ds-sidebar-user">
+        <strong>{% if r == 'student' %}{{ user.first_name|default:"Sinh viên" }}{% else %}{{ user.username }}{% endif %}</strong>
+        {% if r == 'student' %}Sinh viên{% elif r == 'qlsv' %}Phòng Quản lý sinh viên{% elif r == 'daotao' %}Phòng Đào tạo{% elif r == 'hieutruong' %}Hiệu trưởng{% elif r == 'admin' %}Quản trị viên{% else %}Chưa phân quyền{% endif %}
+    </div>
+</div>
+</aside>
+<div class="ds-backdrop" data-ds-sidebar-close></div>
+{% endwith %}

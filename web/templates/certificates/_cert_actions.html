@@ -1,0 +1,94 @@
+{# Update: Nút thao tác nghiệp vụ của một hồ sơ, dùng chung cho bảng điều khiển (variant='row', btn_size='btn-sm') và trang chi tiết (variant='page'). Điều kiện hiện nút giữ nguyên như trước; backend vẫn kiểm tra quyền và trạng thái. #}
+<div class="ds-row-actions{% if variant == 'page' %} ds-cert-actions--page{% endif %}">
+    {# Nút chính: chỉ một nút duyệt / ký theo đúng bước và vai trò (giữ nguyên điều kiện cũ) #}
+    {% if role == 'qlsv' or role == 'admin' %}
+        {% if cert.status == 'PENDING' and not cert.student_affairs_approved %}
+            <form method="post" action="{% url 'certificate_approve' cert.pk %}" class="d-inline">
+                {% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+                <button type="submit" class="btn {{ btn_size }} btn-primary" title="Xác thực danh tính và mã sinh viên, chuyển Phòng Đào tạo">Duyệt</button>
+            </form>
+        {% endif %}
+        {% if cert.is_rejected and not cert.student_affairs_approved %}
+            <button type="button" class="btn {{ btn_size }} btn-outline-secondary"
+                    data-bs-toggle="modal" data-bs-target="#editModal"
+                    data-cert-id="{{ cert.pk }}" data-cert-serial="{{ cert.serial_number }}"
+                    data-cert-studentid="{{ cert.student_id }}" data-cert-name="{{ cert.student_name }}"
+                    data-cert-dob="{{ cert.date_of_birth|date:'Y-m-d' }}" data-cert-major="{{ cert.major }}"
+                    data-cert-year="{{ cert.graduation_year }}" data-cert-classification="{{ cert.classification }}"
+                    data-cert-degreetype="{{ cert.degree_type }}" data-cert-rejectreason="{{ cert.rejection_reason }}">Sửa và gửi lại</button>
+        {% endif %}
+    {% endif %}
+    {% if role == 'daotao' or role == 'admin' %}
+        {% if cert.status == 'PENDING' and cert.student_affairs_approved and not cert.academic_affairs_approved %}
+            <form method="post" action="{% url 'certificate_approve' cert.pk %}" class="d-inline">
+                {% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+                <button type="submit" class="btn {{ btn_size }} btn-primary" title="Xác nhận chương trình học và điều kiện tốt nghiệp, chuyển Hiệu trưởng">{% if cert.is_rejected and cert.rejected_by == 'hieutruong' %}Duyệt lại{% else %}Duyệt{% endif %}</button>
+            </form>
+            {% if cert.is_rejected and cert.rejected_by == 'hieutruong' %}
+            <button type="button" class="btn {{ btn_size }} btn-outline-secondary"
+                    data-bs-toggle="modal" data-bs-target="#editModal"
+                    data-cert-id="{{ cert.pk }}" data-cert-serial="{{ cert.serial_number }}"
+                    data-cert-studentid="{{ cert.student_id }}" data-cert-name="{{ cert.student_name }}"
+                    data-cert-dob="{{ cert.date_of_birth|date:'Y-m-d' }}" data-cert-major="{{ cert.major }}"
+                    data-cert-year="{{ cert.graduation_year }}" data-cert-classification="{{ cert.classification }}"
+                    data-cert-degreetype="{{ cert.degree_type }}" data-cert-rejectreason="{{ cert.rejection_reason }}"
+                    title="Chỉnh sửa thông tin đào tạo theo yêu cầu Hiệu trưởng">Sửa và gửi lại</button>
+            {% endif %}
+        {% endif %}
+    {% endif %}
+    {% if role == 'hieutruong' or role == 'admin' %}
+        {% if cert.status == 'PENDING' and cert.student_affairs_approved and cert.academic_affairs_approved and not cert.rector_approved and not cert.is_rejected %}
+            <form method="post" action="{% url 'certificate_approve' cert.pk %}" class="d-inline">
+                {% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+                <button type="submit" class="btn {{ btn_size }} btn-primary" title="Ký duyệt và phát hành chính thức văn bằng">Ký phát hành</button>
+            </form>
+        {% endif %}
+    {% endif %}
+
+    {# Menu "⋯": xem, in, tài khoản sinh viên, thông tin kỹ thuật, trả hồ sơ, thu hồi (giữ nguyên dữ liệu cho các hộp thoại) #}
+    <div class="dropdown">
+        <button type="button" class="btn {{ btn_size }} btn-outline-secondary ds-more" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false" aria-label="Thao tác khác cho {{ cert.serial_number }}" title="Thao tác khác">
+            <i class="bi bi-three-dots"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+            {% if variant == 'row' %}<li><a class="dropdown-item" href="{% url 'certificate_detail' cert.pk %}"><i class="bi bi-file-earmark-text"></i>Xem chi tiết</a></li>{% endif %}
+            {% if cert.status != 'PENDING' and cert.verify_code %}
+            <li><a class="dropdown-item" href="{% url 'verify' cert.verify_code_display %}" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i>Trang xác minh công khai</a></li>
+            {% endif %}
+            <li><a class="dropdown-item" href="{% url 'certificate_print' cert.pk %}" target="_blank" rel="noopener"><i class="bi bi-printer"></i>In phôi văn bằng</a></li>
+            {% if variant == 'row' and role == 'qlsv' or variant == 'row' and role == 'admin' %}
+            <li><button type="button" class="dropdown-item"
+                    data-bs-toggle="modal" data-bs-target="#studentAccountModal"
+                    data-action="{% url 'certificate_student_account' cert.pk %}"
+                    data-serial="{{ cert.serial_number }}" data-name="{{ cert.student_name }}"
+                    data-nid="{{ cert.national_id_masked }}" data-email="{{ cert.student_email|default:'' }}"
+                    data-issued="{% if cert.status == 'ISSUED' %}1{% endif %}"><i class="bi bi-person-vcard"></i>Tài khoản sinh viên{% if not cert.national_id_last4 %}<span class="ds-menu-note">chưa có CCCD</span>{% endif %}</button></li>
+            {% endif %}
+            {% if variant == 'row' %}<li><a class="dropdown-item" href="{% url 'certificate_detail' cert.pk %}#bang-chung"><i class="bi bi-shield-check"></i>Thông tin xác thực</a></li>{% endif %}
+
+            {% if cert.status == 'PENDING' %}
+                {% if role == 'hieutruong' and cert.student_affairs_approved and cert.academic_affairs_approved and not cert.rector_approved and not cert.is_rejected %}
+                    <li><hr class="dropdown-divider"></li>
+                    <li><button type="button" class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#rejectModal" data-cert-id="{{ cert.pk }}" data-cert-serial="{{ cert.serial_number }}" data-cert-name="{{ cert.student_name }}"><i class="bi bi-arrow-return-left"></i>Trả hồ sơ về Đào tạo</button></li>
+                {% elif role == 'daotao' and cert.student_affairs_approved and not cert.academic_affairs_approved %}
+                    <li><hr class="dropdown-divider"></li>
+                    <li><button type="button" class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#rejectModal" data-cert-id="{{ cert.pk }}" data-cert-serial="{{ cert.serial_number }}" data-cert-name="{{ cert.student_name }}"><i class="bi bi-arrow-return-left"></i>Trả hồ sơ về QLSV</button></li>
+                {% elif role == 'qlsv' and not cert.student_affairs_approved and not cert.is_rejected %}
+                    <li><hr class="dropdown-divider"></li>
+                    <li><button type="button" class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#rejectModal" data-cert-id="{{ cert.pk }}" data-cert-serial="{{ cert.serial_number }}" data-cert-name="{{ cert.student_name }}"><i class="bi bi-x-circle"></i>Từ chối hồ sơ</button></li>
+                {% elif role == 'admin' and not cert.is_rejected %}
+                    <li><hr class="dropdown-divider"></li>
+                    <li><button type="button" class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#rejectModal" data-cert-id="{{ cert.pk }}" data-cert-serial="{{ cert.serial_number }}" data-cert-name="{{ cert.student_name }}"><i class="bi bi-arrow-return-left"></i>Trả hồ sơ</button></li>
+                {% endif %}
+            {% endif %}
+            {% if cert.status == 'ISSUED' %}
+                <li><hr class="dropdown-divider"></li>
+                {% if role == 'qlsv' and cert.student_affairs_revoke or role == 'daotao' and cert.academic_affairs_revoke or role == 'hieutruong' and cert.rector_revoke %}{# Update: phòng đã xác nhận thì không bấm lại #}
+                <li><span class="dropdown-item-text ds-menu-muted"><i class="bi bi-check2-circle"></i>Phòng bạn đã xác nhận thu hồi ({{ cert.revoke_confirmations }}/3)</span></li>
+                {% else %}
+                <li><button type="button" class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#revokeModal" data-cert-id="{{ cert.pk }}" data-cert-serial="{{ cert.serial_number }}" data-cert-name="{{ cert.student_name }}" data-revoke="{{ cert.student_affairs_revoke|yesno:'1,0' }}{{ cert.academic_affairs_revoke|yesno:'1,0' }}{{ cert.rector_revoke|yesno:'1,0' }}"><i class="bi bi-shield-x"></i>{% if cert.revoke_confirmations and role != 'admin' %}Xác nhận thu hồi ({{ cert.revoke_confirmations }}/3){% else %}Thu hồi văn bằng{% endif %}</button></li>
+                {% endif %}
+            {% endif %}
+        </ul>
+    </div>
+</div>

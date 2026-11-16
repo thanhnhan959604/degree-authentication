@@ -1,0 +1,93 @@
+{# Update: TRÌNH XEM ẢNH VĂN BẰNG dùng chung cho 3 phân hệ (tra cứu công khai, sinh viên, cán bộ) #}
+<div class="dv" data-dv>
+    <div class="dv-toolbar">
+        <div class="dv-title">
+            <i class="bi bi-file-earmark-richtext"></i>
+            <span>{{ dv_title|default:"Ảnh văn bằng" }}</span>
+            {% if dv_badge %}<span class="dv-badge">{{ dv_badge }}</span>{% endif %}
+        </div>
+        <div class="dv-tools" {% if not dv_src %}hidden{% endif %}>
+            <button type="button" class="dv-btn" data-dv-zoom="-1" title="Thu nhỏ" aria-label="Thu nhỏ"><i class="bi bi-zoom-out"></i></button>
+            <span class="dv-zoom-label" aria-live="polite">100%</span>
+            <button type="button" class="dv-btn" data-dv-zoom="1" title="Phóng to" aria-label="Phóng to"><i class="bi bi-zoom-in"></i></button>
+            <button type="button" class="dv-btn" data-dv-fit title="Vừa khung" aria-label="Vừa khung"><i class="bi bi-aspect-ratio"></i></button>
+            <button type="button" class="dv-btn" data-dv-full title="Toàn màn hình" aria-label="Xem toàn màn hình"><i class="bi bi-arrows-fullscreen"></i></button>
+            {% if dv_download %}
+            <a class="dv-btn" href="{{ dv_download }}" title="Tải xuống" aria-label="Tải ảnh văn bằng"><i class="bi bi-download"></i></a>
+            {% endif %}
+        </div>
+    </div>
+    <div class="dv-stage{% if dv_fit == 'width' %} dv-stage--auto{% endif %}" tabindex="0">
+        {% if dv_src %}
+            <div class="dv-state" data-dv-loading><div class="spinner-border spinner-border-sm text-secondary me-2"></div>Đang tải ảnh văn bằng…</div>
+            <div class="dv-state" data-dv-error hidden><i class="bi bi-exclamation-triangle me-2"></i>Không tải được ảnh văn bằng. Vui lòng thử lại sau.</div>
+            <img class="dv-img" src="{{ dv_src }}" alt="{{ dv_alt|default:'Ảnh văn bằng' }}" draggable="false" hidden>
+        {% else %}
+            <div class="dv-state"><i class="bi bi-image me-2"></i>{{ dv_empty|default:"Chưa có ảnh văn bằng." }}</div>
+        {% endif %}
+    </div>
+    {% if dv_caption %}<div class="dv-caption"><i class="bi bi-info-circle me-1"></i>{{ dv_caption }}</div>{% endif %}
+</div>
+
+{% if not dv_assets_loaded %}
+{# Update: CSS trình xem đã chuyển vào static/css/design-system.css (dùng token chung) #}
+<script>
+    // Update: Khởi tạo mọi trình xem trên trang (kể cả khi include nhiều lần)
+    window.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('[data-dv]:not([data-dv-ready])').forEach(function (root) {
+            root.setAttribute('data-dv-ready', '1');
+            const stage = root.querySelector('.dv-stage');
+            const img = root.querySelector('.dv-img');
+            const label = root.querySelector('.dv-zoom-label');
+            if (!img) { return; }
+            let zoom = 1;                                  // 1 = vừa khung
+            function fitScale() {
+                if (!img.naturalWidth) { return 1; }
+                // Update: khung "auto" (không toàn màn hình) vừa theo chiều rộng, chiều cao đi theo tỉ lệ ảnh
+                if (stage.classList.contains('dv-stage--auto') && document.fullscreenElement !== root) {
+                    return (stage.clientWidth - 24) / img.naturalWidth;
+                }
+                return Math.min((stage.clientWidth - 24) / img.naturalWidth, (stage.clientHeight - 24) / img.naturalHeight);
+            }
+            function apply() {
+                const w = Math.round(img.naturalWidth * fitScale() * zoom);
+                img.style.width = w + 'px';                // chỉ đặt chiều rộng -> chiều cao theo đúng tỉ lệ gốc
+                stage.classList.toggle('dv-zoomed', zoom > 1.001);
+                img.style.cursor = zoom > 1.001 ? 'zoom-out' : 'zoom-in';
+                label.textContent = Math.round(zoom * 100) + '%';
+            }
+            function setZoom(z) { zoom = Math.min(6, Math.max(0.5, z)); apply(); }
+            img.addEventListener('load', function () {
+                root.querySelector('[data-dv-loading]').hidden = true;
+                img.hidden = false; apply();
+            });
+            img.addEventListener('error', function () {
+                root.querySelector('[data-dv-loading]').hidden = true;
+                root.querySelector('[data-dv-error]').hidden = false;
+                root.querySelector('.dv-tools').hidden = true;
+            });
+            if (img.complete && img.naturalWidth) { img.dispatchEvent(new Event('load')); }
+            root.querySelectorAll('[data-dv-zoom]').forEach(function (b) {
+                b.addEventListener('click', function () { setZoom(zoom * (b.dataset.dvZoom === '1' ? 1.25 : 0.8)); });
+            });
+            root.querySelector('[data-dv-fit]').addEventListener('click', function () { setZoom(1); });
+            function toggleFull() {
+                if (document.fullscreenElement) { document.exitFullscreen(); }
+                else if (root.requestFullscreen) { root.requestFullscreen(); }
+            }
+            root.querySelector('[data-dv-full]').addEventListener('click', toggleFull);
+            img.addEventListener('click', function () {   // bấm vào ảnh: mở trình xem toàn màn hình; đang toàn màn hình thì phóng to / về vừa khung
+                if (document.fullscreenElement !== root) { toggleFull(); }
+                else { setZoom(zoom > 1.001 ? 1 : 2); }
+            });
+            document.addEventListener('fullscreenchange', function () { zoom = 1; apply(); stage.focus(); });
+            window.addEventListener('resize', apply);
+            stage.addEventListener('keydown', function (e) {
+                if (e.key === '+' || e.key === '=') { setZoom(zoom * 1.25); }
+                else if (e.key === '-') { setZoom(zoom * 0.8); }
+                else if (e.key === '0') { setZoom(1); }
+            });
+        });
+    });
+</script>
+{% endif %}

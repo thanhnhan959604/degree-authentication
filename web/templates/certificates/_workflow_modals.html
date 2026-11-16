@@ -1,0 +1,127 @@
+{# Update: Hộp thoại Trả hồ sơ / Thu hồi / Sửa hồ sơ dùng chung cho bảng điều khiển và trang chi tiết (JS mở hộp thoại trong static/js/main.js) #}
+{# Update: Đợt 3 – cùng một mẫu: tiêu đề viết hoa đầu câu, lý do bắt buộc, Hủy bên trái, nút chính bên phải #}
+<div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
+    <div class="modal-dialog ds-modal ds-modal--confirm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="rejectModalLabel">{% if role == 'hieutruong' %}Trả hồ sơ về Phòng Đào tạo{% elif role == 'daotao' %}Trả hồ sơ về Phòng QLSV{% elif role == 'qlsv' %}Từ chối hồ sơ{% else %}Trả hồ sơ{% endif %}</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <form method="post" id="rejectForm" data-busy>
+                {% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+                <div class="modal-body">
+                    <p class="ds-modal-target">Hồ sơ <strong id="rejectCertInfo"></strong></p>
+                    <p class="ds-modal-note">{% if role == 'hieutruong' %}Hồ sơ quay về Phòng Đào tạo để kiểm tra lại theo ý kiến của Hiệu trưởng.{% elif role == 'daotao' %}Hồ sơ quay về Phòng Quản lý sinh viên để rà soát và chỉnh sửa thông tin.{% elif role == 'qlsv' %}Hồ sơ được giữ tại Phòng QLSV ở trạng thái bị từ chối để chỉnh sửa lại.{% else %}Hồ sơ quay về phòng xử lý liền trước trong quy trình.{% endif %}</p>
+                    <label class="form-label" for="rejectReason">Lý do <span class="ds-req" aria-hidden="true">*</span></label>
+                    <textarea name="reason" id="rejectReason" class="form-control" rows="3" placeholder="Ghi rõ thông tin sai hoặc nội dung cần chỉnh sửa" required></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-danger">{% if role == 'hieutruong' %}Trả về Phòng Đào tạo{% elif role == 'daotao' %}Trả về Phòng QLSV{% elif role == 'qlsv' %}Từ chối hồ sơ{% else %}Trả hồ sơ{% endif %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="revokeModal" tabindex="-1" aria-labelledby="revokeModalLabel" aria-hidden="true">
+    <div class="modal-dialog ds-modal ds-modal--confirm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="revokeModalLabel">{% if role == 'admin' %}Thu hồi văn bằng{% else %}Xác nhận thu hồi văn bằng{% endif %}</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <form method="post" id="revokeForm" data-busy>
+                {% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+                <div class="modal-body">
+                    <p class="ds-modal-target">Văn bằng <strong id="revokeCertInfo"></strong></p>
+                    {% if role == 'admin' %}
+                    <div class="ds-modal-warn"><i class="bi bi-exclamation-triangle"></i><span>Quản trị viên thu hồi <strong>có hiệu lực ngay</strong>, không chờ các phòng xác nhận. Thao tác không hoàn tác được.</span></div>
+                    {% else %}
+                    <div class="ds-modal-warn"><i class="bi bi-exclamation-triangle"></i><span>Văn bằng chỉ chuyển sang "Đã thu hồi" khi <strong>đủ 3 phòng</strong> xác nhận. Đây là xác nhận của {% if role == 'qlsv' %}Phòng QLSV{% elif role == 'daotao' %}Phòng Đào tạo{% else %}Hiệu trưởng{% endif %}; thao tác không hoàn tác được.</span></div>
+                    {% endif %}
+                    <p class="ds-modal-progress" id="revokeProgress" hidden></p>
+                    <div class="mb-3">
+                        <label class="form-label" for="revokeEndType">Loại kết thúc hiệu lực</label>
+                        <select name="end_type" class="form-select" id="revokeEndType"
+                                onchange="document.getElementById('revokeReplacedWrap').classList.toggle('d-none', this.value !== 'REPLACED')">
+                            <option value="REVOKED" selected>Thu hồi</option>
+                            <option value="CANCELLED">Hủy (cấp sai / không có giá trị)</option>
+                            <option value="REPLACED">Thay thế bằng văn bằng khác</option>
+                        </select>
+                        <div class="form-text">Nếu phòng khác đã xác nhận trước, hệ thống giữ loại đã chọn lần đầu.</div>
+                    </div>
+                    <div class="mb-3 d-none" id="revokeReplacedWrap">
+                        <label class="form-label" for="revokeReplaced">Số hiệu văn bằng thay thế</label>
+                        <input type="text" name="replaced_serial" id="revokeReplaced" class="form-control" placeholder="VB-2026-101">
+                    </div>
+                    <label class="form-label" for="revokeReason">Lý do <span class="ds-req" aria-hidden="true">*</span></label>
+                    <textarea name="reason" id="revokeReason" class="form-control" rows="3" placeholder="Căn cứ quyết định số …" required></textarea>
+                    <div class="form-text">Lý do chỉ lưu nội bộ, không hiển thị trên trang tra cứu công khai.</div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-danger">{% if role == 'admin' %}Thu hồi văn bằng{% else %}Xác nhận thu hồi{% endif %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog ds-modal ds-modal--form modal-dialog-scrollable modal-fullscreen-sm-down">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="editModalLabel">Sửa và gửi lại hồ sơ</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <form method="post" id="editForm" data-busy>
+                {% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+                <div class="modal-body">
+                    <div class="ds-modal-warn"><i class="bi bi-arrow-return-left"></i><span><strong>Lý do bị trả về:</strong> <span id="editRejectReasonAlert"></span></span></div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label" for="editSerial">Số hiệu văn bằng</label>
+                            <input type="text" id="editSerial" class="form-control" readonly aria-describedby="editSerialHelp">
+                            <div class="form-text" id="editSerialHelp">Không sửa được số hiệu.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="editStudentId">Mã sinh viên <span class="ds-req" aria-hidden="true">*</span></label>
+                            <input type="text" name="student_id" id="editStudentId" class="form-control" required>
+                        </div>
+                        <div class="col-md-7">
+                            <label class="form-label" for="editName">Họ và tên <span class="ds-req" aria-hidden="true">*</span></label>
+                            <input type="text" name="student_name" id="editName" class="form-control" required>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label" for="editDob">Ngày sinh <span class="ds-req" aria-hidden="true">*</span></label>
+                            <input type="date" name="date_of_birth" id="editDob" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="editMajor">Ngành đào tạo <span class="ds-req" aria-hidden="true">*</span></label>
+                            <input type="text" name="major" id="editMajor" class="form-control" required>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <label class="form-label" for="editYear">Năm tốt nghiệp <span class="ds-req" aria-hidden="true">*</span></label>
+                            <input type="number" name="graduation_year" id="editYear" class="form-control" required>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <label class="form-label" for="editClassification">Xếp loại <span class="ds-req" aria-hidden="true">*</span></label>
+                            <select name="classification" id="editClassification" class="form-select" required>
+                                {% for c in CLASSIFICATIONS %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="editDegreeType">Loại văn bằng</label>
+                            <input type="text" name="degree_type" id="editDegreeType" class="form-control">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary">Lưu và gửi lại</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

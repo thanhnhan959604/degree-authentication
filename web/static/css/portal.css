@@ -1,0 +1,225 @@
+/* Shared presentation for students, QLSV, academic affairs, rector and admins. */
+.layout-portal {
+    --ds-header-h: 64px;
+    --ds-sidebar-w: 232px;
+    --portal-blue: #edf4ff;
+    --portal-mint: #edf8f2;
+    --portal-amber: #fff8e9;
+    --portal-rose: #fff1f2;
+    --portal-violet: #f3f0fc;
+    background: #f5f7fb;
+}
+
+/* Keep layout ancestors still: fixed dropdowns and dialogs must not be trapped. */
+.layout-portal .ds-app { min-height: 0; }
+.layout-portal .ds-main { padding: 24px clamp(16px, 2.5vw, 36px) 32px; }
+.layout-portal .ds-main-inner { width: 100%; max-width: 1320px; }
+.layout-portal .ds-header { height: var(--ds-header-h); box-shadow: 0 2px 8px rgb(23 43 77 / 6%); }
+.layout-portal .ds-header-inner { max-width: 1624px; margin: 0 auto; }
+.layout-portal .ds-brand { flex: 1 1 auto; }
+.layout-portal .ds-header-nav { flex-shrink: 0; }
+.layout-portal .ds-user-name { max-width: 14ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.layout-portal .ds-sidebar { background: #fcfdff; transition: none; }
+.layout-portal .ds-sidebar-inner { padding: 24px 12px; scrollbar-width: thin; }
+.layout-portal .ds-nav-label { padding: 0 12px 8px; color: #64748b; font-size: 10px; letter-spacing: .07em; }
+.layout-portal .ds-nav-group + .ds-nav-group { margin-top: 24px; }
+.layout-portal .ds-nav-link { min-height: 42px; margin-bottom: 4px; padding: 10px 12px; border-radius: 10px; font-size: 13px; line-height: 1.5; }
+.layout-portal .ds-nav-link .bi { flex: none; }
+.layout-portal .ds-nav-link:hover { background: #edf2fa; color: #172b4d; }
+.layout-portal .ds-nav-link.active { background: #e8f0ff; color: #1d4ed8; box-shadow: inset 3px 0 #2563eb; }
+.layout-portal .ds-nav-link.active .bi { color: #2563eb; }
+.layout-portal .ds-sidebar-user { padding: 16px 12px 0; overflow-wrap: anywhere; line-height: 1.65; }
+.layout-portal .ds-nav-count { min-width: 24px; text-align: center; font-variant-numeric: tabular-nums; }
+
+.layout-portal .ds-breadcrumb { margin-bottom: 12px; }
+.layout-portal .ds-page-header {
+    align-items: center;
+    gap: 16px 24px;
+    margin-bottom: 20px;
+    padding: 22px 24px;
+    border: 1px solid #dce5f2;
+    border-radius: 14px;
+    background: #edf3fc;
+}
+.layout-portal .ds-page-header > div:first-child { flex: 1 1 360px; min-width: 0; }
+.layout-portal .ds-page-title { color: #172b4d; font-size: clamp(20px, 1.8vw, 26px); line-height: 1.35; overflow-wrap: anywhere; }
+.layout-portal .ds-page-subtitle { margin-top: 8px; max-width: 76ch; font-size: 13px; line-height: 1.65; color: #52647b; }
+.layout-portal .ds-page-actions { align-items: center; }
+
+/* One spacing scale and no hover lifts, scaling or transition: all. */
+.layout-portal .ds-card,
+.layout-portal .custom-card { border: 1px solid #e0e7f0; border-radius: 14px; box-shadow: 0 2px 6px rgb(23 43 77 / 3%); transition: none; }
+.layout-portal .ds-card-body { padding: 22px; }
+.layout-portal .ds-card-title,
+.layout-portal .sp-section-title,
+.layout-portal .cd-title { color: #425671; font-size: 13px; font-weight: 600; letter-spacing: 0; text-transform: none; line-height: 1.6; }
+.layout-portal .ds-card-title .bi { color: #2563eb; }
+.layout-portal .btn,
+.layout-portal .dv-btn { min-height: 38px; border-radius: 8px; }
+.layout-portal .btn { display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
+.layout-portal .btn-sm { min-height: 34px; }
+.layout-portal .btn-link { min-height: 28px; }
+.layout-portal .btn,
+.layout-portal .dv-btn,
+.layout-portal .ds-nav-link,
+.layout-portal .dropdown-item,
+.layout-portal .ds-kpi { transition: background-color .14s ease, border-color .14s ease, color .14s ease; }
+.layout-portal .form-control,
+.layout-portal .form-select { min-height: 38px; border-color: #cdd8e7; border-radius: 8px; }
+.layout-portal .form-control:focus,
+.layout-portal .form-select:focus { border-color: #2563eb; }
+.layout-portal .form-check-input { border-color: #a8b6c9; }
+.layout-portal .btn:focus-visible,
+.layout-portal .dv-btn:focus-visible,
+.layout-portal .ds-kpi:focus-visible,
+.layout-portal .ds-nav-link:focus-visible,
+.layout-portal summary:focus-visible { outline: 2px solid #2563eb; outline-offset: 3px; }
+.layout-portal :is(a, button, input, select, textarea, summary) { scroll-margin-top: calc(var(--ds-header-h) + 20px); }
+
+.layout-portal .ds-kpis { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; }
+.layout-portal .ds-kpi {
+    --kpi-bg: var(--portal-blue);
+    --kpi-border: #cfddf6;
+    --kpi-ink: #24518c;
+    min-width: 0;
+    min-height: 108px;
+    padding: 16px;
+    gap: 10px;
+    border-color: var(--kpi-border);
+    border-radius: 12px;
+    background: var(--kpi-bg);
+}
+.layout-portal .ds-kpi[data-kpi^="pending"] { --kpi-bg: var(--portal-amber); --kpi-border: #eddfbb; --kpi-ink: #875711; }
+.layout-portal .ds-kpi[data-kpi="issued"] { --kpi-bg: var(--portal-mint); --kpi-border: #cce5d7; --kpi-ink: #246345; }
+.layout-portal .ds-kpi[data-kpi="returned"],
+.layout-portal .ds-kpi[data-kpi="rejected"] { --kpi-bg: var(--portal-rose); --kpi-border: #efd4d8; --kpi-ink: #984655; }
+.layout-portal .ds-kpi[data-kpi="forwarded"] { --kpi-bg: var(--portal-violet); --kpi-border: #ded6f1; --kpi-ink: #665096; }
+.layout-portal .ds-kpi-label { color: #475569; line-height: 1.5; white-space: normal; overflow: visible; }
+.layout-portal .ds-kpi-value { margin-top: auto; color: var(--kpi-ink); font-size: 28px; font-variant-numeric: tabular-nums; }
+.layout-portal .ds-kpi:hover { border-color: var(--kpi-ink); color: var(--ds-text); }
+.layout-portal .ds-kpi.is-active { border-color: #2563eb; box-shadow: inset 0 0 0 1px #2563eb; }
+.layout-portal .ds-kpi.is-alert .ds-kpi-value { color: #b91c1c; }
+
+.layout-portal .ds-toolbar { gap: 12px; padding: 16px; border: 1px solid #e0e7f0; border-radius: 12px; background: #fff; }
+.layout-portal .ds-toolbar-search { min-width: 0; max-width: none; flex: 1 1 280px; }
+.layout-portal .ds-toolbar-filter { flex: 0 1 250px; }
+.layout-portal .ds-toolbar-count { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.layout-portal .ds-cert-list { overflow: visible; }
+.layout-portal .ds-cert-list .table-responsive { border-radius: 14px; }
+.layout-portal .ds-cert-table { min-width: 820px; }
+.layout-portal .table > thead th { background: #f1f5fc !important; color: #425671 !important; text-transform: none; letter-spacing: 0; }
+.layout-portal .table > tbody > tr > td { border-bottom-color: #edf0f5; }
+.layout-portal .table > tbody > tr:hover > * { --bs-table-bg-state: #f5f8fe; }
+.layout-portal .ds-cert-table .ds-cell-main { max-width: 30ch; overflow-wrap: anywhere; }
+.layout-portal .ds-row-actions { flex-wrap: wrap; row-gap: 8px; }
+.layout-portal .ds-badge { padding: 4px 10px; }
+.layout-portal .ds-progress { margin-top: 8px; font-size: 12px; }
+.layout-portal .ds-dot.is-done { background: #22825a; }
+
+/* Match dialogs and menus without transforms on their containers. */
+.layout-portal .dropdown-menu { max-width: min(340px, calc(100vw - 24px)); padding: 6px; border-radius: 12px; box-shadow: 0 10px 30px rgb(23 43 77 / 12%); }
+.layout-portal .dropdown-item { min-height: 38px; padding: 8px 10px; border-radius: 7px; white-space: normal; line-height: 1.5; }
+.layout-portal .dropdown-item:hover,
+.layout-portal .dropdown-item:focus { background: #edf3fc; color: #172b4d; }
+.layout-portal .dropdown-item.text-danger:hover { background: #fff1f2; }
+.layout-portal .modal-content { border-radius: 16px; }
+.layout-portal .modal-header { padding: 18px 22px; background: #edf3fc !important; border-radius: 16px 16px 0 0; }
+.layout-portal .modal-header .text-white { color: #172b4d !important; }
+.layout-portal .modal-body { padding: 22px; }
+.layout-portal .modal-footer { gap: 8px; padding: 14px 22px; border-radius: 0 0 16px 16px; }
+.layout-portal .modal.fade .modal-dialog { transform: none; transition: none; }
+.layout-portal .modal.fade { transition: opacity .12s linear; }
+.layout-portal .status-dot-pulse { animation: none; }
+
+/* Student overview, sharing and detail pages use the same colors and spacing. */
+.layout-portal .ds-stat { min-height: 112px; padding: 18px 20px; }
+.layout-portal .ds-stat--issued { background: var(--portal-mint); border-color: #cce5d7; }
+.layout-portal .ds-stat--issued .ds-stat-value { color: #246345; }
+.layout-portal .ds-stat--pending { background: var(--portal-amber); border-color: #eddfbb; }
+.layout-portal .ds-stat--pending .ds-stat-value { color: #875711; }
+.layout-portal .ds-stat--account { background: var(--portal-blue); border-color: #cfddf6; overflow-wrap: anywhere; }
+.layout-portal .ds-stat-value { margin-top: 10px; font-size: 28px; font-variant-numeric: tabular-nums; }
+.layout-portal .sp-label { margin-bottom: 4px; }
+.layout-portal .sp-value { overflow-wrap: anywhere; }
+.layout-portal .sp-verification { display: grid !important; grid-template-columns: 104px minmax(0, 1fr); align-items: start !important; }
+.layout-portal .sp-verification .sp-qr { width: 104px; height: 104px; }
+.layout-portal .sp-verification .btn { margin-top: 6px; }
+.layout-portal .sp-verification .font-monospace { overflow-wrap: anywhere; }
+.layout-portal .sp-share-form { padding: 14px; margin: 0 0 16px; border: 1px solid #dce5f2; border-radius: 12px; background: #f5f8fd; }
+.layout-portal .sp-share-form input[type="checkbox"] { accent-color: #2563eb; }
+.layout-portal .sp-share-form .small label { display: inline-flex; align-items: center; gap: 6px; min-height: 28px; }
+.layout-portal .sp-card details { padding: 12px 16px; border: 1px solid #e0e7f0; border-radius: 10px; background: #fafbfd; }
+.layout-portal .sp-card details[open] summary { margin-bottom: 10px; }
+.layout-portal :is(#van-bang, #chia-se, #lich-su, #tai-khoan) { scroll-margin-top: calc(var(--ds-header-h) + 20px); }
+.layout-portal .ds-overview { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: #e5ebf3; border-radius: 14px; overflow: hidden; }
+.layout-portal .ds-overview > div { padding: 16px 20px; border: 0; background: #f8faff; }
+.layout-portal .ds-overview dd { overflow-wrap: anywhere; }
+.layout-portal .cd-dl dd { line-height: 1.6; }
+.layout-portal .ds-timeline li::before { background: #93afd8; }
+.layout-portal .dv-toolbar { gap: 12px; padding: 12px 14px; background: #f8faff; }
+.layout-portal .dv-title { flex-wrap: wrap; min-width: 0; }
+.layout-portal .dv-badge { white-space: normal; }
+.layout-portal .dv-stage { height: clamp(280px, 55vh, 560px); }
+.layout-portal .dv:fullscreen .dv-stage { height: calc(100vh - 64px); }
+.layout-portal .ds-footer-inner { padding: 18px 24px; font-size: 12px; }
+
+@media (max-width: 1399.98px) {
+    .layout-portal .sp-summary > .col-lg-3 { width: 50%; }
+    .layout-portal .sp-summary > .col-lg-6 { width: 100%; }
+    .layout-portal .sp-card .row.g-4 > :is(.col-lg-7, .col-lg-5) { width: 100%; }
+    .layout-portal .sp-share-form > :is(.col-md-2, .col-md-4) { width: 50%; }
+}
+@media (min-width: 992px) and (max-width: 1199.98px) {
+    .layout-portal .ds-brand-tail, .layout-portal .ds-brand-sub { display: none; }
+    .layout-portal .ds-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 991.98px) {
+    .layout-portal .ds-sidebar { visibility: hidden; pointer-events: none; width: min(280px, calc(100vw - 48px)); }
+    .layout-portal.ds-sidebar-open .ds-sidebar { visibility: visible; pointer-events: auto; }
+    .layout-portal .ds-main { padding: 20px 16px 28px; }
+    .layout-portal .ds-header-inner { padding: 0 16px; }
+    .layout-portal .ds-brand-sub { max-width: 32ch; }
+    .layout-portal .ds-page-header { padding: 20px; }
+}
+@media (max-width: 767.98px) {
+    .layout-portal .ds-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .layout-portal .ds-kpi:last-child:nth-child(odd) { grid-column: 1 / -1; }
+    .layout-portal .ds-cert-table { min-width: 0; }
+    .layout-portal .ds-cert-table .ds-cell-main { max-width: none; }
+    .layout-portal .ds-cert-table > tbody > tr { padding: 18px; gap: 8px; }
+    .layout-portal .ds-cert-table > tbody > tr:hover > * { --bs-table-bg-state: transparent; }
+    .layout-portal .ds-toolbar-search { flex-basis: 100%; }
+    .layout-portal .ds-toolbar-filter { flex: 1 1 180px; }
+    .layout-portal .ds-toolbar-count { margin-left: 0; }
+    .layout-portal .ds-overview { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 575.98px) {
+    .layout-portal { --ds-header-h: 60px; }
+    .layout-portal .ds-header-inner { gap: 8px; padding: 0 12px; }
+    .layout-portal .ds-header-link { padding: 8px; }
+    .layout-portal .ds-main { padding: 16px 12px 24px; }
+    .layout-portal .ds-page-header { padding: 18px 16px; gap: 14px; }
+    .layout-portal .ds-page-header > div:first-child { flex-basis: 100%; }
+    .layout-portal .ds-page-actions { width: 100%; }
+    .layout-portal .ds-page-actions > .btn { flex: 1 1 auto; font-size: 12px; }
+    .layout-portal .ds-kpi { min-height: 104px; padding: 14px; }
+    .layout-portal .ds-stat { padding: 16px; }
+    .layout-portal .sp-share-form > :is(.col-md-2, .col-md-4) { width: 100%; }
+    .layout-portal .sp-verification { grid-template-columns: 80px minmax(0, 1fr); }
+    .layout-portal .sp-verification .sp-qr { width: 80px; height: 80px; }
+    .layout-portal .sp-card.p-4 { padding: 18px !important; }
+    .layout-portal .ds-card-body { padding: 18px; }
+    .layout-portal .ds-overview > div { padding: 14px; }
+    .layout-portal .form-control, .layout-portal .form-select { font-size: 16px; }
+    .layout-portal .modal-body, .layout-portal .modal-header { padding: 18px; }
+    .layout-portal .modal-footer { padding: 12px 18px; }
+    .layout-portal .dv-tools { flex-wrap: wrap; }
+    .layout-portal .ds-footer-links { margin-left: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .layout-portal *, .layout-portal *::before, .layout-portal *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+}
+@media print {
+    .layout-portal .ds-main { padding: 0; }
+    .layout-portal .ds-page-header, .layout-portal .ds-card, .layout-portal .custom-card { background: #fff; box-shadow: none; }
+}

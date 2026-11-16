@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{# Update: Public Layout — tra cứu / xác minh công khai: header nhận diện, nội dung, footer; không có sidebar #}
+{% block body_class %}layout-public{% endblock %}
+{% block layout %}
+{% include 'components/header.html' with variant='public' %}
+<main id="main-content" class="ds-public-main">
+    {% include 'components/alerts.html' %}
+    {% block content %}{% endblock %}
+</main>
+{% include 'components/footer.html' %}
+{% endblock %}

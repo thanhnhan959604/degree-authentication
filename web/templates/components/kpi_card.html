@@ -1,0 +1,5 @@
+{# Update: Thẻ số liệu dùng chung, bấm để lọc. Dùng: {% include 'components/kpi_card.html' with key='all' label='Tất cả hồ sơ' value=total_count %}; alert=1 khi cần chú ý #}
+<a href="?filter={{ key }}" data-kpi="{{ key }}" class="ds-kpi{% if filter_type == key %} is-active{% endif %}{% if alert and value %} is-alert{% endif %}"{% if filter_type == key %} aria-current="true"{% endif %}>
+    <span class="ds-kpi-label">{{ label }}</span>
+    <span class="ds-kpi-value">{{ value|default:0 }}</span>
+</a>

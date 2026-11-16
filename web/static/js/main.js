@@ -61,6 +61,15 @@ document.addEventListener("DOMContentLoaded", function () {
             if (infoEl) {
                 infoEl.textContent = `${certSerial} - ${certName}`;
             }
+            // Update: hiện tiến độ xác nhận thu hồi của 3 phòng
+            const prog = revokeModal.querySelector("#revokeProgress");
+            const flags = button.getAttribute("data-revoke") || "000";
+            if (prog) {
+                const names = ["QLSV", "Đào tạo", "Hiệu trưởng"];
+                const done = flags.split("").filter(function (f) { return f === "1"; }).length;
+                prog.hidden = done === 0;
+                prog.textContent = "Đã xác nhận " + done + "/3: " + names.map(function (n, i) { return (flags[i] === "1" ? "✓ " : "· ") + n; }).join("   ");
+            }
         });
     }
 
@@ -89,7 +98,12 @@ document.addEventListener("DOMContentLoaded", function () {
             editModal.querySelector("#editDob").value = dob;
             editModal.querySelector("#editMajor").value = major;
             editModal.querySelector("#editYear").value = year;
-            editModal.querySelector("#editClassification").value = classification;
+            // Update: xếp loại nằm ngoài danh sách (dữ liệu cũ) thì thêm vào để không mất giá trị
+            const sel = editModal.querySelector("#editClassification");
+            if (classification && ![...sel.options].some(function (o) { return o.value === classification; })) {
+                sel.add(new Option(classification + " (dữ liệu cũ)", classification));
+            }
+            sel.value = classification;
             editModal.querySelector("#editDegreeType").value = degreeType || "Bằng Cử nhân";
 
             const reasonEl = editModal.querySelector("#editRejectReasonAlert");
@@ -131,4 +145,111 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
     }
+});
+// Update: Sidebar cổng sinh viên / cán bộ — mở, đóng trên màn hình nhỏ (Esc hoặc bấm nền tối để đóng)
+document.addEventListener("DOMContentLoaded", function () {
+    const body = document.body;
+    const toggles = document.querySelectorAll("[data-ds-sidebar-toggle]");
+    function setOpen(open) {
+        body.classList.toggle("ds-sidebar-open", open);
+        toggles.forEach(function (t) { t.setAttribute("aria-expanded", open ? "true" : "false"); });
+    }
+    toggles.forEach(function (t) {
+        t.addEventListener("click", function () { setOpen(!body.classList.contains("ds-sidebar-open")); });
+    });
+    document.querySelectorAll("[data-ds-sidebar-close]").forEach(function (el) {
+        el.addEventListener("click", function () { setOpen(false); });
+    });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape") { setOpen(false); } });
+
+    // Update: Mục "Tạo hồ sơ" / "Nhập từ Excel" ở sidebar mở đúng hộp thoại có sẵn trên dashboard (?action=create|excel)
+    const action = new URLSearchParams(window.location.search).get("action");
+    const modalId = { create: "createModal", excel: "excelModal" }[action];
+    const modalEl = modalId && document.getElementById(modalId);
+    if (modalEl && window.bootstrap) { window.bootstrap.Modal.getOrCreateInstance(modalEl).show(); }
+
+    // Update: Trang đăng nhập — chọn nhóm tài khoản chỉ đổi hướng dẫn trên form; quyền vẫn do backend xác định
+    const loginForm = document.getElementById("loginForm");
+    if (loginForm) {
+        const panel = document.getElementById("loginPanel");
+        const cards = document.querySelectorAll("[data-login-kind]");
+        const kindInput = loginForm.querySelector("input[name=login_kind]");
+        const label = loginForm.querySelector("[data-login-label]");
+        const input = document.getElementById("id_username");
+        const help = loginForm.querySelector("[data-login-help]");
+        const title = document.querySelector("[data-login-panel-title]");
+        const studentOnly = document.querySelectorAll("[data-student-only]");
+        const texts = {
+            student: { title: "Đăng nhập sinh viên", label: "Số căn cước công dân (CCCD)", ph: "Nhập 12 chữ số CCCD", mode: "numeric",
+                help: "Dùng số CCCD đã đăng ký với nhà trường và mật khẩu bạn tự đặt qua email kích hoạt." },
+            staff: { title: "Đăng nhập cán bộ nhà trường", label: "Tên đăng nhập hoặc email", ph: "Tên tài khoản cán bộ", mode: "text",
+                help: "Quyền thao tác (QLSV, Đào tạo, Hiệu trưởng) được xác định theo tài khoản sau khi đăng nhập." }
+        };
+        function choose(kind, focus) {
+            const t = texts[kind] || texts.staff;
+            // Update: liên kết nhóm tài khoản dùng aria-current (thẻ cũ dùng aria-pressed)
+            cards.forEach(function (c) {
+                if (c.dataset.loginKind === kind) { c.setAttribute("aria-current", "true"); } else { c.removeAttribute("aria-current"); }
+            });
+            if (kindInput) { kindInput.value = kind; }
+            if (label) { label.textContent = t.label; }
+            if (title) { title.textContent = t.title; }
+            if (help) { help.textContent = t.help; }
+            if (input) { input.placeholder = t.ph; input.setAttribute("inputmode", t.mode); }
+            studentOnly.forEach(function (el) { el.hidden = kind === "staff"; });
+            if (panel) { panel.hidden = false; }
+            if (focus && input) { input.focus(); }
+        }
+        cards.forEach(function (c) {
+            c.addEventListener("click", function (e) {
+                e.preventDefault();  // Update: đổi nhóm tại chỗ, không tải lại trang; không JS thì liên kết ?kind= vẫn hoạt động
+                choose(c.dataset.loginKind, true);
+                if (window.history && history.replaceState && window.URLSearchParams) { const q = new URLSearchParams(location.search); q.set("kind", c.dataset.loginKind); history.replaceState(null, "", "?" + q.toString()); }
+            });
+        });
+        const initial = loginForm.dataset.initialKind;
+        if (initial) { choose(initial, false); }
+    }
+});
+
+// Update: Ô chọn trạng thái ở bảng điều khiển tự gửi form khi đổi (nút "Lọc" chỉ dùng khi tắt JavaScript)
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll("select[data-autosubmit]").forEach(function (sel) {
+        const form = sel.form;
+        if (!form) return;
+        const btn = form.querySelector(".ds-toolbar-submit");
+        if (btn) btn.hidden = true;
+        sel.addEventListener("change", function () { form.submit(); });
+    });
+});
+
+// Update: Nút "Xem thêm" mở các dòng đang ẩn (data-more) trong danh sách cùng khối
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll("[data-show-more]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+            const list = btn.parentElement.querySelector("[data-show-more-list]");
+            if (list) { list.querySelectorAll("[data-more]").forEach(function (li) { li.hidden = false; }); }
+            btn.remove();
+        });
+    });
+});
+
+// Update: Đợt 3 – hộp thoại mở thì con trỏ vào ô nhập đầu tiên; form nghiệp vụ khi gửi thì khoá nút và báo "Đang xử lý…"
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".modal").forEach(function (m) {
+        m.addEventListener("shown.bs.modal", function () {
+            const f = m.querySelector(".modal-body input:not([type=hidden]):not([readonly]):not([disabled]), .modal-body select, .modal-body textarea");
+            if (f) { f.focus(); }
+        });
+    });
+    document.querySelectorAll("form[data-busy], form[action*='/approve/']").forEach(function (form) {
+        form.addEventListener("submit", function () {
+            const btn = form.querySelector("button[type=submit]");
+            if (!btn || btn.disabled) { return; }
+            setTimeout(function () {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>Đang xử lý…';
+            }, 0);
+        });
+    });
 });

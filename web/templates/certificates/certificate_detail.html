@@ -1,0 +1,233 @@
+{% extends 'layouts/portal.html' %}
+{% load tz %}
+{# Update: Trang chi tiết văn bằng cho cán bộ (Đợt 2) – tổng quan · thông tin hồ sơ · bằng chứng xác thực · ảnh văn bằng · lịch sử. Quyền xem ảnh và thao tác do backend quyết định. #}
+
+{% block title %}Chi tiết văn bằng {{ cert.serial_number }}{% endblock %}
+{% block breadcrumb %}<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Bảng điều khiển</a></li><li class="breadcrumb-item active" aria-current="page">Văn bằng {{ cert.serial_number }}</li>{% endblock %}
+{% block page_title %}Văn bằng {{ cert.serial_number }}{% endblock %}
+{% block page_subtitle %}{{ cert.degree_type }} · {{ cert.issuer_name|default:INSTITUTION.name }}{% endblock %}
+{% block page_actions %}
+    <a class="btn btn-outline-secondary" href="{% url 'dashboard' %}"><i class="bi bi-arrow-left me-1"></i>Quay lại</a>
+    {# Update: thao tác nghiệp vụ ngay trên trang chi tiết – cùng điều kiện với bảng điều khiển #}
+    {% include 'certificates/_cert_actions.html' with variant='page' btn_size='' %}
+{% endblock %}
+
+{% block content %}
+{% timezone "Asia/Ho_Chi_Minh" %}
+<div class="cd-page">
+
+<!-- ================= TỔNG QUAN ================= -->
+<section class="ds-card mb-3" aria-label="Tổng quan văn bằng">
+    <dl class="ds-overview mb-0">
+        <div><dt>Người được cấp</dt><dd>{{ cert.student_name }}</dd></div>
+        <div><dt>Trạng thái</dt><dd>{% include 'components/status_badge.html' with cert=cert %}</dd></div>
+        <div><dt>Bước hiện tại</dt><dd>
+            {% if cert.status == 'PENDING' %}{{ cert.current_step_info.name }}
+            {% elif cert.is_ended %}{{ cert.get_status_display }}{% if cert.revoked_at %} ngày {{ cert.revoked_at|date:"d/m/Y" }}{% endif %}
+            {% elif cert.revoke_confirmations %}Đang chờ thu hồi ({{ cert.revoke_confirmations }}/3)
+            {% else %}Đã phát hành{% endif %}
+        </dd></div>
+        <div><dt>Ngày cấp</dt><dd>{{ cert.issue_date|date:"d/m/Y"|default:"Chưa phát hành" }}</dd></div>
+        <div><dt>Mã xác minh</dt><dd>
+            {% if cert.status != 'PENDING' and cert.verify_code %}
+                <span class="cd-mono-inline">{{ cert.verify_code_display }}</span>
+                <button type="button" class="btn btn-outline-secondary btn-copy cd-copy" data-copy="{{ cert.verify_code_display }}" title="Sao chép mã xác minh" aria-label="Sao chép mã xác minh"><i class="bi bi-copy"></i></button>
+            {% else %}<span class="text-muted fw-normal">Có sau khi phát hành</span>{% endif %}
+        </dd></div>
+        <div><dt>Mã sinh viên</dt><dd>{{ cert.student_id|default:"—" }}</dd></div>
+    </dl>
+</section>
+
+{% if cert.status == 'PENDING' %}
+<div class="alert alert-{% if cert.is_rejected %}danger{% else %}warning{% endif %} mb-3">
+    <i class="bi bi-{% if cert.is_rejected %}arrow-return-left{% else %}hourglass-split{% endif %} me-1"></i>
+    <strong>{% if cert.is_rejected %}Hồ sơ bị trả về.{% else %}Văn bằng chưa được phát hành.{% endif %}</strong> {{ cert.current_step_info.desc }}
+</div>
+{% elif cert.is_ended %}{# Update: văn bằng đã hết hiệu lực #}
+<div class="alert alert-{% if cert.status == 'REVOKED' %}danger{% else %}light{% endif %} mb-3">
+    <i class="bi bi-{% if cert.status == 'REPLACED' %}arrow-repeat{% else %}slash-circle{% endif %} me-1"></i>
+    <strong>Văn bằng {{ cert.get_status_display|lower }}{% if cert.revoked_at %} lúc {{ cert.revoked_at|date:"H:i d/m/Y" }}{% endif %}.</strong>
+    {% if cert.revoke_reason %}Lý do: {{ cert.revoke_reason }}.{% endif %}
+    {% if cert.replaced_by %}Thay bằng văn bằng <a href="{% url 'certificate_detail' cert.replaced_by.pk %}">{{ cert.replaced_by.serial_number }}</a>.{% endif %}
+    Trang tra cứu công khai hiển thị văn bằng không còn hiệu lực.
+</div>
+{% elif cert.revoke_confirmations %}{# Update: tiến độ xác nhận thu hồi #}
+<div class="alert alert-warning mb-3">
+    <i class="bi bi-hourglass-split me-1"></i>
+    <strong>Đang chờ thu hồi ({{ cert.revoke_confirmations }}/3).</strong>
+    QLSV: {{ cert.student_affairs_revoke|yesno:"đã xác nhận,chưa xác nhận" }} · Đào tạo: {{ cert.academic_affairs_revoke|yesno:"đã xác nhận,chưa xác nhận" }} · Hiệu trưởng: {{ cert.rector_revoke|yesno:"đã xác nhận,chưa xác nhận" }}.
+    Văn bằng vẫn còn hiệu lực cho tới khi đủ 3 phòng xác nhận.
+</div>
+{% endif %}
+
+<div class="row g-3">
+    <!-- ================= THÔNG TIN + BẰNG CHỨNG (mobile: hiện trước ảnh) ================= -->
+    <div class="col-xl-5 order-1 order-xl-2">
+        <section class="ds-card ds-card-body mb-3" aria-labelledby="cdInfoTitle">
+            <h2 class="ds-card-title" id="cdInfoTitle"><i class="bi bi-person-vcard"></i> Thông tin hồ sơ</h2>
+            <dl class="row cd-dl mb-0">
+                <div class="col-sm-6"><dt>Họ và tên</dt><dd>{{ cert.student_name }}</dd></div>
+                <div class="col-sm-6"><dt>Ngày sinh</dt><dd>{{ cert.date_of_birth|date:"d/m/Y" }}</dd></div>
+                <div class="col-sm-6"><dt>Ngành đào tạo</dt><dd>{{ cert.major }}</dd></div>
+                <div class="col-sm-6"><dt>Xếp loại · Năm tốt nghiệp</dt><dd>{{ cert.classification }} · {{ cert.graduation_year }}</dd></div>
+                <div class="col-sm-6"><dt>CCCD</dt><dd>{{ cert.national_id_masked|default:"Chưa có" }}</dd></div>
+                <div class="col-sm-6"><dt>Email sinh viên</dt><dd>{{ cert.student_email|default:"Chưa có" }}</dd></div>
+                <div class="col-12"><dt>Đơn vị cấp</dt><dd>{{ cert.issuer_name|default:INSTITUTION.name }}</dd></div>
+            </dl>
+        </section>
+
+        <!-- Bằng chứng xác thực: kết luận trước, mã kỹ thuật sau -->
+        <section class="ds-card ds-card-body" id="bang-chung" aria-labelledby="cdProofTitle">
+            <h2 class="ds-card-title" id="cdProofTitle"><i class="bi bi-shield-check"></i> Bằng chứng xác thực</h2>
+            {% if cert.status == 'PENDING' %}
+                <p class="cd-proof-note mb-2"><i class="bi bi-info-circle me-1"></i>Hồ sơ chưa phát hành nên chưa đối chiếu với sổ cái. Kết quả xác thực có sau khi Hiệu trưởng ký phát hành.</p>
+            {% else %}
+                <div class="cd-verdict cd-verdict--{% if failed %}fail{% elif chain_state == 'match' and hash_ok %}ok{% else %}warn{% endif %}">
+                    <i class="bi bi-{% if failed %}x-circle-fill{% elif chain_state == 'match' and hash_ok %}check-circle-fill{% else %}exclamation-circle-fill{% endif %}"></i>
+                    {% if failed %}Có điểm không đạt khi đối chiếu{% elif chain_state == 'match' and hash_ok %}Khớp với sổ cái của nhà trường{% else %}Chưa đối chiếu đầy đủ{% endif %}
+                </div>
+                <ul class="cd-checks">
+                    <li class="{{ hash_ok|yesno:'is-ok,is-fail' }}"><i class="bi bi-{{ hash_ok|yesno:'check2,x-lg' }}"></i>Dữ liệu hồ sơ {{ hash_ok|yesno:'khớp,không khớp' }} với dấu băm</li>
+                    <li class="{% if chain_state == 'match' %}is-ok{% elif chain_state in 'missing,unavailable,end_pending_onchain' %}is-warn{% else %}is-fail{% endif %}">
+                        <i class="bi bi-{% if chain_state == 'match' %}check2{% elif chain_state in 'missing,unavailable,end_pending_onchain' %}dash-circle{% else %}x-lg{% endif %}"></i>
+                        {% if chain_state == 'match' %}Trạng thái khớp sổ cái
+                        {% elif chain_state == 'missing' %}Chưa có bản ghi trên sổ cái
+                        {% elif chain_state == 'unavailable' %}Chưa kết nối được sổ cái, vui lòng thử lại sau
+                        {% elif chain_state == 'end_pending_onchain' %}Sổ cái chưa cập nhật trạng thái hết hiệu lực
+                        {% elif chain_state == 'revoked_onchain' %}Sổ cái ghi nhận văn bằng đã bị thu hồi
+                        {% elif chain_state == 'not_issued_onchain' %}Sổ cái chưa ghi nhận việc cấp văn bằng
+                        {% else %}Dấu băm không khớp với sổ cái{% endif %}
+                    </li>
+                    <li class="{% if signature_state == 'ok' %}is-ok{% elif signature_state == 'fail' %}is-fail{% else %}is-muted{% endif %}">
+                        <i class="bi bi-{% if signature_state == 'ok' %}check2{% elif signature_state == 'fail' %}x-lg{% else %}dash{% endif %}"></i>
+                        {% if signature_state == 'ok' %}Có chữ ký điện tử hợp lệ của Hiệu trưởng{% elif signature_state == 'fail' %}Chữ ký điện tử không hợp lệ{% else %}Văn bằng cấp trước khi áp dụng chữ ký điện tử{% endif %}
+                    </li>
+                </ul>
+                {% if failed and fail_reasons %}<ul class="cd-fail-reasons">{% for r in fail_reasons %}<li>{{ r }}</li>{% endfor %}</ul>{% endif %}
+            {% endif %}
+
+            <details class="cd-tech">
+                <summary>Thông tin kỹ thuật</summary>
+                <dl class="cd-dl mb-0">
+                    {% if cert.data_hash %}<dt>Dấu băm (phiên bản {{ cert.hash_version }})</dt>
+                    <dd class="cd-hash"><span class="cd-mono-inline" title="{{ cert.data_hash }}">{{ cert.data_hash|slice:":10" }}…{{ cert.data_hash|slice:"-8:" }}</span><button type="button" class="btn btn-outline-secondary btn-copy cd-copy" data-copy="{{ cert.data_hash }}" aria-label="Sao chép dấu băm"><i class="bi bi-copy"></i></button></dd>{% endif %}
+                    {% if cert.tx_hash %}<dt>Mã giao dịch gần nhất</dt>
+                    <dd class="cd-hash"><span class="cd-mono-inline" title="{{ cert.tx_hash }}">{{ cert.tx_hash|slice:":10" }}…{{ cert.tx_hash|slice:"-8:" }}</span><button type="button" class="btn btn-outline-secondary btn-copy cd-copy" data-copy="{{ cert.tx_hash }}" aria-label="Sao chép mã giao dịch"><i class="bi bi-copy"></i></button></dd>{% endif %}
+                    {% if contract_address %}<dt>Hợp đồng CertificateRegistry</dt>
+                    <dd class="cd-hash"><span class="cd-mono-inline" title="{{ contract_address }}">{{ contract_address|slice:":10" }}…{{ contract_address|slice:"-8:" }}</span><button type="button" class="btn btn-outline-secondary btn-copy cd-copy" data-copy="{{ contract_address }}" aria-label="Sao chép địa chỉ hợp đồng"><i class="bi bi-copy"></i></button></dd>{% endif %}
+                    {% if chain_issued_at %}<dt>Ghi nhận cấp trên sổ cái</dt><dd>{{ chain_issued_at|date:"H:i d/m/Y" }}</dd>{% endif %}
+                    {% if signer_address %}<dt>Ví đã ký văn bằng</dt>
+                    <dd class="cd-hash"><span class="cd-mono-inline" title="{{ signer_address }}">{{ signer_address|slice:":10" }}…{{ signer_address|slice:"-8:" }}</span><button type="button" class="btn btn-outline-secondary btn-copy cd-copy" data-copy="{{ signer_address }}" aria-label="Sao chép địa chỉ ví"><i class="bi bi-copy"></i></button>{% if cert.signed_at %}<div class="cd-sub">Ký lúc {{ cert.signed_at|date:"H:i d/m/Y" }}</div>{% endif %}</dd>{% endif %}
+                </dl>
+            </details>
+        </section>
+    </div>
+
+    <!-- ================= ẢNH VĂN BẰNG ================= -->
+    <div class="col-xl-7 order-2 order-xl-1">
+        {% if can_view_original %}
+            {% url 'staff_diploma_image' cert.pk 'original' as original_url %}
+            {% include 'certificates/_diploma_viewer.html' with dv_src=original_url dv_download=original_url|add:"?download=1" dv_title="Ảnh văn bằng gốc" dv_badge=has_scan|yesno:"Ảnh scan do nhà trường cung cấp,Mẫu minh hoạ DEMO" dv_caption="Mỗi lượt xem và tải ảnh gốc đều được ghi vào nhật ký." dv_fit="width" %}
+        {% else %}
+            {% url 'staff_diploma_image' cert.pk 'public' as public_url %}
+            {% include 'certificates/_diploma_viewer.html' with dv_src=public_url dv_title="Ảnh văn bằng (bản công khai)" dv_badge="Không có quyền xem ảnh gốc" dv_caption="Tài khoản của bạn chưa được cấp quyền xem ảnh văn bằng gốc. Liên hệ quản trị viên nếu cần." dv_fit="width" %}
+        {% endif %}
+
+        {% if can_manage_image %}
+        {# Update: quản lý ảnh thu gọn mặc định, chỉ người có quyền thấy #}
+        <details class="ds-card cd-manage mt-3"{% if has_scan and not cert.diploma_public_approved %} open{% endif %}>
+            <summary>
+                <span><i class="bi bi-images me-1"></i> Quản lý ảnh văn bằng</span>
+                <span class="cd-manage-state">{% if has_scan %}Ảnh công khai: {{ cert.diploma_public_approved|yesno:"đã duyệt,chờ duyệt" }}{% else %}Chưa có ảnh scan – đang dùng mẫu DEMO{% endif %}</span>
+            </summary>
+            <div class="cd-manage-body">
+                <form method="post" action="{% url 'diploma_manage' cert.pk %}" enctype="multipart/form-data" class="row g-2 align-items-end mb-3">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="upload">
+                    <div class="col-md-8">
+                        <label class="form-label" for="diplomaFile">Ảnh scan văn bằng thật (JPEG, PNG, WEBP; tối đa {{ max_upload_mb }} MB)</label>
+                        <input type="file" name="diploma_file" id="diplomaFile" class="form-control" accept="image/jpeg,image/png,image/webp" required>
+                    </div>
+                    <div class="col-md-4 text-md-end">
+                        <button type="submit" class="btn btn-outline-secondary"><i class="bi bi-upload me-1"></i>{% if has_scan %}Thay ảnh{% else %}Tải ảnh lên{% endif %}</button>
+                    </div>
+                    <div class="col-12 form-text">Chỉ tải ảnh do nhà trường cung cấp. Ảnh lưu riêng tư, không có đường dẫn công khai; tải ảnh mới thì ảnh công khai phải duyệt lại.</div>
+                </form>
+                {% if has_scan %}
+                <div class="row g-3">
+                    <div class="col-lg-6">
+                        <form method="post" action="{% url 'diploma_manage' cert.pk %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="regions">
+                            <label class="form-label" for="regionsInput">Vùng che trên ảnh công khai</label>
+                            <textarea name="regions" id="regionsInput" rows="5" class="form-control cd-mono">{{ regions_text }}</textarea>
+                            <div class="form-text">Mỗi dòng: <code>trường x y rộng cao</code> (đơn vị % so với ảnh). Trường: {{ region_fields|join:", " }}.</div>
+                            <button type="submit" class="btn btn-outline-secondary mt-2">Lưu vùng che và tạo lại bản công khai</button>
+                        </form>
+                    </div>
+                    <div class="col-lg-6">
+                        {% url 'staff_diploma_image' cert.pk 'public' as preview_url %}
+                        {% include 'certificates/_diploma_viewer.html' with dv_src=preview_url dv_title="Xem trước bản công khai" dv_badge=cert.diploma_public_approved|yesno:"Đã duyệt,Chờ duyệt" dv_fit="width" %}
+                        <form method="post" action="{% url 'diploma_manage' cert.pk %}" class="mt-2 d-flex gap-2">
+                            {% csrf_token %}
+                            {% if cert.diploma_public_approved %}
+                                <input type="hidden" name="action" value="unapprove">
+                                <button type="submit" class="btn btn-outline-secondary">Gỡ duyệt ảnh công khai</button>
+                            {% else %}
+                                <input type="hidden" name="action" value="approve">
+                                <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle me-1"></i>Đã kiểm tra vùng che – duyệt công khai</button>
+                            {% endif %}
+                        </form>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </details>
+        {% endif %}
+    </div>
+</div>
+
+<!-- ================= LỊCH SỬ (tab, mỗi tab 5 dòng gần nhất + Xem thêm) ================= -->
+<section class="ds-card mt-3" aria-label="Lịch sử hồ sơ">
+    <ul class="nav nav-tabs cd-tabs" role="tablist">
+        <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#cdTabApproval" type="button" role="tab" aria-controls="cdTabApproval" aria-selected="true">Lịch sử phê duyệt <span class="cd-count">{{ approval_logs|length }}</span></button></li>
+        <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#cdTabAccess" type="button" role="tab" aria-controls="cdTabAccess" aria-selected="false">Truy cập ảnh <span class="cd-count">{{ diploma_logs|length }}</span></button></li>
+        <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#cdTabControl" type="button" role="tab" aria-controls="cdTabControl" aria-selected="false">Kiểm soát</button></li>
+    </ul>
+    <div class="tab-content ds-card-body">
+        <div class="tab-pane fade show active" id="cdTabApproval" role="tabpanel">
+            <ul class="ds-timeline" data-show-more-list>
+                {% for log in approval_logs %}
+                <li{% if forloop.counter > 5 %} hidden data-more{% endif %}>
+                    <strong>{{ log.action_label }}</strong> · {{ log.actor }} <span class="ds-time">· {{ log.created_at|date:"H:i d/m/Y" }}</span>
+                    {% if log.comment %}<div class="cd-sub">{{ log.comment }}</div>{% endif %}
+                </li>
+                {% empty %}<li class="text-muted">Chưa có.</li>{% endfor %}
+            </ul>
+            {% if approval_logs|length > 5 %}<button type="button" class="btn btn-link cd-more-btn" data-show-more>Xem thêm {{ approval_logs|length|add:"-5" }} dòng</button>{% endif %}
+        </div>
+        <div class="tab-pane fade" id="cdTabAccess" role="tabpanel">
+            <ul class="ds-timeline" data-show-more-list>
+                {% for log in diploma_logs %}
+                <li{% if forloop.counter > 5 %} hidden data-more{% endif %}>{% if log.action == 'denied' %}<span class="text-danger">{{ log.get_action_display }}</span>{% else %}{{ log.get_action_display }}{% endif %}
+                    · {{ log.user.username|default:"(ẩn danh)" }} <span class="ds-time">· {{ log.created_at|date:"H:i d/m/Y" }}</span></li>
+                {% empty %}<li class="text-muted">Chưa có lượt nào.</li>{% endfor %}
+            </ul>
+            {% if diploma_logs|length > 5 %}<button type="button" class="btn btn-link cd-more-btn" data-show-more>Xem thêm {{ diploma_logs|length|add:"-5" }} dòng</button>{% endif %}
+        </div>
+        <div class="tab-pane fade" id="cdTabControl" role="tabpanel">
+            <dl class="row cd-dl mb-0">
+                <div class="col-sm-6 col-lg-3"><dt>Tạo hồ sơ lúc</dt><dd>{{ cert.created_at|date:"H:i d/m/Y" }}</dd></div>
+                <div class="col-sm-6 col-lg-3"><dt>Cập nhật gần nhất</dt><dd>{{ cert.updated_at|date:"H:i d/m/Y" }}</dd></div>
+                <div class="col-sm-6 col-lg-3"><dt>Ảnh scan tải lên bởi</dt><dd>{{ cert.diploma_uploaded_by.username|default:"—" }}{% if cert.diploma_uploaded_at %} · {{ cert.diploma_uploaded_at|date:"H:i d/m/Y" }}{% endif %}</dd></div>
+                <div class="col-sm-6 col-lg-3"><dt>Lượt tra cứu công khai</dt><dd>{{ verification_logs|length }} lượt gần nhất</dd></div>
+            </dl>
+        </div>
+    </div>
+</section>
+
+</div>
+{% endtimezone %}
+
+{% include 'certificates/_workflow_modals.html' %}
+{% endblock %}

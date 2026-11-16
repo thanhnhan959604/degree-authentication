@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% load static %}
+{# Update: Authentication Layout — logo + tên trường + tên hệ thống ở trên, khu vực xác thực ở giữa, footer #}
+{% block body_class %}layout-auth{% endblock %}
+{% block layout %}
+<main id="main-content" class="ds-auth">
+    <div class="ds-auth-inner">
+        <div class="ds-auth-brand">
+            <a href="{% url 'search' %}"><img src="{% static INSTITUTION.logo %}" alt="Logo {{ INSTITUTION.short }}" width="84" height="84"></a>
+            <div class="ds-auth-org">{{ INSTITUTION.name }}</div>
+            <div class="ds-auth-system">Hệ thống quản lý, cấp phát, tra cứu và xác thực văn bằng</div>
+        </div>
+        {% include 'components/alerts.html' %}
+        {% block content %}{% endblock %}
+    </div>
+</main>
+{% include 'components/footer.html' %}
+{% endblock %}

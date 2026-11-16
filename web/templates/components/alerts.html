@@ -1,0 +1,15 @@
+{# Update: Thông báo (Django messages) dùng chung; tag "error" của Django được hiển thị bằng kiểu "danger" #}
+{% if messages %}
+<div class="ds-alerts mb-4" role="status" aria-live="polite">
+    {% for message in messages %}
+    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags|default:'info' }}{% endif %} alert-dismissible fade show" role="alert">
+        {% if message.tags == 'success' %}<i class="bi bi-check-circle-fill"></i>
+        {% elif message.tags == 'error' or message.tags == 'danger' %}<i class="bi bi-exclamation-triangle-fill"></i>
+        {% elif message.tags == 'warning' %}<i class="bi bi-exclamation-circle-fill"></i>
+        {% else %}<i class="bi bi-info-circle-fill"></i>{% endif %}
+        <span>{{ message }}</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Đóng"></button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}

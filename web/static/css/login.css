@@ -1,0 +1,318 @@
+/* Presentation scoped to the login page, including its essential layout rules. */
+.page-login {
+    display: flex;
+    flex-direction: column;
+    background: #f5f7fb;
+    min-height: 100vh;
+    min-height: 100svh;
+}
+
+.page-login .ds-auth {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 28px 20px;
+}
+
+.page-login .ds-auth-inner {
+    display: block;
+    width: 100%;
+    max-width: 520px;
+}
+
+.page-login .ds-auth-brand {
+    display: grid;
+    grid-template-columns: 56px minmax(0, 1fr);
+    align-items: center;
+    gap: 4px 16px;
+    margin: 0 0 20px;
+    padding: 0 8px;
+    text-align: left;
+}
+
+.page-login .ds-auth-brand > a {
+    display: flex;
+    grid-row: 1 / span 2;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    background: var(--ds-surface);
+}
+
+.page-login .ds-auth-brand img {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+}
+
+.page-login .ds-auth-org {
+    margin: 0;
+    color: var(--ds-primary);
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.6;
+    letter-spacing: .025em;
+    text-transform: uppercase;
+}
+
+.page-login .ds-auth-system {
+    margin: 0;
+    color: var(--ds-text-muted);
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 1.5;
+    letter-spacing: 0;
+}
+
+.page-login .ds-alerts {
+    width: 100%;
+    max-width: none;
+    margin: 0 0 16px;
+}
+
+.page-login .ds-login {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    margin: 0;
+    gap: 16px;
+    padding: 28px;
+    border: 1px solid var(--ds-border);
+    border-radius: 20px;
+    background: var(--ds-surface);
+    box-shadow: 0 16px 48px rgb(23 43 77 / 7%), 0 2px 6px rgb(23 43 77 / 3%);
+}
+
+.page-login .ds-login-card {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.page-login .ds-login-title {
+    margin: 0 0 6px;
+    color: var(--ds-primary);
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1.3;
+    letter-spacing: -.025em;
+    text-wrap: balance;
+}
+
+.page-login .ds-login-lead {
+    margin: 0 0 20px;
+    color: var(--ds-text-muted);
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.page-login .ds-login-card .form-label {
+    margin-bottom: 6px;
+    color: var(--ds-text-2);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.page-login .ds-login-card .form-control {
+    min-height: 44px;
+    padding: 9px 12px;
+    border-color: var(--ds-border-strong);
+    border-radius: 10px;
+    background-color: #fcfdff;
+    font-size: 16px;
+}
+
+.page-login .ds-login-card .form-control:focus {
+    border-color: var(--ds-accent);
+    background-color: var(--ds-surface);
+}
+
+.page-login .ds-login-card .form-control::placeholder {
+    color: var(--ds-text-muted);
+    opacity: 1;
+}
+
+.page-login .ds-login-card .form-text {
+    margin-top: 6px;
+    color: var(--ds-text-muted);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.page-login .ds-login-forgot {
+    flex-shrink: 0;
+    margin-left: 12px;
+    color: var(--ds-accent);
+    font-size: 13px;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.page-login .ds-login-forgot:hover {
+    text-decoration: underline;
+}
+
+.page-login .ds-login-card .btn-primary {
+    width: 100%;
+    min-height: 44px;
+    margin-top: 0;
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+.page-login .ds-login-kinds {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    padding-top: 16px;
+    border-top: 1px solid var(--ds-border);
+}
+
+.page-login .ds-login-kind {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    min-height: 76px;
+    gap: 6px;
+    padding: 10px 6px;
+    border: 1px solid var(--ds-border);
+    border-radius: 12px;
+    background: var(--ds-surface);
+    color: var(--ds-text-2);
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.45;
+    text-align: center;
+    text-decoration: none;
+    transition: background-color .15s ease, border-color .15s ease;
+}
+
+.page-login .ds-login-kind > span {
+    min-height: 2.9em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.page-login .ds-login-kind .bi {
+    color: var(--ds-primary);
+    font-size: 21px;
+    line-height: 1;
+}
+
+.page-login .ds-login-kind:hover {
+    border-color: var(--ds-accent);
+    background: var(--ds-accent-soft);
+    color: var(--ds-accent-hover);
+}
+
+.page-login .ds-login-kind[aria-current="true"] .bi {
+    color: var(--ds-accent);
+}
+
+.page-login .ds-login-kind[aria-current="true"] {
+    border-color: var(--ds-accent);
+    background: var(--ds-accent-soft);
+    color: var(--ds-accent-hover);
+    box-shadow: inset 0 0 0 1px var(--ds-accent);
+}
+
+.page-login .ds-public-link {
+    display: flex;
+    align-items: center;
+    min-height: 60px;
+    gap: 12px;
+    padding: 10px 14px;
+    border: 1px solid #d9e4f5;
+    border-radius: 12px;
+    background: var(--ds-accent-soft);
+    color: var(--ds-primary);
+    text-decoration: none;
+}
+
+.page-login .ds-public-link > div {
+    min-width: 0;
+}
+
+.page-login .ds-public-link span {
+    color: var(--ds-text-muted);
+    font-size: 12px;
+}
+
+.page-login .ds-public-link strong { display: block; font-size: 14px; font-weight: 600; }
+.page-login .ds-public-link .bi-qr-code-scan { font-size: 24px; }
+.page-login .ds-public-link .bi-arrow-right { margin-left: auto; }
+
+.page-login .ds-public-link:hover {
+    border-color: #b4c9ee;
+    background: #e5edfc;
+    color: var(--ds-accent-hover);
+}
+
+.page-login .ds-public-link > .bi {
+    flex-shrink: 0;
+}
+
+.page-login .ds-login-note {
+    display: flex;
+    gap: 8px;
+    margin: 0;
+    padding: 0 2px;
+    color: var(--ds-text-muted);
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.page-login .ds-login-note .bi {
+    flex: none;
+    color: var(--ds-accent);
+    font-size: 15px;
+}
+
+.page-login .ds-footer-inner {
+    justify-content: center;
+    max-width: 760px;
+    padding: 14px 20px;
+    gap: 8px 20px;
+    font-size: 12px;
+    text-align: center;
+}
+
+.page-login .ds-footer-brand { justify-content: center; }
+.page-login .ds-footer-brand img { width: 28px; height: 28px; }
+.page-login .ds-footer-links { margin-left: 0; }
+
+@media (max-width: 479.98px) {
+    .page-login .ds-auth { padding: 20px 16px; }
+    .page-login .ds-auth-brand { grid-template-columns: 48px minmax(0, 1fr); gap: 4px 12px; padding: 0; margin-bottom: 16px; }
+    .page-login .ds-auth-brand > a { width: 48px; height: 48px; }
+    .page-login .ds-auth-brand img { width: 42px; height: 42px; }
+    .page-login .ds-auth-org { font-size: 11px; }
+    .page-login .ds-auth-system { font-size: 12px; }
+    .page-login .ds-login { padding: 22px 18px; border-radius: 16px; }
+    .page-login .ds-login-title { font-size: 22px; }
+    .page-login .ds-login-kind { padding: 10px 4px; font-size: 11px; }
+    .page-login .ds-public-link { padding: 10px; gap: 10px; }
+    .page-login .ds-public-link strong { font-size: 13px; }
+    .page-login .ds-footer-brand img { display: none; }
+}
+
+@media (max-width: 359.98px) {
+    .page-login .ds-login-kinds { grid-template-columns: 1fr; gap: 8px; }
+    .page-login .ds-login-kind { flex-direction: row; justify-content: flex-start; min-height: 48px; padding: 10px 14px; gap: 12px; font-size: 13px; text-align: left; }
+    .page-login .ds-login-kind > span { min-height: 0; }
+    .page-login .ds-login-kind .bi { width: 24px; flex-shrink: 0; text-align: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .page-login .ds-login-kind { transition: none; }
+}

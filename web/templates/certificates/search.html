@@ -1,252 +1,344 @@
-{% extends 'base.html' %}
+{% extends 'layouts/public.html' %}{# Update: dùng Public Layout #}
 {% load static %}
+{% load tz %}{# Update: hiển thị giờ Việt Nam trên trang công khai (hệ thống lưu giờ UTC) #}
 
-{% block title %}Tra cứu Văn bằng - Cổng Xác Thực Blockchain{% endblock %}
+{# Update: bỏ thuật ngữ kỹ thuật #}
+{% block title %}Xác minh Văn bằng - Cổng Xác Minh Văn Bằng{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <!-- Hero Search Section -->
-    <div class="col-lg-9 col-md-11">
-        <div class="custom-card p-4 p-md-5 mb-4 text-center">
-            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 mb-3 rounded-pill fw-semibold">
-                <i class="bi bi-shield-check me-1"></i> Xác thực dữ liệu toàn vẹn bằng Hyperledger Besu
-            </span>
-            <h2 class="fw-bold text-dark mb-2">Cổng Tra Cứu & Xác Thực Văn Bằng</h2>
-            <p class="text-muted mx-auto mb-4" style="max-width: 650px;">
-                Nhập <strong>Số hiệu văn bằng</strong> (ví dụ: <code>VB-2026-001</code>), <strong>Mã sinh viên</strong> hoặc <strong>Họ tên người học</strong> để đối chiếu trực tiếp dữ liệu với sổ cái Blockchain.
-            </p>
+{# Update: CSS của trang đã chuyển vào static/css/design-system.css #}
 
-            <!-- Search Form -->
-            <form method="get" action="{% url 'search' %}" id="searchForm" class="d-flex flex-column flex-sm-row justify-content-center gap-2 max-w-700 mx-auto">
-                <div class="input-group input-group-lg shadow-sm">
-                    <span class="input-group-text bg-white border-end-0 text-muted">
-                        <i class="bi bi-search"></i>
-                    </span>
-                    <input 
-                        type="text" 
-                        name="q" 
-                        id="searchInput"
-                        class="form-control border-start-0 ps-0" 
-                        placeholder="Nhập số hiệu văn bằng, mã sinh viên hoặc họ tên..." 
-                        value="{{ query|default:'' }}" 
-                        required 
-                        autocomplete="off"
-                    >
-                    <button type="submit" class="btn btn-primary px-4 fw-bold">
-                        Tra Cứu Ngay
-                    </button>
-                </div>
-            </form>
+{# Update: Hero tra cứu gọn, tập trung vào ô nhập mã; không phải landing page #}
+<section class="ds-card ds-hero mb-4" aria-labelledby="hero-title">
+    <span class="ds-badge ds-badge--info mb-3"><i class="bi bi-shield-check"></i> Kết quả xác minh chính thức của nhà trường</span>
+    <h1 class="ds-hero-title" id="hero-title">Tra cứu và xác minh văn bằng</h1>
+    <div class="ds-hero-org">{{ INSTITUTION.name }} ({{ INSTITUTION.short }})</div>
+    <form method="get" action="{% url 'search' %}" id="searchForm" class="ds-search" role="search">
+        <label class="ds-visually-hidden" for="searchInput">Mã xác minh văn bằng</label>
+        <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-qr-code-scan"></i></span>
+            <input type="text" name="q" id="searchInput" class="form-control"
+                   placeholder="{% if allow_serial %}Nhập mã xác minh hoặc số hiệu văn bằng{% else %}Nhập mã xác minh, ví dụ K7M2-9QXD-4T{% endif %}"
+                   value="{{ query|default:'' }}" required maxlength="60" autocomplete="off">
+            <button type="submit" class="btn btn-primary">Xác minh</button>
         </div>
+    </form>
+    <div class="ds-steps" aria-label="Hướng dẫn">
+        <span><b>1</b> Quét mã QR trên văn bằng bằng camera điện thoại</span>
+        <span><b>2</b> Hoặc nhập mã xác minh in cạnh mã QR{% if allow_serial %} / số hiệu{% endif %}</span>
+        <span><b>3</b> Xem kết quả xác minh của nhà trường</span>
     </div>
-</div>
+</section>
 
-<!-- Search Results Area -->
-{% if query %}
+{# Update: trang kết quả 5 khu vực, lời dễ hiểu, không lộ dữ liệu cá nhân #}
+
+{% timezone "Asia/Ho_Chi_Minh" %}{# Update: mọi ngày giờ bên dưới hiển thị theo giờ Việt Nam #}
+{# Update: Thêm share_mode: trang mở từ liên kết chia sẻ không có ô tìm kiếm #}
+{% if query or share_mode %}
 <div class="row justify-content-center">
-    <div class="col-lg-10 col-md-11">
-        {% if result %}
-            <!-- Status Alert Banner (Chỉ cảnh báo khi bị thu hồi) -->
-            {% if result.status == 'REVOKED' %}
-                <div class="alert alert-danger d-flex align-items-center shadow-sm p-3 mb-4" role="alert">
-                    <i class="bi bi-exclamation-octagon-fill fs-2 me-3 text-danger"></i>
+    <div class="col-12">{# Update: vùng kết quả cùng bề rộng khối tìm kiếm, ảnh đặt cạnh thông tin #}
+
+        {% if blocked %}
+            {# Update: Vượt hạn mức tra cứu (dấu hiệu dò mã) #}
+            <div class="custom-card p-5 text-center mb-5">
+                <i class="bi bi-hourglass-split text-warning display-4 mb-3 d-block"></i>
+                <h4 class="fw-bold text-dark mb-2">Bạn đã tra cứu quá nhiều lần</h4>
+                <p class="text-muted mb-0 mx-auto" style="max-width: 520px;">
+                    Để bảo vệ thông tin văn bằng, hệ thống tạm dừng tra cứu từ thiết bị của bạn. Vui lòng thử lại sau ít phút.
+                </p>
+            </div>
+
+        {% elif share_denied %}
+            {# Update: Liên kết chia sẻ hết hạn / bị thu hồi / hết lượt xem: không hiện bất kỳ dữ liệu nào #}
+            <div class="custom-card p-5 text-center mb-5">
+                <i class="bi bi-link-45deg text-secondary display-4 mb-3 d-block"></i>
+                <h4 class="fw-bold text-dark mb-2">Liên kết chia sẻ không còn hiệu lực</h4>
+                <p class="text-muted mb-0 mx-auto" style="max-width: 540px;">
+                    Liên kết này {{ share_state|lower }}. Vui lòng đề nghị người sở hữu văn bằng gửi liên kết mới,
+                    hoặc dùng mã xác minh in trên văn bằng để xem thông tin công khai.
+                </p>
+            </div>
+
+        {% elif result %}
+
+            <!-- ============ KHU VỰC 1: KẾT LUẬN XÁC MINH ============ -->
+            {# Update: kết luận theo cả 3 nguồn (dữ liệu, chuỗi, chữ ký), nêu lý do cụ thể #}
+            {% if failed %}
+                <div class="verify-status verify-status-revoked mb-3">
+                    <i class="bi bi-exclamation-octagon-fill"></i>
                     <div>
-                        <h5 class="alert-heading mb-1 fw-bold">CẢNH BÁO: VĂN BẰNG NÀY ĐÃ BỊ THU HỒI HIỆU LỰC</h5>
-                        <p class="mb-0 small">
-                            Văn bằng mang số hiệu <strong>{{ result.serial_number }}</strong> đã bị cơ sở giáo dục thu hồi theo biên bản xác nhận của 3 phòng ban.
-                            {% if result.revoke_reason %}<br><strong>Lý do thu hồi:</strong> {{ result.revoke_reason }}{% endif %}
-                        </p>
+                        <div class="fw-bold fs-5">Chưa thể xác nhận văn bằng này</div>
+                        <div class="small">
+                            {% for reason in fail_reasons %}{{ reason }} {% endfor %}
+                            Vui lòng không sử dụng kết quả này và liên hệ nhà trường để được hỗ trợ.
+                        </div>
+                    </div>
+                </div>
+            {% elif result.status == 'ISSUED' %}
+                <div class="verify-status verify-status-valid mb-3">
+                    <i class="bi bi-patch-check-fill"></i>
+                    <div>
+                        <div class="fw-bold fs-5">Văn bằng hợp lệ</div>
+                        <div class="small">Văn bằng này do nhà trường cấp và hiện vẫn còn giá trị sử dụng.
+                            {# Update: Khi chưa đối chiếu được với hệ thống lưu trữ: vẫn hợp lệ theo dữ liệu nhà trường nhưng #}
+                            {% if chain_state == 'unavailable' or chain_state == 'missing' %}<br>Lưu ý: bước đối chiếu với hệ thống lưu trữ chống chỉnh sửa chưa hoàn tất (xem chi tiết bên dưới).{% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% elif result.status == 'REVOKED' %}
+                <div class="verify-status verify-status-revoked mb-3">
+                    <i class="bi bi-slash-circle-fill"></i>
+                    <div>
+                        <div class="fw-bold fs-5">Văn bằng đã bị thu hồi</div>
+                        {# Update: Không hiện lý do thu hồi (văn bản tự do, có thể chứa thông tin cá nhân) #}
+                        <div class="small">Nhà trường đã thu hồi văn bằng này{% if result.revoked_at %} từ ngày {{ result.revoked_at|date:"d/m/Y" }}{% endif %}. Văn bằng không còn giá trị sử dụng.</div>
+                    </div>
+                </div>
+            {% elif result.status == 'CANCELLED' %}
+                <div class="verify-status verify-status-ended mb-3">
+                    <i class="bi bi-x-octagon-fill"></i>
+                    <div>
+                        <div class="fw-bold fs-5">Văn bằng đã bị hủy</div>
+                        <div class="small">Nhà trường đã hủy văn bằng này{% if result.revoked_at %} từ ngày {{ result.revoked_at|date:"d/m/Y" }}{% endif %}. Văn bằng không có giá trị sử dụng.</div>
+                    </div>
+                </div>
+            {% elif result.status == 'REPLACED' %}
+                <div class="verify-status verify-status-ended mb-3">
+                    <i class="bi bi-arrow-repeat"></i>
+                    <div>
+                        <div class="fw-bold fs-5">Văn bằng đã được thay thế</div>
+                        <div class="small">
+                            Văn bằng này đã được nhà trường thay bằng văn bằng khác{% if result.replaced_by %} (số hiệu <strong>{{ result.replaced_by.serial_number }}</strong>){% endif %}.
+                            Vui lòng đề nghị người sở hữu cung cấp mã xác minh của văn bằng mới.
+                        </div>
                     </div>
                 </div>
             {% endif %}
 
-            <!-- DIGITAL DIPLOMA PREVIEW (BẢN THỂ HIỆN PHÔI VĂN BẰNG ĐẠI HỌC) -->
-            <div class="diploma-card mb-4" id="diplomaPrintArea">
-                <!-- Header -->
-                <div class="diploma-header">
-                    <div class="diploma-republic">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
-                    <div class="diploma-motto">Độc lập - Tự do - Hạnh phúc</div>
-                    <div class="diploma-university">TRƯỜNG ĐẠI HỌC CÔNG NGHỆ & ĐÀO TẠO</div>
-                    <div class="text-muted small">CƠ SỞ GIÁO DỤC ĐẠI HỌC QUỐC GIA</div>
-                </div>
-
-                <!-- Degree Title -->
-                <div class="diploma-title">{{ result.degree_type|upper }}</div>
-                <div class="text-center text-muted fst-italic mb-3">Hiệu trưởng trường Đại học công nhận học vị cho:</div>
-
-                <!-- Student Name -->
-                <div class="diploma-student-name">{{ result.student_name }}</div>
-
-                <!-- Information Grid -->
-                <div class="row diploma-body justify-content-center my-3">
-                    <div class="col-md-5">
-                        <p class="mb-2"><strong>Mã sinh viên:</strong> {{ result.student_id|default:"Chưa cập nhật" }}</p>
-                        <p class="mb-2"><strong>Ngày sinh:</strong> {{ result.date_of_birth|date:"d/m/Y" }}</p>
-                        <p class="mb-2"><strong>Ngành đào tạo:</strong> {{ result.major }}</p>
-                    </div>
-                    <div class="col-md-5">
-                        <p class="mb-2"><strong>Năm tốt nghiệp:</strong> {{ result.graduation_year }}</p>
-                        <p class="mb-2"><strong>Xếp loại tốt nghiệp:</strong> <span class="badge bg-primary">{{ result.classification }}</span></p>
-                        <p class="mb-2"><strong>Ngày cấp văn bằng:</strong> {{ result.issue_date|default:result.created_at|date:"d/m/Y" }}</p>
-                    </div>
-                </div>
-
-                <!-- Diploma Footer (Seal, QR, Signatures) -->
-                <div class="diploma-footer border-top pt-3">
-                    <!-- Left: Serial & Book numbers -->
+            {% if share %}
+                {# Update: Cho người xem biết đây là thông tin do người sở hữu chủ động chia sẻ, có thời hạn #}
+                <div class="alert alert-primary-subtle border border-primary-subtle d-flex gap-2 align-items-start small mb-3" style="background:#eff6ff;">
+                    <i class="bi bi-person-check-fill text-primary fs-5"></i>
                     <div>
-                        <p class="mb-1 text-muted small">Số hiệu văn bằng: <strong class="text-dark">{{ result.serial_number }}</strong></p>
-                        <p class="mb-1 text-muted small">Số vào sổ cấp bằng: <strong class="text-dark">VB-{{ result.graduation_year }}-{{ result.id }}</strong></p>
-                        <p class="mb-0 text-muted small">Trạng thái: 
-                            {% if result.status == 'ISSUED' %}
-                                <span class="text-success fw-bold">Hiệu lực On-Chain</span>
-                            {% elif result.status == 'REVOKED' %}
-                                <span class="text-danger fw-bold">Đã thu hồi</span>
-                            {% else %}
-                                <span class="text-warning fw-bold">Chờ duyệt</span>
+                        Người sở hữu văn bằng đã đồng ý chia sẻ thêm thông tin{% if share.recipient %} cho <strong>{{ share.recipient }}</strong>{% endif %}.
+                        Liên kết có hiệu lực đến {{ share.expires_at|date:"H:i" }} ngày {{ share.expires_at|date:"d/m/Y" }}{% if share.max_views %}, tối đa {{ share.max_views }} lượt xem{% endif %}.
+                    </div>
+                </div>
+            {% endif %}
+
+            {% if lookup_mode == 'serial' %}
+                <div class="alert alert-light border small mb-3">
+                    <i class="bi bi-info-circle text-primary me-1"></i>
+                    Bạn đang tra cứu bằng <strong>số hiệu văn bằng</strong> nên chỉ hiển thị kết quả rút gọn.
+                    Để xem họ tên và ngành đào tạo, hãy quét mã QR hoặc nhập mã xác minh in trên văn bằng.
+                </div>
+            {% endif %}
+
+            {# Update: ảnh văn bằng bên trái, thông tin bên phải trên màn hình lớn; xếp dọc trên màn hình nhỏ #}
+            <div class="row g-3 mb-3">
+            {% if show_diploma %}
+            <!-- Update: ẢNH VĂN BẰNG (bản công khai đã che thông tin cá nhân, xử lý ở máy chủ) -->
+                <div class="col-xl-7">
+                {% if share %}
+                    {% include 'certificates/_diploma_viewer.html' with dv_src=diploma_img_url dv_badge="Theo phạm vi người sở hữu chia sẻ" dv_alt="Ảnh văn bằng được chia sẻ" dv_caption="Ảnh văn bằng chỉ hiện những thông tin người sở hữu đồng ý chia sẻ. Vui lòng sử dụng phần xác minh bên dưới để kiểm tra tình trạng và tính xác thực của văn bằng." dv_empty="Nhà trường chưa phát hành ảnh văn bằng điện tử cho văn bằng này." %}
+                {% else %}
+                    {% include 'certificates/_diploma_viewer.html' with dv_src=diploma_img_url dv_badge="Đã che thông tin cá nhân" dv_alt="Ảnh văn bằng đã che thông tin cá nhân" dv_caption="Ảnh văn bằng đã được bảo vệ một phần thông tin cá nhân. Vui lòng sử dụng chức năng xác minh để kiểm tra tình trạng và tính xác thực của văn bằng." dv_empty="Nhà trường chưa phát hành ảnh văn bằng điện tử cho văn bằng này." %}
+                {% endif %}
+            </div>
+            {% endif %}
+                <div class="{% if show_diploma %}col-xl-5{% else %}col-12{% endif %}">
+                <div class="row g-3">
+                <!-- ============ KHU VỰC 2: NGƯỜI ĐƯỢC CẤP ============ -->
+                {% if public_name %}
+                <div class="{% if show_diploma %}col-12{% else %}col-md-5{% endif %}">
+                    <div class="custom-card verify-zone p-4 h-100">
+                        <div class="verify-zone-title"><i class="bi bi-person-badge me-1"></i> Người được cấp</div>
+                        <div class="fs-4 fw-bold text-dark">{{ public_name }}</div>
+                        {# Update: Họ tên che bớt theo MASK_PUBLIC_NAME #}
+                        {% if share %}
+                            {# Update: Chỉ hiện những trường người sở hữu cho phép trong liên kết chia sẻ #}
+                            {% if share.show_dob or share.show_student_id or share.show_classification %}
+                            <dl class="verify-field mt-3 mb-0">
+                                {% if share.show_dob %}<dt>Ngày sinh</dt><dd>{{ result.date_of_birth|date:"d/m/Y" }}</dd>{% endif %}
+                                {% if share.show_student_id %}<dt>Mã sinh viên</dt><dd>{{ result.student_id }}</dd>{% endif %}
+                                {% if share.show_classification %}<dt>Xếp loại tốt nghiệp</dt><dd class="mb-0">{{ result.classification }}</dd>{% endif %}
+                            </dl>
                             {% endif %}
-                        </p>
-                    </div>
-
-                    <!-- Center: Digital Red Seal -->
-                    <div class="text-center">
-                        <div class="diploma-seal mx-auto mb-1">
-                            <span>CHỨNG THỰC SỐ<br>BLOCKCHAIN<br>VERIFIED</span>
-                        </div>
-                        <span class="text-muted" style="font-size: 0.7rem;">Dấu Mộc Điện Tử</span>
-                    </div>
-
-                    <!-- Right: QR Code & Rector Signature -->
-                    <div class="text-center">
-                        {% if qr_data %}
-                            <img src="{{ qr_data }}" alt="Mã QR Xác thực" style="width: 85px; height: 85px;" class="border p-1 rounded bg-white shadow-sm mb-1">
-                            <div class="text-muted" style="font-size: 0.7rem;">Quét để xác thực</div>
+                        {% else %}
+                        <div class="text-muted small mt-2">Để đối chiếu đầy đủ họ tên và thông tin cá nhân, vui lòng đề nghị người sở hữu văn bằng chia sẻ.</div>
                         {% endif %}
                     </div>
                 </div>
-            </div>
+                {% endif %}
 
-            <!-- ACTION BUTTONS -->
-            <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2 no-print">
-                <div class="d-flex gap-2">
-                    <a href="{% url 'certificate_print' result.pk %}" target="_blank" class="btn btn-outline-primary">
-                        <i class="bi bi-printer me-1"></i> In Phôi Văn Bằng
-                    </a>
-                    <button type="button" class="btn btn-outline-secondary btn-copy" data-copy="{{ result.data_hash }}">
-                        <i class="bi bi-clipboard me-1"></i> Sao chép Data Hash
-                    </button>
-                </div>
-                <div>
-                    <span class="text-muted small">Tra cứu lúc: {% now "H:i:s d/m/Y" %}</span>
-                </div>
-            </div>
-
-            <!-- BLOCKCHAIN AUDIT & INTEGRITY VERIFICATION CARD -->
-            <div class="custom-card p-4 mb-5">
-                <div class="blockchain-box-title">
-                    <i class="bi bi-link-45deg fs-4 text-primary"></i>
-                    <span>Thông Số Kỹ Thuật Đối Chiếu Trên Mạng Hyperledger Besu</span>
-                </div>
-
-                <div class="row g-3">
-                    <div class="col-md-12">
-                        <label class="form-label text-muted small fw-bold mb-1">Dấu băm dữ liệu gốc (SHA-256 Data Hash):</label>
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="code-font flex-grow-1 p-2">{{ result.data_hash|default:"Chưa tính toán hash" }}</span>
-                            <button type="button" class="btn btn-sm btn-outline-secondary btn-copy" data-copy="{{ result.data_hash }}" title="Sao chép">
-                                <i class="bi bi-copy"></i>
-                            </button>
-                        </div>
-                        <small class="text-muted">
-                            <i class="bi bi-info-circle"></i> Chuỗi băm chuẩn hóa: <code>{{ result.serial_number }}|{{ result.student_id }}|{{ result.student_name }}|{{ result.date_of_birth|date:'Y-m-d' }}|{{ result.major }}|{{ result.graduation_year }}|{{ result.classification }}</code>
-                        </small>
-                    </div>
-
-                    <div class="col-md-12">
-                        <label class="form-label text-muted small fw-bold mb-1">Mã giao dịch phát hành (Transaction Hash):</label>
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="code-font flex-grow-1 p-2">{{ result.tx_hash|default:"Chưa ghi nhận mã giao dịch On-Chain" }}</span>
-                            {% if result.tx_hash %}
-                            <button type="button" class="btn btn-sm btn-outline-secondary btn-copy" data-copy="{{ result.tx_hash }}" title="Sao chép">
-                                <i class="bi bi-copy"></i>
-                            </button>
+                <!-- ============ KHU VỰC 3: THÔNG TIN VĂN BẰNG ============ -->
+                <div class="{% if show_diploma or not public_name %}col-12{% else %}col-md-7{% endif %}">
+                    <div class="custom-card verify-zone p-4 h-100">
+                        <div class="verify-zone-title"><i class="bi bi-mortarboard me-1"></i> Thông tin văn bằng</div>
+                        <dl class="row verify-field mb-0">
+                            <div class="col-sm-6"><dt>Loại văn bằng</dt><dd>{{ result.degree_type }}</dd></div>
+                            <div class="col-sm-6"><dt>Số hiệu văn bằng</dt><dd>{{ result.serial_number }}</dd></div>
+                            {% if lookup_mode != 'serial' %}
+                            <div class="col-sm-6"><dt>Ngành đào tạo</dt><dd>{{ result.major }}</dd></div>
                             {% endif %}
+                            <div class="col-sm-6"><dt>Ngày cấp</dt><dd>{{ result.issue_date|date:"d/m/Y"|default:"—" }}</dd></div>
+                            {# Update: tên lúc cấp lưu trong văn bằng, nếu trống thì tên hiện tại #}
+                            <div class="col-12"><dt>Cơ sở đào tạo cấp bằng</dt><dd class="mb-0">{{ result.issuer_name|default:INSTITUTION.name }} ({{ INSTITUTION.short }})</dd></div>
+                        </dl>
+                    </div>
+                </div>
+                </div>
+                </div>
+            </div>
+
+            <!-- ============ KHU VỰC 4: CƠ SỞ XÁC NHẬN ============ -->
+            {# Update: viết thành các câu xác nhận dễ hiểu #}
+            <div class="custom-card verify-zone p-4 mb-3">
+                <div class="verify-zone-title"><i class="bi bi-clipboard-check me-1"></i> Cơ sở xác nhận</div>
+
+                <div class="verify-check">
+                    <i class="bi bi-building-check text-success"></i>
+                    <div>
+                        <div class="fw-semibold">Được nhà trường phê duyệt</div>
+                        <div class="small text-muted">
+                            Văn bằng đã được Phòng Quản lý sinh viên, Phòng Đào tạo và Hiệu trưởng lần lượt xét duyệt trước khi cấp{% if result.issue_date %} (cấp ngày {{ result.issue_date|date:"d/m/Y" }}){% endif %}.
                         </div>
                     </div>
+                </div>
 
-                    <!-- 3 Department Approvals Timeline -->
-                    <div class="col-md-12 mt-3">
-                        <label class="form-label text-muted small fw-bold mb-2">Quy trình thẩm định 3 phòng ban cơ sở giáo dục:</label>
-                        <div class="row g-2">
-                            <div class="col-md-4">
-                                <div class="p-3 border rounded bg-white h-100">
-                                    <div class="d-flex align-items-center gap-2 mb-1">
-                                        {% if result.student_affairs_approved %}
-                                            <i class="bi bi-check-circle-fill text-success fs-5"></i>
-                                            <strong class="text-success small">1. Phòng QLSV đã duyệt</strong>
-                                        {% else %}
-                                            <i class="bi bi-clock-history text-warning fs-5"></i>
-                                            <strong class="text-warning small">1. Chờ QLSV duyệt</strong>
-                                        {% endif %}
-                                    </div>
-                                    <p class="mb-0 text-muted" style="font-size: 0.8rem;">
-                                        Xác thực danh tính học sinh & Mã số sinh viên.
-                                    </p>
-                                </div>
-                            </div>
+                <div class="verify-check">
+                    {% if hash_ok %}
+                        <i class="bi bi-check-circle-fill text-success"></i>
+                        <div>
+                            <div class="fw-semibold">Nội dung văn bằng còn nguyên vẹn</div>
+                            <div class="small text-muted">Thông tin văn bằng trùng khớp với bản gốc nhà trường đã cấp, không bị chỉnh sửa.</div>
+                        </div>
+                    {% else %}
+                        <i class="bi bi-x-circle-fill text-danger"></i>
+                        <div>
+                            <div class="fw-semibold text-danger">Nội dung văn bằng không khớp với bản gốc</div>
+                            <div class="small text-muted">Thông tin đã bị thay đổi so với lúc nhà trường cấp.</div>
+                        </div>
+                    {% endif %}
+                </div>
 
-                            <div class="col-md-4">
-                                <div class="p-3 border rounded bg-white h-100">
-                                    <div class="d-flex align-items-center gap-2 mb-1">
-                                        {% if result.academic_affairs_approved %}
-                                            <i class="bi bi-check-circle-fill text-success fs-5"></i>
-                                            <strong class="text-success small">2. Phòng Đào tạo đã duyệt</strong>
-                                        {% else %}
-                                            <i class="bi bi-clock-history text-secondary fs-5"></i>
-                                            <strong class="text-secondary small">2. Chờ Đào tạo duyệt</strong>
-                                        {% endif %}
-                                    </div>
-                                    <p class="mb-0 text-muted" style="font-size: 0.8rem;">
-                                        Thẩm định chương trình, điểm rèn luyện & điều kiện tốt nghiệp.
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div class="col-md-4">
-                                <div class="p-3 border rounded bg-white h-100">
-                                    <div class="d-flex align-items-center gap-2 mb-1">
-                                        {% if result.rector_approved %}
-                                            <i class="bi bi-check-circle-fill text-success fs-5"></i>
-                                            <strong class="text-success small">3. Hiệu trưởng đã ký</strong>
-                                        {% else %}
-                                            <i class="bi bi-clock-history text-secondary fs-5"></i>
-                                            <strong class="text-secondary small">3. Chờ Hiệu trưởng ký</strong>
-                                        {% endif %}
-                                    </div>
-                                    <p class="mb-0 text-muted" style="font-size: 0.8rem;">
-                                        Ký số phát hành chính thức lên Blockchain Besu.
-                                    </p>
-                                </div>
+                {# Update: đối chiếu trực tiếp với hệ thống lưu trữ #}
+                <div class="verify-check">
+                    {% if chain_state == 'match' %}
+                        <i class="bi bi-lock-fill text-success"></i>
+                        <div>
+                            <div class="fw-semibold">Khớp với hệ thống lưu trữ chống chỉnh sửa</div>
+                            <div class="small text-muted">
+                                Hệ thống vừa đối chiếu trực tiếp: bản ghi gốc của văn bằng trùng khớp và đúng trạng thái{% if chain_issued_at %}; việc cấp được ghi nhận lúc {{ chain_issued_at|date:"H:i" }} ngày {{ chain_issued_at|date:"d/m/Y" }}{% endif %}.
                             </div>
                         </div>
+                    {% elif chain_state == 'mismatch' or chain_state == 'revoked_onchain' or chain_state == 'not_issued_onchain' %}
+                        <i class="bi bi-x-circle-fill text-danger"></i>
+                        <div>
+                            <div class="fw-semibold text-danger">Không khớp với hệ thống lưu trữ chống chỉnh sửa</div>
+                            <div class="small text-muted">
+                                {% if chain_state == 'mismatch' %}Thông tin văn bằng khác với bản ghi gốc đã lưu khi cấp.{% elif chain_state == 'revoked_onchain' %}Bản ghi gốc cho biết văn bằng đã bị thu hồi.{% else %}Bản ghi gốc chưa ghi nhận việc cấp văn bằng.{% endif %}
+                            </div>
+                        </div>
+                    {% elif chain_state == 'end_pending_onchain' %}
+                        <i class="bi bi-info-circle-fill text-secondary"></i>
+                        <div>
+                            <div class="fw-semibold">Hệ thống lưu trữ chống chỉnh sửa đang được cập nhật</div>
+                            <div class="small text-muted">Nhà trường đã ghi nhận văn bằng hết hiệu lực; bản ghi gốc chưa cập nhật xong.</div>
+                        </div>
+                    {% elif chain_state == 'missing' %}
+                        <i class="bi bi-info-circle-fill text-warning"></i>
+                        <div>
+                            <div class="fw-semibold">Chưa tìm thấy bản ghi trong hệ thống lưu trữ chống chỉnh sửa</div>
+                            <div class="small text-muted">Điều này chưa đủ để kết luận văn bằng không hợp lệ. Vui lòng liên hệ nhà trường để được xác nhận thêm.</div>
+                        </div>
+                    {% else %}
+                        <i class="bi bi-cloud-slash text-warning"></i>
+                        <div>
+                            <div class="fw-semibold">Tạm thời chưa đối chiếu được với hệ thống lưu trữ chống chỉnh sửa</div>
+                            <div class="small text-muted">Việc đối chiếu chưa hoàn tất do sự cố kết nối. Điều này không có nghĩa văn bằng không hợp lệ; vui lòng thử lại sau ít phút.</div>
+                        </div>
+                    {% endif %}
+                </div>
+
+                {# Update: kiểm tra chữ ký thật nếu văn bằng có chữ ký #}
+                <div class="verify-check">
+                    {% if signature_state == 'ok' %}
+                        <i class="bi bi-pen-fill text-success"></i>
+                        <div>
+                            <div class="fw-semibold">Có chữ ký điện tử hợp lệ của Hiệu trưởng</div>
+                            <div class="small text-muted">Văn bằng được ký bởi đúng người có thẩm quyền của nhà trường{% if result.signed_at %} lúc {{ result.signed_at|date:"H:i" }} ngày {{ result.signed_at|date:"d/m/Y" }}{% endif %}, và nội dung được ký không bị thay đổi.</div>
+                        </div>
+                    {% elif signature_state == 'fail' %}
+                        <i class="bi bi-x-circle-fill text-danger"></i>
+                        <div>
+                            <div class="fw-semibold text-danger">Chữ ký điện tử không hợp lệ</div>
+                            <div class="small text-muted">Không xác minh được nguồn phát hành của văn bằng.</div>
+                        </div>
+                    {% else %}
+                        <i class="bi bi-pen text-secondary"></i>
+                        <div>
+                            <div class="fw-semibold">Chữ ký điện tử của nhà trường</div>
+                            <div class="small text-muted">Chưa áp dụng cho văn bằng này (văn bằng được cấp trước khi nhà trường áp dụng chữ ký điện tử).</div>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="verify-check">
+                    <i class="bi bi-clock-history text-secondary"></i>
+                    <div>
+                        <div class="fw-semibold">Thời điểm tra cứu</div>
+                        <div class="small text-muted">{{ verified_at|date:"H:i" }} ngày {{ verified_at|date:"d/m/Y" }} (giờ Việt Nam)</div>
                     </div>
+                </div>
+
+                {% if result.tx_hash or signer_address %}
+                {# Update: Mã giao dịch chuyển vào mục thu gọn, chỉ dành cho bộ phận kỹ thuật cần đối chiếu #}
+                <details class="verify-tech mt-3">
+                    <summary>Thông tin tham chiếu kỹ thuật (dành cho bộ phận kỹ thuật)</summary>
+                    {% if result.tx_hash %}
+                    <div class="small text-muted mt-2 mb-1">Mã giao dịch trên mạng Blockchain của nhà trường. Mã này chỉ dùng để đối chiếu kỹ thuật, không dùng riêng để kết luận văn bằng hợp lệ.</div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="code-font flex-grow-1 p-2 small text-break">{{ result.tx_hash }}</span>
+                        <button type="button" class="btn btn-sm btn-outline-secondary btn-copy" data-copy="{{ result.tx_hash }}" title="Sao chép">
+                            <i class="bi bi-copy"></i>
+                        </button>
+                    </div>
+                    {% endif %}
+                    {% if signer_address %}
+                    {# Update: Địa chỉ ví đã ký (khôi phục từ chữ ký) để bộ phận kỹ thuật đối chiếu với địa chỉ Hiệu #}
+                    <div class="small text-muted mt-2 mb-1">Địa chỉ ví đã ký văn bằng (đối chiếu với địa chỉ Hiệu trưởng được hợp đồng công nhận):</div>
+                    <div class="code-font p-2 small text-break">{{ signer_address }}</div>
+                    {% endif %}
+                </details>
+                {% endif %}
+            </div>
+
+            <!-- ============ KHU VỰC 5: THÔNG BÁO BẢO MẬT ============ -->
+            <div class="alert alert-light border d-flex gap-3 align-items-start small mb-5">
+                <i class="bi bi-shield-lock-fill text-primary fs-4"></i>
+                <div>
+                    <strong class="d-block text-dark mb-1">Bảo vệ thông tin cá nhân</strong>
+                    Trang này chỉ công khai những thông tin cần thiết để xác minh văn bằng. Ngày sinh, mã sinh viên, số căn cước,
+                    kết quả học tập và các thông tin cá nhân khác được bảo vệ, chỉ được chia sẻ khi người sở hữu văn bằng đồng ý.
                 </div>
             </div>
 
         {% else %}
-            <!-- Not Found Card -->
+            <!-- Không tìm thấy: cùng một thông báo cho mọi trường hợp (mã sai, chưa phát hành...) để không lộ thông tin -->
             <div class="custom-card p-5 text-center mb-5">
                 <i class="bi bi-search text-muted display-4 mb-3 d-block"></i>
-                <h4 class="fw-bold text-dark mb-2">Không tìm thấy thông tin văn bằng</h4>
-                <p class="text-muted mb-4 mx-auto" style="max-width: 500px;">
-                    Không có bản ghi nào khớp với từ khóa <strong>"{{ query }}"</strong> trong cơ sở dữ liệu và sổ cái Blockchain.
+                <h4 class="fw-bold text-dark mb-2">Không tìm thấy văn bằng</h4>
+                <p class="text-muted mb-4 mx-auto" style="max-width: 520px;">
+                    {# Update: Câu riêng cho liên kết chia sẻ sai #}
+                    {% if share_mode %}Liên kết chia sẻ không đúng. Vui lòng kiểm tra lại đường dẫn người sở hữu văn bằng đã gửi.{% else %}Không có văn bằng nào của nhà trường khớp với mã bạn nhập.{% endif %}
                 </p>
-                <div class="alert alert-light border mx-auto text-start small" style="max-width: 550px;">
-                    <strong class="text-dark d-block mb-1"><i class="bi bi-question-circle text-primary me-1"></i> Hướng dẫn xử lý:</strong>
+                <div class="alert alert-light border mx-auto text-start small" style="max-width: 560px;">
+                    <strong class="text-dark d-block mb-1"><i class="bi bi-question-circle text-primary me-1"></i> Hướng dẫn:</strong>
                     <ul class="mb-0 ps-3 text-muted">
-                        <li>Kiểm tra lại số hiệu văn bằng trên góc văn bằng (ví dụ: <code>VB-2026-001</code>).</li>
-                        <li>Đảm bảo mã sinh viên hoặc họ tên được gõ chính xác không kèm ký tự lạ.</li>
-                        <li>Nếu văn bằng mới được trao, vui lòng liên hệ Phòng Đào tạo để kiểm tra trạng thái cập nhật On-Chain.</li>
+                        <li>Kiểm tra lại mã xác minh in cạnh mã QR trên văn bằng (10 ký tự, ví dụ <code>K7M2-9QXD-4T</code>).</li>
+                        {% if not allow_serial %}<li>Trang này không tra cứu theo số hiệu, mã sinh viên hoặc họ tên.</li>{% endif %}
+                        <li>Nếu văn bằng vừa được trao, vui lòng liên hệ nhà trường để được hỗ trợ.</li>
                     </ul>
                 </div>
             </div>
@@ -254,5 +346,6 @@
     </div>
 </div>
 {% endif %}
+{% endtimezone %}
 
 {% endblock %}

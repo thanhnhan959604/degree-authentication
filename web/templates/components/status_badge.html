@@ -1,0 +1,7 @@
+{# Update: Badge trạng thái văn bằng dùng chung. Dùng: {% include 'components/status_badge.html' with cert=cert %} #}
+{% if cert.status == 'ISSUED' %}<span class="ds-badge ds-badge--success"><i class="bi bi-patch-check-fill"></i> Đã cấp</span>
+{% elif cert.status == 'REVOKED' %}<span class="ds-badge ds-badge--danger"><i class="bi bi-slash-circle-fill"></i> Đã thu hồi</span>
+{% elif cert.status == 'CANCELLED' %}<span class="ds-badge ds-badge--neutral"><i class="bi bi-x-octagon-fill"></i> Đã hủy</span>
+{% elif cert.status == 'REPLACED' %}<span class="ds-badge ds-badge--neutral"><i class="bi bi-arrow-repeat"></i> Đã thay thế</span>
+{% elif cert.is_rejected %}<span class="ds-badge ds-badge--danger"><i class="bi bi-arrow-return-left"></i> {{ cert.current_step_info.name }}</span>
+{% else %}<span class="ds-badge ds-badge--warning"><i class="bi bi-hourglass-split"></i> {{ cert.current_step_info.name }}</span>{% endif %}

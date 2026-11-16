@@ -1,54 +1,70 @@
-{% extends 'base.html' %}
+{% extends 'layouts/auth.html' %}
 {% load static %}
 
-{% block title %}Đăng Nhập Cán Bộ - Hệ Thống Văn Bằng Số{% endblock %}
+{# Update: Bố cục 1 cột cân đối: hộp đăng nhập → 3 liên kết nhóm tài khoản → tra cứu công khai → lưu ý bảo mật #}
+{# Update: Cơ chế xác thực giữ nguyên (POST /login/ với username + password); nhóm tài khoản (?kind=) chỉ đổi nhãn / hướng dẫn, backend không dùng để cấp quyền #}
+{% block title %}Đăng Nhập{% endblock %}
+{% block body_class %}{{ block.super }} page-login{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/login.css' %}?v=20261116-2">
+{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center my-4">
-    <div class="col-lg-5 col-md-7 col-sm-10">
-        <!-- Login Card -->
-        <div class="custom-card shadow-sm p-4 p-md-5 mb-4">
-            <div class="text-center mb-4">
-                <div class="bg-primary-subtle text-primary p-3 rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width: 60px; height: 60px;">
-                    <i class="bi bi-shield-lock-fill fs-2"></i>
-                </div>
-                <h4 class="fw-bold text-dark mb-1">Đăng Nhập Cán Bộ</h4>
-                <p class="text-muted small">Cổng thông tin nội bộ thẩm định & cấp phát văn bằng</p>
+{% with pk=request.POST.login_kind gk=request.GET.kind %}{% with k=pk|default:gk|default:'' %}
+<div class="ds-login">
+    <section class="ds-card ds-login-card" aria-labelledby="loginTitle">
+        <h1 class="ds-login-title" id="loginTitle" data-login-panel-title>{% if k == 'student' %}Đăng nhập sinh viên{% elif k == 'staff' %}Đăng nhập cán bộ nhà trường{% else %}Đăng nhập{% endif %}</h1>
+        <p class="ds-login-lead">Sử dụng tài khoản do nhà trường cấp.</p>
+
+        {% if error_msg or form.errors %}
+            <div class="alert alert-danger py-2 px-3 mb-3" role="alert">
+                <i class="bi bi-exclamation-triangle me-1"></i> {{ error_msg|default:"Tên đăng nhập hoặc mật khẩu không chính xác." }}
             </div>
+        {% endif %}
 
-            {% if error_msg or form.errors %}
-                <div class="alert alert-danger py-2 px-3 small mb-3">
-                    <i class="bi bi-exclamation-triangle me-1"></i> {{ error_msg|default:"Tên đăng nhập hoặc mật khẩu không chính xác." }}
+        <form method="post" action="{% url 'login' %}" id="loginForm" data-initial-kind="{{ k }}">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.GET.next|default:'' }}">
+            <input type="hidden" name="login_kind" value="{{ k }}">
+            <div class="mb-3">
+                <label class="form-label" for="id_username" data-login-label>{% if k == 'student' %}Số căn cước công dân (CCCD){% elif k == 'staff' %}Tên đăng nhập hoặc email{% else %}Tên đăng nhập hoặc số CCCD{% endif %}</label>
+                <input type="text" name="username" id="id_username" class="form-control" value="{{ request.POST.username|default:'' }}" required autocomplete="username" autofocus
+                       placeholder="{% if k == 'student' %}Nhập 12 chữ số CCCD{% elif k == 'staff' %}Tên tài khoản cán bộ{% else %}Tên tài khoản hoặc số CCCD{% endif %}">
+                <div class="form-text" data-login-help>{% if k == 'student' %}Dùng số CCCD đã đăng ký với nhà trường và mật khẩu bạn tự đặt qua email kích hoạt.{% elif k == 'staff' %}Quyền thao tác (QLSV, Đào tạo, Hiệu trưởng) được xác định theo tài khoản sau khi đăng nhập.{% else %}Sinh viên dùng số CCCD, cán bộ dùng tên tài khoản.{% endif %}</div>
+            </div>
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-baseline">
+                    <label class="form-label" for="id_password">Mật khẩu</label>
+                    <a href="{% url 'student_forgot' %}" class="ds-login-forgot" data-student-only {% if k == 'staff' %}hidden{% endif %}>Quên mật khẩu?</a>
                 </div>
-            {% endif %}
+                <input type="password" name="password" id="id_password" class="form-control" required autocomplete="current-password">
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Đăng nhập</button>
+        </form>
+    </section>
 
-            <form method="post" action="{% url 'login' %}">
-                {% csrf_token %}
-                <input type="hidden" name="next" value="{{ request.GET.next|default:'' }}">
-                <div class="mb-3">
-                    <label class="form-label small fw-bold text-dark">Tên đăng nhập cán bộ:</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light text-muted"><i class="bi bi-person"></i></span>
-                        <input type="text" name="username" id="id_username" class="form-control" placeholder="Ví dụ: qlsv, daotao, hieutruong..." required autofocus>
-                    </div>
-                </div>
+    <nav class="ds-login-kinds" aria-label="Đăng nhập theo nhóm tài khoản">
+        <a href="?kind=student{% if request.GET.next %}&amp;next={{ request.GET.next|urlencode }}{% endif %}" class="ds-login-kind" data-login-kind="student" {% if k == 'student' %}aria-current="true"{% endif %}>
+            <i class="bi bi-mortarboard"></i><span>Sinh viên</span>
+        </a>
+        <a href="?kind=staff{% if request.GET.next %}&amp;next={{ request.GET.next|urlencode }}{% endif %}" class="ds-login-kind" data-login-kind="staff" {% if k == 'staff' %}aria-current="true"{% endif %}>
+            <i class="bi bi-building"></i><span>Cán bộ nhà trường</span>
+        </a>
+        <a href="{% url 'admin:login' %}?next={% url 'admin:index' %}" class="ds-login-kind">
+            <i class="bi bi-shield-lock"></i><span>Quản trị hệ thống</span>
+        </a>
+    </nav>
 
-                <div class="mb-4">
-                    <label class="form-label small fw-bold text-dark">Mật khẩu:</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light text-muted"><i class="bi bi-key"></i></span>
-                        <input type="password" name="password" id="id_password" class="form-control" placeholder="Nhập mật khẩu..." required>
-                    </div>
-                    <div class="form-text text-muted mt-1" style="font-size: 0.75rem;">
-                        <i class="bi bi-info-circle me-1"></i> Lưu ý: Tên đăng nhập và mật khẩu có phân biệt chính xác chữ hoa / chữ thường.
-                    </div>
-                </div>
-
-                <button type="submit" class="btn btn-primary w-100 py-2 fw-bold shadow-sm">
-                    <i class="bi bi-box-arrow-in-right me-1"></i> Đăng Nhập Hệ Thống
-                </button>
-            </form>
+    <a class="ds-public-link" href="{% url 'search' %}">
+        <i class="bi bi-qr-code-scan"></i>
+        <div>
+            <strong>Tra cứu văn bằng công khai</strong>
+            <span>Không cần đăng nhập</span>
         </div>
-    </div>
+        <i class="bi bi-arrow-right ms-auto"></i>
+    </a>
+
+    <p class="ds-login-note"><i class="bi bi-shield-check"></i> Không chia sẻ mật khẩu cho người khác. Nhà trường không bao giờ hỏi mật khẩu qua điện thoại hay email. Đăng nhập sai nhiều lần, tài khoản sẽ bị khoá tạm thời.</p>
 </div>
+{% endwith %}{% endwith %}
 {% endblock %}

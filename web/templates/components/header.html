@@ -1,0 +1,62 @@
+{% load static %}
+{# Update: Header dùng chung. variant="app" có nút mở sidebar (mobile); vai trò lấy theo UserProfile.role (trước đây đoán theo username) #}
+{% with r=user.profile.role|default:user.username %}
+<header class="ds-header">
+    <div class="ds-header-inner">
+        {% if variant == 'app' and user.is_authenticated %}
+        <button type="button" class="ds-sidebar-toggle ds-sidebar-toggle--mobile" data-ds-sidebar-toggle aria-label="Mở menu điều hướng" aria-controls="ds-sidebar" aria-expanded="false">
+            <i class="bi bi-list"></i>
+        </button>
+        {% endif %}
+        <a class="ds-brand" href="{% url 'search' %}">
+            <img class="ds-brand-logo" src="{% static INSTITUTION.logo %}" alt="Logo {{ INSTITUTION.short }}" width="38" height="38">
+            <span class="ds-brand-text">
+                <span class="ds-brand-title">{{ INSTITUTION.short }}<span class="ds-brand-tail"> · CỔNG XÁC MINH VĂN BẰNG</span></span>
+                <span class="ds-brand-sub">{{ INSTITUTION.name }}</span>
+            </span>
+        </a>
+
+        <nav class="ds-header-nav" aria-label="Điều hướng chính">
+            <a class="ds-header-link {% if request.resolver_match.url_name == 'search' or request.resolver_match.url_name == 'verify' %}active{% endif %}" href="{% url 'search' %}">
+                <i class="bi bi-search"></i><span>Tra cứu văn bằng</span>
+            </a>
+            {% if user.is_authenticated %}
+                {% if r == 'student' %}
+                <a class="ds-header-link d-none d-lg-inline-flex {% if request.resolver_match.url_name == 'student_portal' %}active{% endif %}" href="{% url 'student_portal' %}">
+                    <i class="bi bi-mortarboard"></i><span>Văn bằng của tôi</span>
+                </a>
+                {% else %}
+                <a class="ds-header-link d-none d-lg-inline-flex {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">
+                    <i class="bi bi-grid"></i><span>Bảng điều khiển</span>
+                </a>
+                {% endif %}
+                <div class="dropdown ms-1">
+                    <button class="ds-user-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <span class="ds-avatar" aria-hidden="true">{% if r == 'student' %}{{ user.first_name|default:"S"|slice:":1"|upper }}{% else %}{{ user.username|slice:":1"|upper }}{% endif %}</span>
+                        <span class="ds-user-name">{% if r == 'student' %}{{ user.first_name|default:"Sinh viên" }}{% else %}{{ user.username }}{% endif %}</span>
+                        <span class="ds-role">{% if r == 'student' %}Sinh viên{% elif r == 'qlsv' %}Phòng QLSV{% elif r == 'daotao' %}Phòng Đào tạo{% elif r == 'hieutruong' %}Hiệu trưởng{% elif r == 'admin' %}Quản trị{% else %}Chưa phân quyền{% endif %}</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><h6 class="dropdown-header">{% if r == 'student' %}Tài khoản sinh viên{% else %}Tài khoản cán bộ{% endif %}</h6></li>
+                        {% if r == 'student' %}
+                        <li><a class="dropdown-item" href="{% url 'student_portal' %}"><i class="bi bi-mortarboard me-2"></i>Văn bằng của tôi</a></li>
+                        {% else %}
+                        <li><a class="dropdown-item" href="{% url 'dashboard' %}"><i class="bi bi-grid me-2"></i>Bảng điều khiển</a></li>
+                        {% if user.is_staff %}<li><a class="dropdown-item" href="{% url 'admin:index' %}"><i class="bi bi-gear me-2"></i>Quản trị hệ thống</a></li>{% endif %}
+                        {% endif %}
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <form action="{% url 'logout' %}" method="post" class="m-0 p-0">
+                                {% csrf_token %}
+                                <button type="submit" class="dropdown-item text-danger"><i class="bi bi-box-arrow-right me-2"></i>Đăng xuất</button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+            {% else %}
+                <a class="btn btn-sm btn-login ms-1" href="{% url 'login' %}"><i class="bi bi-box-arrow-in-right me-1"></i>Đăng nhập</a>
+            {% endif %}
+        </nav>
+    </div>
+</header>
+{% endwith %}
