@@ -26,9 +26,87 @@ load_dotenv(ENV_PATH) # Load các biến môi trường từ file .env
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# Update: DEBUG đọc từ .env
+DEBUG = os.getenv('DJANGO_DEBUG', 'True').strip().lower() in ('1', 'true', 'yes')
 
-ALLOWED_HOSTS = ['*'] # Lấy giá trị từ biến môi trường ALLOWED_HOSTS trong file .env
+# Update: Địa chỉ công khai của hệ thống, dùng để sinh link trong mã QR in trên văn bằng
+PUBLIC_BASE_URL = os.getenv('PUBLIC_BASE_URL', '').strip().rstrip('/')
+
+# Update: ALLOWED_HOSTS đọc từ .env (danh sách cách nhau bởi dấu phẩy) thay cho '*'
+ALLOWED_HOSTS = [h.strip() for h in os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,[::1],web').split(',') if h.strip()]
+if PUBLIC_BASE_URL:  # Update: thêm host của địa chỉ công khai để QR mở được trang
+    from urllib.parse import urlparse  # Update: tách host từ URL
+    _public_host = urlparse(PUBLIC_BASE_URL).hostname  # Update: ví dụ 'vanbang.truong.edu.vn'
+    if _public_host and _public_host not in ALLOWED_HOSTS:  # Update: tránh thêm trùng
+        ALLOWED_HOSTS.append(_public_host)  # Update
+
+# Update: Công tắc cho phép tra cứu công khai bằng SỐ HIỆU văn bằng (VB-...)
+ALLOW_LOOKUP_BY_SERIAL = os.getenv('ALLOW_LOOKUP_BY_SERIAL', 'False').strip().lower() in ('1', 'true', 'yes')
+
+# Update: Che bớt họ tên người được cấp trên trang xác minh công khai
+MASK_PUBLIC_NAME = os.getenv('MASK_PUBLIC_NAME', 'True').strip().lower() in ('1', 'true', 'yes')
+
+# Update: Giới hạn tần suất tra cứu công khai theo địa chỉ IP (chống dò mã hàng loạt)
+LOOKUP_RATE = int(os.getenv('LOOKUP_RATE', '30'))
+LOOKUP_WINDOW = int(os.getenv('LOOKUP_WINDOW', '60'))
+LOOKUP_MISS_RATE = int(os.getenv('LOOKUP_MISS_RATE', '15'))
+LOOKUP_MISS_WINDOW = int(os.getenv('LOOKUP_MISS_WINDOW', '600'))
+
+# Update: Khoá bí mật (pepper) để băm số CCCD bằng HMAC-SHA256 trước khi lưu
+CCCD_PEPPER = os.getenv('CCCD_PEPPER', '')
+
+# Update: Khoá mã hoá hai chiều số CCCD (AES-256-GCM) để sinh viên xem lại số đầy đủ
+CCCD_ENCRYPTION_KEY = os.getenv('CCCD_ENCRYPTION_KEY', '')
+
+# Update: Gửi email link kích hoạt / đặt lại mật khẩu cho sinh viên
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'localhost')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '').replace(' ', '')  # Update: Gmail App Password hay chép kèm dấu cách
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').strip().lower() in ('1', 'true', 'yes')
+EMAIL_TIMEOUT = int(os.getenv('EMAIL_TIMEOUT', '15'))  # Update: máy chủ thư chậm/không phản hồi thì bỏ sau 15 giây, không treo trang
+# Update: Tự chọn cách gửi: đã điền EMAIL_HOST_USER + EMAIL_HOST_PASSWORD → gửi thật qua SMTP
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND') or (
+    'django.core.mail.backends.smtp.EmailBackend' if (EMAIL_HOST_USER and EMAIL_HOST_PASSWORD)
+    else 'django.core.mail.backends.console.EmailBackend')
+# Update: Người gửi: mặc định là chính tài khoản SMTP (Gmail bắt buộc trùng)
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL') or (
+    f'Cong Xac Minh Van Bang <{EMAIL_HOST_USER}>' if EMAIL_HOST_USER else 'Cong Van Bang <no-reply@localhost>')
+
+# Update: Hiệu lực của link kích hoạt / đặt lại mật khẩu (giây)
+PASSWORD_RESET_TIMEOUT = int(os.getenv('PASSWORD_RESET_TIMEOUT', str(3 * 24 * 3600)))
+
+# Update: Khoá tạm đăng nhập khi sai mật khẩu nhiều lần
+LOGIN_FAIL_LIMIT = int(os.getenv('LOGIN_FAIL_LIMIT', '5'))
+LOGIN_FAIL_WINDOW = int(os.getenv('LOGIN_FAIL_WINDOW', '900'))
+
+# Update: Thông tin nhận diện cơ sở đào tạo
+INSTITUTION = {
+    'name': 'Trường Đại học Kỹ thuật – Công nghệ Cần Thơ',
+    'name_upper': 'TRƯỜNG ĐẠI HỌC KỸ THUẬT – CÔNG NGHỆ CẦN THƠ',
+    'short': 'CTUT',
+    'name_en': 'Can Tho University of Technology',
+    'city': 'Cần Thơ',
+    'logo': 'img/ctut-logo.png',              # file logo do người dùng cung cấp (web/static/img/ctut-logo.png)
+    'rector_title': 'HIỆU TRƯỞNG',
+    # Update: Tên người ký hiển thị trên ảnh văn bằng mẫu / phôi in
+    'rector_name': os.getenv('RECTOR_DISPLAY_NAME', 'Hoàng Nam Tiến'),
+}
+
+# Update: Vẽ CON DẤU + CHỮ KÝ MINH HOẠ lên ảnh văn bằng MẪU (DEMO) để trình diễn
+DIPLOMA_DEMO_SEAL = os.getenv('DIPLOMA_DEMO_SEAL', 'True').strip().lower() in ('1', 'true', 'yes')
+
+# Update: Thư mục lưu ảnh văn bằng (ảnh gốc + bản công khai đã che)
+PRIVATE_MEDIA_ROOT = Path(os.getenv('PRIVATE_MEDIA_ROOT', str(BASE_DIR.parent / 'private_media')))
+DIPLOMA_MAX_UPLOAD_MB = int(os.getenv('DIPLOMA_MAX_UPLOAD_MB', '15'))
+# Update: Vùng che mặc định áp cho ảnh scan văn bằng thật khi tạo bản công khai
+DIPLOMA_DEFAULT_REGIONS = [
+    {'field': 'dob', 'x': 38.5, 'y': 59.8, 'w': 18.0, 'h': 3.6},
+    {'field': 'classification', 'x': 38.5, 'y': 63.7, 'w': 18.0, 'h': 3.6},
+]
+
+# Update: Thời hạn tối đa (ngày) sinh viên được chọn cho một liên kết chia sẻ văn bằng
+SHARE_MAX_DAYS = int(os.getenv('SHARE_MAX_DAYS', '30'))
 
 
 
@@ -67,6 +145,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                # Update: Đưa thông tin nhận diện trường (INSTITUTION) vào mọi template
+                'certificates.context_processors.institution_processor',
             ],
         },
     },
