@@ -2,6 +2,14 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
 from .models import Certificate, ApprovalLog, UserProfile
+from .models import ShareToken, VerificationLog  # Update: 2 bảng mới của P3
+from .models import DiplomaAccessLog  # Update: nhật ký truy cập ảnh văn bằng
+from django.conf import settings  # Update
+
+# Update: Nhận diện CTUT trên trang quản trị Django (tiêu đề, thanh bên)
+admin.site.site_header = f"{settings.INSTITUTION['short']} · Quản trị hệ thống văn bằng"
+admin.site.site_title = f"{settings.INSTITUTION['short']} · Quản trị"
+admin.site.index_title = settings.INSTITUTION['name']
 
 
 # ── Inline: hiển thị phân quyền ngay trong trang chỉnh sửa User ──────────────
@@ -57,3 +65,42 @@ class ApprovalLogAdmin(admin.ModelAdmin):
     list_display = ('certificate', 'action', 'actor', 'created_at', 'tx_hash')
     search_fields = ('certificate__serial_number', 'actor', 'action')
     list_filter = ('action', 'created_at')
+
+
+# ── Update: liên kết chia sẻ & nhật ký xác minh (chỉ xem) ──
+
+@admin.register(ShareToken)
+class ShareTokenAdmin(admin.ModelAdmin):
+    list_display = ('certificate', 'recipient', 'expires_at', 'view_count', 'max_views', 'state_display', 'created_at')
+    search_fields = ('certificate__serial_number', 'recipient')
+    readonly_fields = ('token_hash', 'view_count', 'created_by', 'created_at')
+
+    @admin.display(description='Trạng thái')
+    def state_display(self, obj):
+        return obj.state_display
+
+
+@admin.register(VerificationLog)
+class VerificationLogAdmin(admin.ModelAdmin):
+    list_display = ('certificate', 'channel', 'outcome', 'share', 'created_at')
+    list_filter = ('channel', 'outcome', 'created_at')
+    search_fields = ('certificate__serial_number',)
+
+    def has_add_permission(self, request):  # nhật ký không được thêm/sửa tay
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+@admin.register(DiplomaAccessLog)
+class DiplomaAccessLogAdmin(admin.ModelAdmin):
+    """Update: Nhật ký xem / tải ảnh văn bằng gốc"""
+    list_display = ('certificate', 'action', 'user', 'created_at')
+    list_filter = ('action', 'created_at')
+    search_fields = ('certificate__serial_number', 'user__username')
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False

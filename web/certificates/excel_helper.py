@@ -3,6 +3,18 @@ from datetime import datetime, date
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from .models import Certificate
+from .security_helper import hash_national_id, national_id_last4, is_valid_national_id  # Update: băm CCCD khi nhập Excel
+from .security_helper import encrypt_national_id  # Update: lưu thêm CCCD mã hoá để sinh viên xem lại
+
+
+def _read_national_id(val):
+    """Update: Đọc số CCCD từ ô Excel"""
+    if val is None or val == '':
+        return ''
+    if isinstance(val, (int, float)):
+        return f"{int(val):012d}"
+    return str(val).strip()
+
 
 def generate_sample_excel():
     """Tạo tệp Excel mẫu .xlsx với định dạng chuẩn và dữ liệu ví dụ"""
@@ -19,7 +31,9 @@ def generate_sample_excel():
         "Năm tốt nghiệp (*)",
         "Xếp loại (*)",
         "Loại văn bằng",
-        "Ngày cấp (YYYY-MM-DD)"
+        "Ngày cấp (YYYY-MM-DD)",
+        "Số CCCD (12 số)",          # Update: tuỳ chọn — cần để sinh viên có tài khoản khi văn bằng phát hành
+        "Email sinh viên",          # Update: tuỳ chọn — nhận link kích hoạt tài khoản
     ]
 
     ws.append(headers)
@@ -40,9 +54,10 @@ def generate_sample_excel():
 
     # Thêm dữ liệu mẫu
     sample_data = [
-        ["VB-2026-001", "B21DCCN001", "Nguyễn Văn An", "2003-05-15", "Công nghệ thông tin", 2026, "Giỏi", "Bằng Cử nhân", "2026-06-30"],
-        ["VB-2026-002", "B21DCCN002", "Trần Thị Bình", "2003-08-20", "Khoa học máy tính", 2026, "Xuất sắc", "Bằng Kỹ sư", "2026-06-30"],
-        ["VB-2026-003", "B21DCKT003", "Lê Hoàng Cường", "2003-12-01", "Kỹ thuật phần mềm", 2026, "Khá", "Bằng Cử nhân", "2026-06-30"],
+        # Update: thêm 2 cột ví dụ CCCD + email (số CCCD mẫu là số giả)
+        ["VB-2026-001", "B21DCCN001", "Nguyễn Văn An", "2003-05-15", "Công nghệ thông tin", 2026, "Giỏi", "Bằng Cử nhân", "2026-06-30", "001203000001", "an.nv@example.com"],
+        ["VB-2026-002", "B21DCCN002", "Trần Thị Bình", "2003-08-20", "Khoa học máy tính", 2026, "Xuất sắc", "Bằng Kỹ sư", "2026-06-30", "001303000002", "binh.tt@example.com"],
+        ["VB-2026-003", "B21DCKT003", "Lê Hoàng Cường", "2003-12-01", "Kỹ thuật phần mềm", 2026, "Khá", "Bằng Cử nhân", "2026-06-30", "", ""],
     ]
 
     for row in sample_data:
@@ -52,12 +67,14 @@ def generate_sample_excel():
         for cell in row:
             cell.border = thin_border
             cell.font = Font(name="Segoe UI", size=10)
-            if cell.column in [1, 2, 4, 6, 7, 9]:
+            if cell.column in [1, 2, 4, 6, 7, 9, 10]:
                 cell.alignment = Alignment(horizontal="center", vertical="center")
             else:
                 cell.alignment = Alignment(horizontal="left", vertical="center")
+            if cell.column == 10:  # Update: định dạng ô CCCD là văn bản để Excel không xoá số 0 đầu
+                cell.number_format = '@'
 
-    col_widths = [22, 18, 26, 24, 26, 18, 16, 20, 24]
+    col_widths = [22, 18, 26, 24, 26, 18, 16, 20, 24, 18, 28]  # Update: thêm độ rộng 2 cột mới
     for i, w in enumerate(col_widths, 1):
         ws.column_dimensions[openpyxl.utils.get_column_letter(i)].width = w
 
@@ -112,8 +129,14 @@ def process_excel_upload(file):
         classification = str(row[6]).strip() if len(row) > 6 and row[6] is not None else ""
         degree_type = str(row[7]).strip() if len(row) > 7 and row[7] is not None else "Bằng Cử nhân"
         issue_date_raw = row[8] if len(row) > 8 else None
+        national_id = _read_national_id(row[9]) if len(row) > 9 else ''          # Update: cột tuỳ chọn
+        student_email = str(row[10]).strip() if len(row) > 10 and row[10] else ''  # Update: cột tuỳ chọn
 
         row_errors = []
+        if national_id and not is_valid_national_id(national_id):  # Update
+            row_errors.append("Số CCCD phải gồm đúng 12 chữ số")
+        if student_email and '@' not in student_email:  # Update
+            row_errors.append("Email sinh viên không hợp lệ")
 
         if not serial:
             row_errors.append("Thiếu số hiệu văn bằng")
@@ -146,6 +169,8 @@ def process_excel_upload(file):
 
         if not classification:
             row_errors.append("Thiếu xếp loại tốt nghiệp")
+        elif classification not in Certificate.CLASSIFICATIONS:  # Update: chỉ nhận 5 loại chuẩn
+            row_errors.append(f"Xếp loại '{classification}' không hợp lệ (chỉ nhận: {', '.join(Certificate.CLASSIFICATIONS)})")
 
         issue_date = parse_date(issue_date_raw) if issue_date_raw else None
 
@@ -162,6 +187,10 @@ def process_excel_upload(file):
                 'classification': classification,
                 'degree_type': degree_type or 'Bằng Cử nhân',
                 'issue_date': issue_date,
+                'national_id_hash': hash_national_id(national_id) or None,     # Update: chỉ lưu dấu băm
+                'national_id_last4': national_id_last4(national_id) or None,   # Update
+                'national_id_encrypted': encrypt_national_id(national_id) or None,  # Update
+                'student_email': student_email or None,                        # Update
             })
 
     return valid_records, errors
