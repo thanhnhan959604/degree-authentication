@@ -21,3 +21,4 @@ def generate_qr_base64(data: str) -> str:
     except Exception:
         return ""
 
+
