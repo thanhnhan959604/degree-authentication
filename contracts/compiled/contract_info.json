@@ -1,0 +1,308 @@
+{
+    "address": "0xfeae27388A65eE984F452f86efFEd42AaBD438FD",
+    "abi": [
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "_studentAffairs",
+                    "type": "address"
+                },
+                {
+                    "internalType": "address",
+                    "name": "_academicAffairs",
+                    "type": "address"
+                },
+                {
+                    "internalType": "address",
+                    "name": "_rector",
+                    "type": "address"
+                }
+            ],
+            "stateMutability": "nonpayable",
+            "type": "constructor"
+        },
+        {
+            "anonymous": false,
+            "inputs": [
+                {
+                    "indexed": true,
+                    "internalType": "string",
+                    "name": "serialNumber",
+                    "type": "string"
+                },
+                {
+                    "indexed": false,
+                    "internalType": "string",
+                    "name": "role",
+                    "type": "string"
+                },
+                {
+                    "indexed": true,
+                    "internalType": "address",
+                    "name": "approver",
+                    "type": "address"
+                }
+            ],
+            "name": "ApprovedIssue",
+            "type": "event"
+        },
+        {
+            "anonymous": false,
+            "inputs": [
+                {
+                    "indexed": true,
+                    "internalType": "string",
+                    "name": "serialNumber",
+                    "type": "string"
+                },
+                {
+                    "indexed": false,
+                    "internalType": "string",
+                    "name": "role",
+                    "type": "string"
+                },
+                {
+                    "indexed": true,
+                    "internalType": "address",
+                    "name": "approver",
+                    "type": "address"
+                },
+                {
+                    "indexed": false,
+                    "internalType": "string",
+                    "name": "reason",
+                    "type": "string"
+                }
+            ],
+            "name": "ApprovedRevoke",
+            "type": "event"
+        },
+        {
+            "anonymous": false,
+            "inputs": [
+                {
+                    "indexed": true,
+                    "internalType": "string",
+                    "name": "serialNumber",
+                    "type": "string"
+                },
+                {
+                    "indexed": false,
+                    "internalType": "bytes32",
+                    "name": "dataHash",
+                    "type": "bytes32"
+                },
+                {
+                    "indexed": false,
+                    "internalType": "uint256",
+                    "name": "timestamp",
+                    "type": "uint256"
+                }
+            ],
+            "name": "Issued",
+            "type": "event"
+        },
+        {
+            "anonymous": false,
+            "inputs": [
+                {
+                    "indexed": true,
+                    "internalType": "string",
+                    "name": "serialNumber",
+                    "type": "string"
+                },
+                {
+                    "indexed": false,
+                    "internalType": "bytes32",
+                    "name": "dataHash",
+                    "type": "bytes32"
+                },
+                {
+                    "indexed": true,
+                    "internalType": "address",
+                    "name": "by",
+                    "type": "address"
+                }
+            ],
+            "name": "Registered",
+            "type": "event"
+        },
+        {
+            "anonymous": false,
+            "inputs": [
+                {
+                    "indexed": true,
+                    "internalType": "string",
+                    "name": "serialNumber",
+                    "type": "string"
+                },
+                {
+                    "indexed": false,
+                    "internalType": "uint256",
+                    "name": "timestamp",
+                    "type": "uint256"
+                }
+            ],
+            "name": "Revoked",
+            "type": "event"
+        },
+        {
+            "inputs": [],
+            "name": "academicAffairsAddr",
+            "outputs": [
+                {
+                    "internalType": "address",
+                    "name": "",
+                    "type": "address"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "string",
+                    "name": "serialNumber",
+                    "type": "string"
+                },
+                {
+                    "internalType": "bytes32",
+                    "name": "expectedHash",
+                    "type": "bytes32"
+                }
+            ],
+            "name": "approve",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "string",
+                    "name": "serialNumber",
+                    "type": "string"
+                }
+            ],
+            "name": "getStatus",
+            "outputs": [
+                {
+                    "internalType": "bytes32",
+                    "name": "dataHash",
+                    "type": "bytes32"
+                },
+                {
+                    "internalType": "enum CertificateRegistry.Status",
+                    "name": "status",
+                    "type": "uint8"
+                },
+                {
+                    "internalType": "bool",
+                    "name": "studentAffairsApproved",
+                    "type": "bool"
+                },
+                {
+                    "internalType": "bool",
+                    "name": "academicAffairsApproved",
+                    "type": "bool"
+                },
+                {
+                    "internalType": "bool",
+                    "name": "rectorApproved",
+                    "type": "bool"
+                },
+                {
+                    "internalType": "bool",
+                    "name": "studentAffairsRevoke",
+                    "type": "bool"
+                },
+                {
+                    "internalType": "bool",
+                    "name": "academicAffairsRevoke",
+                    "type": "bool"
+                },
+                {
+                    "internalType": "bool",
+                    "name": "rectorRevoke",
+                    "type": "bool"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "issuedAt",
+                    "type": "uint256"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "revokedAt",
+                    "type": "uint256"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [],
+            "name": "rectorAddr",
+            "outputs": [
+                {
+                    "internalType": "address",
+                    "name": "",
+                    "type": "address"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "string",
+                    "name": "serialNumber",
+                    "type": "string"
+                },
+                {
+                    "internalType": "bytes32",
+                    "name": "dataHash",
+                    "type": "bytes32"
+                }
+            ],
+            "name": "register",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "string",
+                    "name": "serialNumber",
+                    "type": "string"
+                },
+                {
+                    "internalType": "string",
+                    "name": "reason",
+                    "type": "string"
+                }
+            ],
+            "name": "revoke",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [],
+            "name": "studentAffairsAddr",
+            "outputs": [
+                {
+                    "internalType": "address",
+                    "name": "",
+                    "type": "address"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        }
+    ]
+}

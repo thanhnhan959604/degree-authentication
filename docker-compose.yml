@@ -1,0 +1,148 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: degree-postgres
+    env_file:
+      - .env
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      degree_net:
+        ipv4_address: 172.16.239.10
+  
+  node1:
+    image: hyperledger/besu:latest
+    container_name: besu-node1
+    volumes:
+      #đường dẫn cho data
+      - ./besu/data/node1:/opt/besu/data
+      #đường dẫn file cấu hình
+      - ./besu/config/networkFiles/genesis.json:/opt/besu/genesis.json:ro
+      #danh sách các node trong mạng
+      - ./besu/config/networkFiles/static-nodes.json:/opt/besu/data/static-nodes.json:ro
+      #khoá private và public
+      - ./besu/config/networkFiles/keys/0x76d2c5d1804aa702469959d3561cade1236e2f85:/opt/besu/keys:ro
+    command:
+      #lưu dữ liệu của blockchain
+      - --data-path=/opt/besu/data
+      #chỉ định đến file genesis
+      - --genesis-file=/opt/besu/genesis.json
+      #file chứa key
+      - --node-private-key-file=/opt/besu/keys/key
+      #bật chức năng máy chủ JSON-RPC qua HTTP
+      - --rpc-http-enabled
+      #cho phép các nhóm API cụ thể truy cập
+      - --rpc-http-api=ETH,NET,QBFT,WEB3
+      #ip lắng nghe cho máy chủ
+      - --rpc-http-host=0.0.0.0
+      #cấu hình cors
+      - --rpc-http-cors-origins=*
+      #alowhost
+      - --host-allowlist=*
+      #phí gas tối thiểu
+      - --min-gas-price=0
+    ports:
+      - "8545:8545" #cổng dùng để truyền dữ liệu ứng dụng
+      - "30303:30303" #cổng để các node kết nối trao đổi với nhau
+    networks:
+      degree_net:
+        ipv4_address: 172.16.239.11
+  
+  node2:
+    image: hyperledger/besu:latest
+    container_name: besu-node2
+    depends_on:
+      - node1
+    volumes:
+      - ./besu/data/node2:/opt/besu/data
+      - ./besu/config/networkFiles/genesis.json:/opt/besu/genesis.json:ro
+      - ./besu/config/networkFiles/static-nodes.json:/opt/besu/data/static-nodes.json:ro
+      - ./besu/config/networkFiles/keys/0xba7b9b6298c0c44200168b0ca16cd8def9c9f1e5:/opt/besu/keys:ro
+    command:
+      - --data-path=/opt/besu/data
+      - --genesis-file=/opt/besu/genesis.json
+      - --node-private-key-file=/opt/besu/keys/key
+      - --rpc-http-enabled
+      - --rpc-http-api=ETH,NET,QBFT,WEB3
+      - --rpc-http-host=0.0.0.0
+      - --rpc-http-cors-origins=*
+      - --host-allowlist=*
+      - --min-gas-price=0
+    ports:
+      - "8546:8545"
+    networks:
+      degree_net:
+        ipv4_address: 172.16.239.12
+
+
+  node3:
+    image: hyperledger/besu:latest
+    container_name: besu-node3
+    depends_on:
+      - node1
+    volumes:
+      - ./besu/data/node3:/opt/besu/data
+      - ./besu/config/networkFiles/genesis.json:/opt/besu/genesis.json:ro
+      - ./besu/config/networkFiles/static-nodes.json:/opt/besu/data/static-nodes.json:ro
+      - ./besu/config/networkFiles/keys/0xf6d388f3bd9199946fcb050dad8d250dc6c2f4ec:/opt/besu/keys:ro
+    command:
+      - --data-path=/opt/besu/data
+      - --genesis-file=/opt/besu/genesis.json
+      - --node-private-key-file=/opt/besu/keys/key
+      - --rpc-http-enabled
+      - --rpc-http-api=ETH,NET,QBFT,WEB3
+      - --rpc-http-host=0.0.0.0
+      - --rpc-http-cors-origins=*
+      - --host-allowlist=*
+      - --min-gas-price=0
+    ports:
+      - "8547:8545"
+    networks:
+      degree_net:
+        ipv4_address: 172.16.239.13
+
+  web:
+    build:
+      #lấy thư mục hiện tại
+      context: .
+      dockerfile: Dockerfile
+    container_name: degree-web
+    restart: unless-stopped #tự động khởi động lại
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - BESU_RPC_NODE1=http://node1:8545
+      - BESU_RPC_NODE2=http://node2:8545
+      - BESU_RPC_NODE3=http://node3:8545
+    depends_on:
+      postgres:
+        condition: service_healthy
+      node1:
+        condition: service_started
+    networks:
+      degree_net:
+        ipv4_address: 172.16.239.20
+
+
+networks:
+  degree_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.16.239.0/24

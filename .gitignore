@@ -1,17 +1,90 @@
-# Môi trường Python & biến môi trường
+# ==============================================================================
+# .gitignore cho dự án Xác thực văn bằng Blockchain (Besu QBFT + Django + PostgreSQL)
+# ==============================================================================
+
+# 1. Môi trường & Bí mật (Secrets & Environment Variables)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.priv
+
+# 2. Cơ sở dữ liệu & Dữ liệu Docker (Database & Container Volumes)
+pgdata/
+*.sqlite3
+*.sqlite3-journal
+*.db
+
+# 3. Môi trường Python & Bộ đệm (Python & Virtual Environments)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
 venv/
 .venv/
-.env
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 Pipfile
 Pipfile.lock
-__pycache__/
-*.pyc
-.vscode
 
-# Dữ liệu chạy của Besu (sổ cái và khóa sinh tự động)
+# 4. Django Framework (Tệp tĩnh, Tệp tải lên & Cấu hình cục bộ)
+staticfiles/
+web/staticfiles/
+local_settings.py
+*.log
+
+# 5. Blockchain Hyperledger Besu (Dữ liệu Node, Sổ cái & Khóa mạng)
 besu/data/
 besu/config/networkFiles/
+besu/logs/
+*.blob
+*.sst
 
-# File sinh ra khi chạy Django
-media/
-db.sqlite3
+# 6. Smart Contracts & Node.js (nếu có sử dụng công cụ biên dịch JS/Hardhat)
+node_modules/
+package-lock.json
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+contracts/artifacts/
+contracts/cache/
+
+# 7. Trình soạn thảo & Hệ điều hành (IDEs, Editors & OS Files)
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# 8. Tệp tạm & Thư mục sinh tự động (Temporary & Scratch files)
+scratch/
+.gemini/
+tmp/
+temp/

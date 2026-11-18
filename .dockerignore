@@ -1,0 +1,99 @@
+# ==============================================================================
+# .dockerignore cho dự án Xác thực văn bằng Blockchain
+# ==============================================================================
+
+# 1. Hệ thống quản lý phiên bản (Git)
+.git/
+.gitignore
+.gitattributes
+
+# 2. Môi trường & Bí mật (Secrets & Environment Files)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.priv
+
+# 3. Cơ sở dữ liệu & Thư mục dữ liệu Container
+pgdata/
+*.sqlite3
+*.sqlite3-journal
+*.db
+
+# 4. Blockchain Hyperledger Besu (Dữ liệu sổ cái & Khóa Node)
+besu/data/
+besu/config/networkFiles/
+besu/logs/
+*.blob
+*.sst
+
+# 5. Môi trường ảo Python & Bộ đệm biên dịch
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+Pipfile
+Pipfile.lock
+
+# 6. Django Framework (Tệp tĩnh gom tụ, Tệp tải lên & Nhật ký)
+media/
+web/media/
+staticfiles/
+web/staticfiles/
+local_settings.py
+*.log
+
+# 7. Smart Contracts & Node.js
+node_modules/
+package-lock.json
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+contracts/artifacts/
+contracts/cache/
+
+# 8. Trình soạn thảo & Hệ điều hành
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# 9. Tệp tài liệu & Tệp tạm của Agent
+README*
+scratch/
+.gemini/
+tmp/
+temp/
+
