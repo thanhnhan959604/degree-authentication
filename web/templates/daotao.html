@@ -1,0 +1,938 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phòng Đào tạo - Thẩm định Điều kiện Tốt nghiệp & Chuẩn đầu ra</title>
+  <link rel="icon" type="image/png" href="/media/ctut_logo.png">
+  <link rel="shortcut icon" type="image/png" href="/media/ctut_logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Merriweather:wght@700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'style.css' %}">
+</head>
+<body>
+
+
+  <!-- HEADER CHUẨN CỔNG DỊCH VỤ CÔNG QUỐC GIA & CTUT -->
+  <header class="dvc-header">
+    <div class="container dvc-top-main">
+      <div class="dvc-brand">
+        <div class="dvc-emblem-wrap" style="width: 68px; height: 68px;">
+          <img src="/media/ctut_logo.png" alt="Logo Trường ĐH Kỹ thuật - Công nghệ Cần Thơ" class="dvc-emblem" style="width: 68px; height: 68px; object-fit: contain;">
+        </div>
+        <div class="dvc-title-block">
+          <div class="dvc-title-row">
+            <h1 class="dvc-brand-heading">TRƯỜNG ĐẠI HỌC KỸ THUẬT - CÔNG NGHỆ CẦN THƠ</h1>
+          </div>
+          <div class="dvc-brand-slogan">Đức trí – Kỹ năng – Sáng tạo – Hội nhập</div>
+        </div>
+      </div>
+
+      <!-- Thông tin cán bộ Đào tạo -->
+      <div style="display: flex; align-items: center; gap: 14px;">
+        <div style="text-align: right;">
+          <div style="font-size: 13.5px; font-weight: 700; color: #1E293B;">ThS. Lê Hoàng Nam</div>
+          <div style="font-size: 11.5px; color: #64748B;">Phó Trưởng phòng Đào tạo</div>
+        </div>
+        <button type="button" onclick="openModal('modalLogout')" class="btn-gov-subtle" title="Đăng xuất khỏi hệ thống" style="cursor: pointer;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          <span>Đăng xuất</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Thanh menu điều hướng với các tab hàng đợi nghiệp vụ (thay cho các bước) -->
+    <nav class="dvc-navbar">
+      <div class="container dvc-nav-container">
+        <a href="{% url 'search' %}" class="dvc-nav-home" title="Trang chủ tra cứu">
+          <img src="/media/home_icon.png" alt="Trang chủ" style="width: 22px; height: 20px; display: block;">
+        </a>
+
+        <ul class="dvc-nav-list">
+          <li class="dvc-nav-item">
+            <a href="javascript:void(0)" onclick="switchQueueTab('pending')" id="nav-tab-pending" class="dvc-nav-link active">
+              <span>Hàng đợi Đào tạo thẩm định</span>
+              <span class="dvc-nav-badge">{{ pending_count }}</span>
+            </a>
+          </li>
+          <li class="dvc-nav-item">
+            <a href="javascript:void(0)" onclick="switchQueueTab('returned')" id="nav-tab-returned" class="dvc-nav-link">
+              <span>Hiệu trưởng trả về</span>
+              <span class="dvc-nav-badge badge-red">{{ returned_count }}</span>
+            </a>
+          </li>
+          <li class="dvc-nav-item">
+            <a href="javascript:void(0)" onclick="switchQueueTab('forwarded')" id="nav-tab-forwarded" class="dvc-nav-link">
+              <span>Đã chuyển lên Hiệu trưởng</span>
+              <span class="dvc-nav-badge">{{ forwarded_count }}</span>
+            </a>
+          </li>
+          <li class="dvc-nav-item">
+            <a href="javascript:void(0)" onclick="switchQueueTab('revoked')" id="nav-tab-revoked" class="dvc-nav-link">
+              <span>Xác nhận thu hồi</span>
+              <span class="dvc-nav-badge badge-red" id="nav-count-revoked">{{ revoked_count }}</span>
+            </a>
+          </li>
+          <li class="dvc-nav-item">
+            <a href="{% url 'search' %}" class="dvc-nav-link" target="_blank">
+              Cổng tra cứu công khai
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left: 3px;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+  </header>
+
+  <!-- BANNER XANH CTUT ĐỒNG BỘ CỔNG DVC QUỐC GIA -->
+  <section class="portal-banner">
+    <div class="container portal-banner-container">
+      <h2 class="portal-banner-title">BÀN LÀM VIỆC PHÒNG ĐÀO TẠO</h2>
+      <p class="portal-banner-subtitle">Thẩm định chuẩn đầu ra, điểm tích lũy & Quyết định công nhận tốt nghiệp</p>
+    </div>
+  </section>
+
+  <!-- NỘI DUNG CHÍNH -->
+  <main class="container admin-portal-wrap">
+
+    <!-- KHỐI TỔNG QUAN HÀNG ĐỢI THẨM ĐỊNH (CHỈ HIỂN THỊ KHI Ở HÀNG ĐỢI THẨM ĐỊNH) -->
+    <div id="portal-pending-summary">
+      <!-- Hướng dẫn nhiệm vụ tối giản -->
+      <div class="admin-notice-banner">
+        <strong>Nhiệm vụ Phòng Đào tạo:</strong> Đối soát điểm CPA, xếp loại tốt nghiệp và chuẩn đầu ra (Ngoại ngữ, Tin học, ĐRL) trước khi duyệt trình Hiệu trưởng.
+      </div>
+
+      <!-- 4 THẺ THỐNG KÊ KPI CHUẨN GOVTECH THEO STYLE DỰ ÁN (KHÔNG EMOJI, KHÔNG VIỀN MÀU) -->
+      <div class="admin-kpi-grid">
+        <div class="admin-kpi-card">
+          <div class="admin-kpi-label">CHỜ ĐÀO TẠO THẨM ĐỊNH</div>
+          <div class="admin-kpi-val">{{ pending_count }}</div>
+        </div>
+
+        <div class="admin-kpi-card">
+          <div class="admin-kpi-label">ĐÃ DUYỆT LÊN HIỆU TRƯỞNG</div>
+          <div class="admin-kpi-val">{{ forwarded_count }}</div>
+        </div>
+
+        <div class="admin-kpi-card">
+          <div class="admin-kpi-label">HIỆU TRƯỞNG TRẢ VỀ XEM LẠI</div>
+          <div class="admin-kpi-val">{{ returned_count }}</div>
+        </div>
+
+        <div class="admin-kpi-card">
+          <div class="admin-kpi-label">TỶ LỆ CHUẨN HÓA HỌC VỤ</div>
+          <div class="admin-kpi-val">100%</div>
+        </div>
+      </div>
+
+      <!-- THANH CÔNG CỤ TÁC VỤ (CÁC NÚT HÀNH ĐỘNG) -->
+      <div class="admin-action-bar" id="portal-action-bar" style="justify-content: flex-end;">
+        <div class="admin-action-group">
+          <button class="btn-gov-subtle" onclick="exportDecisionList()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span>Xuất danh sách Quyết định (.xlsx)</span>
+          </button>
+          <button class="btn-gov-primary" onclick="batchApproveAll()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Duyệt nhanh tất cả hợp lệ</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- KHUNG CHÍNH CHỨA BẢNG HÀNG ĐỢI -->
+    <div class="admin-card">
+      <div class="admin-card-header">
+        <div class="admin-card-title" id="queue-card-title">HỒ SƠ ĐÃ QUA BƯỚC 1 (QLSV ĐÃ XÁC NHẬN) - CHỜ PHÒNG ĐÀO TẠO THẨM ĐỊNH</div>
+        <div style="font-size: 12.5px; color: #64748B;">Hiển thị <span id="queue-count-display">4</span> hồ sơ trong danh sách</div>
+      </div>
+
+      <!-- Thanh tìm kiếm & lọc nhanh -->
+      <div class="admin-filter-bar">
+        <div class="admin-search-wrap">
+          <svg class="admin-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="filter-search" class="admin-search-input" placeholder="Tìm theo Số hiệu, Mã SV, Họ tên..." onkeyup="filterQueueTable()">
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <select id="filter-classification" class="admin-filter-select" onchange="filterQueueTable()">
+            <option value="">Tất cả xếp loại tốt nghiệp</option>
+            <option value="Xuất sắc">Xuất sắc</option>
+            <option value="Giỏi">Giỏi</option>
+            <option value="Khá">Khá</option>
+            <option value="Trung bình">Trung bình</option>
+          </select>
+          <button class="btn-gov-subtle" onclick="resetFilters()">Làm mới</button>
+        </div>
+      </div>
+
+      <!-- BẢNG DỮ LIỆU: TAB 1 - CHỜ ĐÀO TẠO THẨM ĐỊNH -->
+      <div class="admin-table-wrap" id="panel-pending">
+        <table class="admin-table" id="table-pending">
+          <thead>
+            <tr>
+              <th style="width: 140px;">Số hiệu văn bằng</th>
+              <th>Mã SV - Sinh viên</th>
+              <th>Ngành đào tạo</th>
+              <th>Xếp loại tốt nghiệp</th>
+              <th>Chuẩn đầu ra (CĐR)</th>
+              <th>Trạng thái bước 1</th>
+              <th style="text-align: right; width: 260px; white-space: nowrap;">Thao tác Phòng Đào tạo</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for cert in pending_certs %}
+            <tr>
+              <td><code style="color: #26457F; font-weight: 700;">{{ cert.serial_number }}</code></td>
+              <td><strong>{{ cert.student_name }}</strong> <br><span style="color: #64748B; font-size: 11.5px;">MSSV: {{ cert.student_id|default:"-" }}</span></td>
+              <td>{{ cert.major }}</td>
+              <td><span class="admin-badge admin-badge-success" style="padding: 1px 6px;">{{ cert.classification }}</span></td>
+              <td>
+                <div style="font-size: 11.5px; color: #059669; font-weight: 600;">Chuẩn ngoại ngữ & tin học Đạt - ĐRL Tốt</div>
+              </td>
+              <td><span class="admin-badge admin-badge-info">QLSV đã xác nhận</span></td>
+              <td style="text-align: right; white-space: nowrap;">
+                <button class="btn-gov-subtle" onclick="openTranscriptModal('{{ cert.serial_number|escapejs }}', '{{ cert.student_name|escapejs }}', '{{ cert.major|escapejs }}', '{{ cert.classification|escapejs }}')">
+                  Học bạ
+                </button>
+                <button class="btn-gov-primary" onclick="openApproveModal('{{ cert.id }}', '{{ cert.serial_number|escapejs }}', '{{ cert.student_name|escapejs }}', '{{ cert.major|escapejs }}', '{{ cert.classification|escapejs }}')">
+                  Duyệt BGH
+                </button>
+                <button class="btn-gov-danger" onclick="openRejectModal('{{ cert.id }}', '{{ cert.serial_number|escapejs }}', '{{ cert.student_name|escapejs }}')">
+                  Trả về
+                </button>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="7" style="text-align: center; padding: 36px; color: #64748B;">
+                Hiện không có hồ sơ nào đang chờ Phòng Đào tạo thẩm định học vụ.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- BẢNG DỮ LIỆU: TAB 2 - HIỆU TRƯỞNG TRẢ VỀ -->
+      <div class="admin-table-wrap" id="panel-returned" style="display: none;">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th style="width: 140px;">Số hiệu</th>
+              <th>Mã SV - Sinh viên</th>
+              <th>Ngành đào tạo</th>
+              <th>Xếp loại</th>
+              <th>Ý kiến chỉ đạo của Ban Giám hiệu</th>
+              <th style="text-align: right; width: 240px; min-width: 240px; white-space: nowrap;">Thao tác xử lý</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for cert in returned_certs %}
+            <tr class="row-highlight">
+              <td><code style="color: #26457F; font-weight: 700;">{{ cert.serial_number }}</code></td>
+              <td><strong>{{ cert.student_name }}</strong> <br><span style="color: #64748B; font-size: 11.5px;">MSSV: {{ cert.student_id|default:"-" }}</span></td>
+              <td>{{ cert.major }}</td>
+              <td><strong>{{ cert.classification }}</strong></td>
+              <td>
+                <span class="admin-badge admin-badge-danger">Hiệu trưởng trả về</span>
+                <div style="color: #DC2626; font-size: 12px; margin-top: 4px; font-weight: 500;">
+                  "{{ cert.rejection_reason|default:'Kiểm tra lại hồ sơ tốt nghiệp' }}"
+                </div>
+              </td>
+              <td style="text-align: right; white-space: nowrap;">
+                <button class="btn-gov-primary" onclick="openAdjustModal('{{ cert.id }}', '{{ cert.serial_number|escapejs }}', '{{ cert.student_name|escapejs }}', '{{ cert.major|escapejs }}', '{{ cert.classification|escapejs }}')">
+                  Điều chỉnh & Trình lại BGH
+                </button>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="6" style="text-align: center; padding: 36px; color: #64748B;">
+                Không có hồ sơ nào bị Hiệu trưởng hoàn trả.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- BẢNG DỮ LIỆU: TAB 3 - ĐÃ THẨM ĐỊNH LÊN HIỆU TRƯỞNG -->
+      <div class="admin-table-wrap" id="panel-forwarded" style="display: none;">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th style="width: 140px;">Số hiệu</th>
+              <th>Mã SV - Sinh viên</th>
+              <th>Ngành đào tạo</th>
+              <th>Xếp loại</th>
+              <th>Thời gian Đào tạo duyệt</th>
+              <th>Trạng thái bước 3</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for cert in forwarded_certs %}
+            <tr>
+              <td><code style="color: #26457F; font-weight: 700;">{{ cert.serial_number }}</code></td>
+              <td><strong>{{ cert.student_name }}</strong> ({{ cert.student_id|default:"-" }})</td>
+              <td>{{ cert.major }}</td>
+              <td>{{ cert.classification }}</td>
+              <td>{{ cert.academic_affairs_approved_at|date:"d/m/Y H:i"|default:"-" }}</td>
+              <td>
+                {% if cert.status == 'ISSUED' %}
+                  <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
+                    <span class="admin-badge admin-badge-success">Hiệu trưởng đã phát hành</span>
+                    {% if not cert.academic_affairs_revoke %}
+                      <button type="button" class="btn-gov-subtle" style="font-size: 11.5px; padding: 4px 8px; color: #DC2626; border-color: #FECACA;" onclick="openRevokeModal('{{ cert.id }}', '{{ cert.serial_number|escapejs }}', '{{ cert.student_name|escapejs }}')">
+                        Đề xuất thu hồi
+                      </button>
+                    {% else %}
+                      <span class="admin-badge admin-badge-warning">Đào tạo đã ký thu hồi</span>
+                    {% endif %}
+                  </div>
+                {% elif cert.status == 'REVOKED' %}
+                  <span class="admin-badge admin-badge-danger">Đã thu hồi</span>
+                {% else %}
+                  <span class="admin-badge admin-badge-warning">Đang chờ Hiệu trưởng ký duyệt</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="6" style="text-align: center; padding: 36px; color: #64748B;">
+                Chưa có hồ sơ nào được chuyển lên Hiệu trưởng.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- BẢNG DỮ LIỆU: TAB 4 - XÁC NHẬN THU HỒI (ĐỒNG THUẬN 3 BÊN) -->
+      <div class="admin-table-wrap" id="panel-revoked" style="display: none;">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th style="width: 140px;">Số hiệu</th>
+              <th>Mã SV - Sinh viên</th>
+              <th>Ngành đào tạo</th>
+              <th>Lý do thu hồi</th>
+              <th style="text-align: center; white-space: nowrap; min-width: 250px;">Đồng thuận 3 cấp</th>
+              <th style="text-align: right; width: 220px; white-space: nowrap;">Thao tác Phòng Đào tạo</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for cert in revoked_certs %}
+            <tr class="row-highlight">
+              <td><code style="color: #DC2626; font-weight: 700;">{{ cert.serial_number }}</code></td>
+              <td><strong>{{ cert.student_name }}</strong> ({{ cert.student_id|default:"-" }})</td>
+              <td>{{ cert.major }}</td>
+              <td>
+                <div style="font-size: 12.5px; color: #475569; max-width: 260px;">
+                  {{ cert.revoke_reason|default:"Phát hiện sai sót trong hồ sơ gốc." }}
+                </div>
+              </td>
+              <td style="text-align: center; white-space: nowrap;">
+                <div style="display: inline-flex; gap: 5px; align-items: center; justify-content: center; flex-wrap: nowrap; white-space: nowrap;">
+                  <span class="admin-badge {% if cert.student_affairs_revoke %}admin-badge-success{% else %}admin-badge-secondary{% endif %}" title="Phòng Quản lý sinh viên" style="white-space: nowrap;">
+                    QLSV: {% if cert.student_affairs_revoke %}Đã ký{% else %}Chờ{% endif %}
+                  </span>
+                  <span class="admin-badge {% if cert.academic_affairs_revoke %}admin-badge-success{% else %}admin-badge-warning{% endif %}" title="Phòng Đào tạo" style="white-space: nowrap;">
+                    Đào tạo: {% if cert.academic_affairs_revoke %}Đã ký{% else %}Chờ{% endif %}
+                  </span>
+                  <span class="admin-badge {% if cert.rector_revoke %}admin-badge-success{% else %}admin-badge-secondary{% endif %}" title="Hiệu trưởng" style="white-space: nowrap;">
+                    BGH: {% if cert.rector_revoke %}Đã ký{% else %}Chờ{% endif %}
+                  </span>
+                </div>
+              </td>
+              <td style="text-align: right; white-space: nowrap;">
+                {% if cert.status == 'REVOKED' %}
+                  <span class="admin-badge admin-badge-danger">Đã thu hồi chính thức</span>
+                {% elif cert.academic_affairs_revoke %}
+                  <span class="admin-badge admin-badge-success">Đào tạo đã ký xác nhận</span>
+                {% else %}
+                  <button class="btn-gov-danger" onclick="openRevokeModal('{{ cert.id }}', '{{ cert.serial_number|escapejs }}', '{{ cert.student_name|escapejs }}')">
+                    Ký xác nhận thu hồi
+                  </button>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="6" style="text-align: center; padding: 36px; color: #64748B;">
+                Hiện chưa có hồ sơ nào thuộc diện đề xuất hoặc xác nhận thu hồi.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+    <!-- GHI CHÚ BẢO MẬT DƯỚI CÙNG -->
+    <div class="sp-privacy-note">
+      * Lưu ý: Hồ sơ sau khi Phòng Đào tạo thẩm định và duyệt sẽ được chuyển thẳng đến bàn làm việc của Hiệu trưởng để ký số bằng chữ ký số cá nhân và phát hành lên Blockchain.
+    </div>
+
+  </main>
+
+  <!-- CHÂN TRANG CHUẨN CỔNG DỊCH VỤ CÔNG QUỐC GIA & CTUT -->
+  <footer class="main-footer">
+    <div class="container footer-container">
+      Cơ quan chủ quản: Trường Đại học Kỹ Thuật - Công nghệ Cần Thơ. Hotline hỗ trợ: 0000000000
+    </div>
+  </footer>
+
+  <!-- ==================== CÁC MODAL HỆ THỐNG PHÒNG ĐÀO TẠO ==================== -->
+
+  <!-- 1. MODAL DUYỆT HỒ SƠ LÊN HIỆU TRƯỞNG -->
+  <div class="gov-modal-backdrop" id="modalApprove">
+    <div class="gov-modal">
+      <div class="gov-modal-header">
+        <div class="gov-modal-title">
+          <span>XÁC NHẬN ĐIỀU KIỆN TỐT NGHIỆP & CHUYỂN HIỆU TRƯỞNG</span>
+        </div>
+        <button class="gov-modal-close" onclick="closeModal('modalApprove')">&times;</button>
+      </div>
+      <div class="gov-modal-body">
+        <p style="font-size: 13.5px; color: #334155; margin-bottom: 14px;">
+          Phòng Đào tạo xác nhận sinh viên đã hoàn thành đầy đủ chương trình đào tạo, đạt chuẩn đầu ra và đủ điều kiện công nhận tốt nghiệp:
+        </p>
+
+        <div style="background: #F8FAFC; border: 1px solid #CBD5E1; border-radius: 6px; padding: 14px; font-size: 13px; margin-bottom: 14px;">
+          <div style="margin-bottom: 4px;">Số hiệu văn bằng: <strong id="app_serial" style="color: #26457F;">-</strong></div>
+          <div style="margin-bottom: 4px;">Họ và tên sinh viên: <strong id="app_name">-</strong></div>
+          <div style="margin-bottom: 4px;">Ngành đào tạo: <strong id="app_major">-</strong></div>
+          <div style="margin-bottom: 4px;">Xếp loại tốt nghiệp: <strong id="app_grade" style="color: #059669;">-</strong></div>
+          <div>Quyết định tốt nghiệp: <strong id="app_decision">Đủ điều kiện tốt nghiệp</strong></div>
+        </div>
+
+        <div style="background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 6px; padding: 12px; font-size: 12.5px; color: #065F46;">
+          Hồ sơ sẽ được chuyển thẳng đến hàng đợi ký duyệt của <strong>Hiệu trưởng</strong> để tiến hành ký số phát hành chính thức.
+        </div>
+      </div>
+      <div class="gov-modal-footer">
+        <button class="btn-gov-subtle" onclick="closeModal('modalApprove')">Hủy bỏ</button>
+        <button class="btn-gov-primary" onclick="submitApprove()">
+          Xác nhận hợp lệ & Chuyển Hiệu trưởng
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. MODAL TRẢ VỀ PHÒNG QLSV KÈM LÝ DO -->
+  <div class="gov-modal-backdrop" id="modalReject">
+    <div class="gov-modal">
+      <div class="gov-modal-header">
+        <div class="gov-modal-title" style="color: #DC2626;">
+          <span>HOÀN TRẢ HỒ SƠ VỀ PHÒNG QUẢN LÝ SINH VIÊN</span>
+        </div>
+        <button class="gov-modal-close" onclick="closeModal('modalReject')">&times;</button>
+      </div>
+      <div class="gov-modal-body">
+        <p style="font-size: 13px; color: #475569; margin-bottom: 12px;">
+          Hoàn trả hồ sơ số hiệu <strong id="rej_serial" style="color: #26457F;">-</strong> của sinh viên <strong id="rej_name">-</strong> về Phòng QLSV để kiểm tra chỉnh sửa lại.
+        </p>
+
+        <div class="gov-form-group">
+          <label class="gov-form-label">Lý do hoàn trả <span class="required">*</span></label>
+          <select id="rej_preset" class="gov-form-select" onchange="applyRejectPreset()">
+            <option value="Sai ngày tháng năm sinh so với hồ sơ trúng tuyển và CCCD">Sai ngày tháng năm sinh so với hồ sơ trúng tuyển và CCCD</option>
+            <option value="Chưa chuẩn hóa tên ngành đào tạo theo quyết định mở ngành">Chưa chuẩn hóa tên ngành đào tạo theo quyết định mở ngành</option>
+            <option value="Sai lệch họ và tên đệm của người học so với hồ sơ gốc">Sai lệch họ và tên đệm của người học so với hồ sơ gốc</option>
+            <option value="custom">Lý do học vụ khác (Nhập chi tiết bên dưới)...</option>
+          </select>
+        </div>
+
+        <div class="gov-form-group">
+          <label class="gov-form-label">Chi tiết phản hồi cho Phòng QLSV</label>
+          <textarea id="rej_reason" class="gov-form-textarea" rows="3" placeholder="Nhập ghi chú yêu cầu QLSV sửa đổi..."></textarea>
+        </div>
+      </div>
+      <div class="gov-modal-footer">
+        <button class="btn-gov-subtle" onclick="closeModal('modalReject')">Đóng</button>
+        <button class="btn-gov-danger" onclick="submitReject()">
+          Xác nhận hoàn trả về QLSV
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. MODAL XEM CHI TIẾT HỌC BẠ & CHUẨN ĐẦU RA -->
+  <div class="gov-modal-backdrop" id="modalTranscript">
+    <div class="gov-modal gov-modal-lg">
+      <div class="gov-modal-header">
+        <div class="gov-modal-title">
+          <span>HỒ SƠ HỌC TẬP & CHUẨN ĐẦU RA TỐT NGHIỆP</span>
+        </div>
+        <button class="gov-modal-close" onclick="closeModal('modalTranscript')">&times;</button>
+      </div>
+      <div class="gov-modal-body">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; background: #FAFBFD; padding: 12px; border: 1px solid #E2E8F0; border-radius: 6px;">
+          <div>
+            <div style="font-size: 14.5px; font-weight: 700; color: #0F172A;" id="tr_name">-</div>
+            <div style="font-size: 12.5px; color: #64748B;">Số hiệu: <code id="tr_serial">-</code> - Ngành: <span id="tr_major">-</span></div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 16px; font-weight: 800; color: #059669;" id="tr_cpa">-</div>
+            <div style="font-size: 12px; font-weight: 600; color: #475569;">Xếp loại: <span id="tr_grade">-</span></div>
+          </div>
+        </div>
+
+        <div style="font-size: 13px; font-weight: 700; color: #1E293B; margin-bottom: 8px;">1. ĐỐI SOÁT CHUẨN ĐẦU RA BẮT BUỘC:</div>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px;">
+          <div style="background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 6px; padding: 10px;">
+            <div style="font-size: 11.5px; color: #065F46; font-weight: 600;">Chuẩn Ngoại ngữ</div>
+            <div style="font-size: 13px; font-weight: 700; color: #059669; margin-top: 2px;" id="tr_lang">Đạt chuẩn quy định</div>
+            <div style="font-size: 11px; color: #64748B;">Hồ sơ lưu trữ điện tử</div>
+          </div>
+          <div style="background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 6px; padding: 10px;">
+            <div style="font-size: 11.5px; color: #065F46; font-weight: 600;">Chuẩn Tin học</div>
+            <div style="font-size: 13px; font-weight: 700; color: #059669; margin-top: 2px;" id="tr_it">Đạt chuẩn ứng dụng CNTT</div>
+            <div style="font-size: 11px; color: #64748B;">Hồ sơ lưu trữ điện tử</div>
+          </div>
+          <div style="background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 6px; padding: 10px;">
+            <div style="font-size: 11.5px; color: #065F46; font-weight: 600;">Điểm rèn luyện toàn khóa</div>
+            <div style="font-size: 13px; font-weight: 700; color: #059669; margin-top: 2px;" id="tr_conduct">Đạt chuẩn tốt nghiệp</div>
+            <div style="font-size: 11px; color: #64748B;">Tích lũy đủ số tín chỉ</div>
+          </div>
+        </div>
+
+        <div style="font-size: 13px; font-weight: 700; color: #1E293B; margin-bottom: 8px;">2. QUYẾT ĐỊNH CÔNG NHẬN TỐT NGHIỆP:</div>
+        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 6px; padding: 10px; font-size: 12.5px; color: #475569;" id="tr_decision">
+          Hồ sơ đã hoàn thành đầy đủ các học phần trong chương trình đào tạo và đủ điều kiện công nhận tốt nghiệp theo quy định của Trường Đại học Kỹ thuật - Công nghệ Cần Thơ.
+        </div>
+      </div>
+      <div class="gov-modal-footer">
+        <button class="btn-gov-primary" onclick="closeModal('modalTranscript')">Đã kiểm tra đối soát</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. MODAL ĐIỀU CHỈNH HỌC VỤ THEO BGH -->
+  <div class="gov-modal-backdrop" id="modalAdjust">
+    <div class="gov-modal">
+      <div class="gov-modal-header">
+        <div class="gov-modal-title">
+          <span>ĐIỀU CHỈNH HỌC VỤ & TRÌNH LẠI BAN GIÁM HIỆU</span>
+        </div>
+        <button class="gov-modal-close" onclick="closeModal('modalAdjust')">&times;</button>
+      </div>
+      <div class="gov-modal-body">
+        <div class="gov-form-group">
+          <label class="gov-form-label">Số hiệu văn bằng</label>
+          <input type="text" id="adj_serial" class="gov-form-input" readonly style="background: #F1F5F9;">
+        </div>
+        <div class="gov-form-group">
+          <label class="gov-form-label">Họ và tên sinh viên</label>
+          <input type="text" id="adj_name" class="gov-form-input" readonly style="background: #F1F5F9;">
+        </div>
+        <div class="gov-form-row">
+          <div class="gov-form-group">
+            <label class="gov-form-label">Điểm CPA rà soát lại</label>
+            <input type="text" id="adj_cpa" class="gov-form-input">
+          </div>
+          <div class="gov-form-group">
+            <label class="gov-form-label">Xếp loại điều chỉnh</label>
+            <select id="adj_grade" class="gov-form-select">
+              <option value="Xuất sắc">Xuất sắc</option>
+              <option value="Giỏi" selected>Giỏi</option>
+              <option value="Khá">Khá</option>
+              <option value="Trung bình">Trung bình</option>
+            </select>
+          </div>
+        </div>
+        <div class="gov-form-group">
+          <label class="gov-form-label">Nội dung giải trình gửi Ban Giám hiệu</label>
+          <textarea class="gov-form-textarea" rows="2">Phòng Đào tạo đã rà soát lại bảng điểm tốt nghiệp bổ sung tháng 10/2026 và điều chỉnh xếp loại chính xác thành Giỏi (CPA 3.22) theo đúng Quy chế đào tạo.</textarea>
+        </div>
+      </div>
+      <div class="gov-modal-footer">
+        <button class="btn-gov-subtle" onclick="closeModal('modalAdjust')">Hủy</button>
+        <button class="btn-gov-primary" onclick="submitAdjust()">
+          Cập nhật & Trình lại Hiệu trưởng
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL XÁC NHẬN THU HỒI VĂN BẰNG (PHÒNG ĐÀO TẠO) -->
+  <div class="gov-modal-backdrop" id="modalRevoke">
+    <div class="gov-modal">
+      <div class="gov-modal-header" style="background: #FEF2F2; border-bottom: 1px solid #FECACA;">
+        <div class="gov-modal-title" style="color: #DC2626;">
+          <span>XÁC NHẬN ĐỒNG THUẬN THU HỒI VĂN BẰNG</span>
+        </div>
+        <button class="gov-modal-close" onclick="closeModal('modalRevoke')">&times;</button>
+      </div>
+      <div class="gov-modal-body">
+        <p style="font-size: 13px; color: #475569; margin-bottom: 12px;">
+          Phòng Đào tạo xác nhận thu hồi văn bằng số hiệu <strong id="rev_serial" style="color: #26457F;">...</strong> của người học <strong id="rev_name">...</strong>.
+        </p>
+        <p style="font-size: 12px; color: #DC2626; background: #FFF5F5; border: 1px solid #FED7D7; padding: 8px 12px; border-radius: 4px; margin-bottom: 14px;">
+          Quy trình Smart Contract yêu cầu cả 3 cấp (QLSV, Đào tạo, Hiệu trưởng) cùng ký xác nhận on-chain thì văn bằng mới chính thức mất hiệu lực.
+        </p>
+
+        <div class="gov-form-group">
+          <label class="gov-form-label">Lý do thu hồi học vụ <span class="required">*</span></label>
+          <textarea id="rev_reason" class="gov-form-textarea" rows="3" placeholder="Ghi rõ lý do sai phạm học vụ, điểm số hoặc CĐR..."></textarea>
+        </div>
+      </div>
+      <div class="gov-modal-footer">
+        <button class="btn-gov-subtle" onclick="closeModal('modalRevoke')">Đóng</button>
+        <button class="btn-gov-danger" onclick="submitRevoke()">
+          Xác nhận thu hồi
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL XÁC NHẬN ĐĂNG XUẤT -->
+  <div class="gov-modal-backdrop" id="modalLogout" style="display: none;">
+    <div class="gov-modal" style="max-width: 440px;">
+      <div class="gov-modal-header">
+        <div class="gov-modal-title" style="color: #0F172A; display: flex; align-items: center; gap: 8px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          <span>Xác nhận đăng xuất</span>
+        </div>
+        <button class="gov-modal-close" onclick="closeModal('modalLogout')">&times;</button>
+      </div>
+      <div class="gov-modal-body" style="text-align: center; padding: 28px 20px 20px;">
+        <div style="width: 52px; height: 52px; border-radius: 50%; background: #FEE2E2; color: #DC2626; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </div>
+        <p style="font-size: 15px; font-weight: 600; color: #0F172A; margin-bottom: 8px;">Bạn có chắc chắn muốn đăng xuất khỏi hệ thống?</p>
+        <span style="font-size: 13px; color: #64748B; line-height: 1.5; display: block;">Sau khi đăng xuất, phiên làm việc sẽ kết thúc và bạn sẽ được chuyển về Cổng tra cứu văn bằng công khai.</span>
+      </div>
+      <div class="gov-modal-footer" style="justify-content: center; gap: 12px; background: #FAFBFD; padding: 14px 20px;">
+        <button type="button" class="btn-gov-subtle" onclick="closeModal('modalLogout')" style="padding: 8px 18px; font-weight: 600;">Hủy bỏ</button>
+        <a href="{% url 'logout' %}" class="btn-gov-danger" style="text-decoration: none; padding: 8px 22px; font-weight: 600; background: #DC2626; color: #FFFFFF; border-color: #DC2626;">Đăng xuất</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT ĐIỀU HƯỚNG TABS & MODALS KẾT NỐI API THỰC -->
+  <script src="{% static 'toast.js' %}"></script>
+  <script>
+    let currentCertId = null;
+
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.substring(0, name.length + 1) === (name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+
+    function switchQueueTab(tabName) {
+      const tabs = ['pending', 'returned', 'forwarded', 'revoked'];
+      const titles = {
+        'pending': 'HỒ SƠ ĐÃ QUA BƯỚC 1 (QLSV ĐÃ XÁC NHẬN) - CHỜ PHÒNG ĐÀO TẠO THẨM ĐỊNH',
+        'returned': 'HỒ SƠ HIỆU TRƯỞNG HOÀN TRẢ PHÒNG ĐÀO TẠO XEM XÉT LẠI',
+        'forwarded': 'HỒ SƠ ĐÃ THẨM ĐỊNH HỢP LỆ - ĐÃ CHUYỂN BAN GIÁM HIỆU / HIỆU TRƯỞNG',
+        'revoked': 'DANH SÁCH HỒ SƠ PHÒNG ĐÀO TẠO XÁC NHẬN THU HỒI HIỆU LỰC'
+      };
+      const counts = {
+        'pending': '{{ pending_count }}',
+        'returned': '{{ returned_count }}',
+        'forwarded': '{{ forwarded_count }}',
+        'revoked': '{{ revoked_count }}'
+      };
+
+      tabs.forEach(t => {
+        const navBtn = document.getElementById('nav-tab-' + t);
+        const panel = document.getElementById('panel-' + t);
+        if (navBtn) navBtn.classList.toggle('active', t === tabName);
+        if (panel) panel.style.display = (t === tabName) ? 'block' : 'none';
+      });
+
+      const summaryEl = document.getElementById('portal-pending-summary');
+      if (summaryEl) {
+        summaryEl.style.display = (tabName === 'pending') ? 'block' : 'none';
+      }
+
+      const actionBar = document.getElementById('portal-action-bar');
+      if (actionBar) {
+        actionBar.style.display = (tabName === 'pending') ? 'flex' : 'none';
+      }
+
+      const titleEl = document.getElementById('queue-card-title');
+      if (titleEl) titleEl.innerText = titles[tabName] || '';
+      const countEl = document.getElementById('queue-count-display');
+      if (countEl) countEl.innerText = counts[tabName] || '0';
+    }
+
+    function openModal(id) {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'flex';
+    }
+
+    function closeModal(id) {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    }
+
+    window.addEventListener('click', function(e) {
+      if (e.target.classList.contains('gov-modal-backdrop')) {
+        e.target.style.display = 'none';
+      }
+    });
+
+    function openApproveModal(id, serial, name, major, grade) {
+      currentCertId = id;
+      document.getElementById('app_serial').innerText = serial;
+      document.getElementById('app_name').innerText = name;
+      document.getElementById('app_major').innerText = major;
+      document.getElementById('app_grade').innerText = grade;
+      openModal('modalApprove');
+    }
+
+    function submitApprove() {
+      if (!currentCertId) return;
+      const serial = document.getElementById('app_serial').innerText;
+
+      fetch(`/certificates/${currentCertId}/approve/`, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': getCookie('csrftoken'),
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      })
+      .then(res => res.json())
+      .then(data => {
+        closeModal('modalApprove');
+        if (data.success) {
+          showToastAndReload(data.message || `Đã thẩm định thành công hồ sơ ${serial}!`, 'success');
+        } else {
+          showToast('Lỗi: ' + (data.error || 'Không thể phê duyệt hồ sơ.'), 'error');
+        }
+      })
+      .catch(err => {
+        showToast('Lỗi kết nối máy chủ: ' + err.message, 'error');
+      });
+    }
+
+    function openRejectModal(id, serial, name) {
+      currentCertId = id;
+      document.getElementById('rej_serial').innerText = serial;
+      document.getElementById('rej_name').innerText = name;
+      applyRejectPreset();
+      openModal('modalReject');
+    }
+
+    function applyRejectPreset() {
+      const val = document.getElementById('rej_preset').value;
+      const ta = document.getElementById('rej_reason');
+      if (val !== 'custom') {
+        ta.value = val;
+      } else {
+        ta.value = '';
+        ta.focus();
+      }
+    }
+
+    function submitReject() {
+      if (!currentCertId) return;
+      const serial = document.getElementById('rej_serial').innerText;
+      const reason = document.getElementById('rej_reason').value.trim() || document.getElementById('rej_preset').value;
+
+      const formData = new FormData();
+      formData.append('reason', reason);
+
+      fetch(`/certificates/${currentCertId}/reject/`, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': getCookie('csrftoken'),
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: formData
+      })
+      .then(res => res.json())
+      .then(data => {
+        closeModal('modalReject');
+        if (data.success) {
+          showToastAndReload(data.message || `Đã hoàn trả hồ sơ ${serial} về Phòng Quản lý sinh viên.`, 'success');
+        } else {
+          showToast('Lỗi: ' + (data.error || 'Không thể hoàn trả hồ sơ.'), 'error');
+        }
+      })
+      .catch(err => {
+        showToast('Lỗi kết nối máy chủ: ' + err.message, 'error');
+      });
+    }
+
+    function openTranscriptModal(serial, name, major, grade) {
+      document.getElementById('tr_serial').innerText = serial;
+      document.getElementById('tr_name').innerText = name;
+      document.getElementById('tr_major').innerText = major;
+      document.getElementById('tr_cpa').innerText = grade || '-';
+      document.getElementById('tr_grade').innerText = grade || '-';
+      openModal('modalTranscript');
+    }
+
+    function openAdjustModal(id, serial, name, major, grade) {
+      currentCertId = id;
+      document.getElementById('adj_serial').value = serial;
+      document.getElementById('adj_name').value = name;
+      document.getElementById('adj_cpa').value = '';
+      document.getElementById('adj_grade').value = grade;
+      openModal('modalAdjust');
+    }
+
+    function submitAdjust() {
+      if (!currentCertId) return;
+      const serial = document.getElementById('adj_serial').value;
+      const grade = document.getElementById('adj_grade').value;
+
+      const formData = new FormData();
+      formData.append('classification', grade);
+
+      fetch(`/certificates/${currentCertId}/edit/`, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': getCookie('csrftoken'),
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: formData
+      })
+      .then(res => res.json())
+      .then(data => {
+        closeModal('modalAdjust');
+        if (data.success) {
+          showToastAndReload(data.message || `Đã điều chỉnh hồ sơ ${serial} và gửi trình lại Hiệu trưởng.`, 'success');
+        } else {
+          showToast('Lỗi: ' + (data.error || 'Không thể cập nhật hồ sơ.'), 'error');
+        }
+      })
+      .catch(err => {
+        showToast('Lỗi kết nối máy chủ: ' + err.message, 'error');
+      });
+    }
+
+    function batchApproveAll() {
+      openModal('modalBatchApprove');
+    }
+
+    let currentRevokeCertId = null;
+    function openRevokeModal(id, serial, name) {
+      currentRevokeCertId = id;
+      document.getElementById('rev_serial').innerText = serial;
+      document.getElementById('rev_name').innerText = name;
+      document.getElementById('rev_reason').value = 'Phát hiện sai sót học vụ trong hồ sơ tốt nghiệp.';
+      openModal('modalRevoke');
+    }
+
+    function submitRevoke() {
+      if (!currentRevokeCertId) return;
+      const serial = document.getElementById('rev_serial').innerText;
+      const reason = document.getElementById('rev_reason').value.trim();
+
+      const formData = new FormData();
+      formData.append('reason', reason);
+
+      fetch(`/certificates/${currentRevokeCertId}/revoke/`, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': getCookie('csrftoken'),
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: formData
+      })
+      .then(res => res.json())
+      .then(data => {
+        closeModal('modalRevoke');
+        if (data.success) {
+          showToastAndReload(data.message || `Đã ký xác nhận thu hồi văn bằng ${serial}!`, 'success');
+        } else {
+          showToast('Lỗi: ' + (data.error || 'Không thể xác nhận thu hồi.'), 'error');
+        }
+      })
+      .catch(err => {
+        showToast('Lỗi kết nối máy chủ: ' + err.message, 'error');
+      });
+    }
+
+    function executeBatchApprove() {
+      closeModal('modalBatchApprove');
+      fetch('/certificates/batch-approve/', {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': getCookie('csrftoken'),
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          showToastAndReload(data.message || `Đã duyệt thành công ${data.count} hồ sơ!`, 'success');
+        } else {
+          showToast('Lỗi: ' + (data.error || 'Không thể duyệt hàng loạt.'), 'error');
+        }
+      })
+      .catch(err => {
+        showToast('Lỗi kết nối máy chủ: ' + err.message, 'error');
+      });
+    }
+
+    function exportDecisionList() {
+      window.location.href = "{% url 'download_excel_template' %}";
+    }
+
+    function filterQueueTable() {
+      const kw = (document.getElementById('filter-search') ? document.getElementById('filter-search').value : '').toLowerCase();
+      const cls = (document.getElementById('filter-classification') ? document.getElementById('filter-classification').value : '').toLowerCase();
+      
+      const activePanels = Array.from(document.querySelectorAll('.admin-table-wrap')).filter(p => p.style.display !== 'none');
+      const rows = activePanels.length > 0
+        ? activePanels[0].querySelectorAll('tbody tr')
+        : document.querySelectorAll('#table-pending tbody tr');
+
+      rows.forEach(r => {
+        if (r.cells.length <= 1) return;
+        const text = r.innerText.toLowerCase();
+        const matchesKw = !kw || text.includes(kw);
+        const matchesCls = !cls || text.includes(cls);
+        r.style.display = (matchesKw && matchesCls) ? '' : 'none';
+      });
+    }
+
+    function resetFilters() {
+      if (document.getElementById('filter-search')) document.getElementById('filter-search').value = '';
+      if (document.getElementById('filter-classification')) document.getElementById('filter-classification').value = '';
+      filterQueueTable();
+    }
+  </script>
+  <!-- MODAL XÁC NHẬN DUYỆT NHANH TẤT CẢ -->
+  <div class="gov-modal-backdrop" id="modalBatchApprove" style="display: none;">
+    <div class="gov-modal" style="max-width: 440px;">
+      <div class="gov-modal-header" style="background: #EEF3FA; border-bottom: 1px solid #CBD5E1;">
+        <div class="gov-modal-title" style="color: #26457F; display: flex; align-items: center; gap: 8px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#26457F" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          <span>Xác nhận thẩm định hàng loạt</span>
+        </div>
+        <button type="button" class="gov-modal-close" onclick="closeModal('modalBatchApprove')">&times;</button>
+      </div>
+      <div class="gov-modal-body" style="text-align: center; padding: 26px 20px 20px;">
+        <div style="width: 52px; height: 52px; border-radius: 50%; background: #EEF3FA; color: #26457F; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <p style="font-size: 15px; font-weight: 600; color: #0F172A; margin-bottom: 8px;">Duyệt nhanh toàn bộ hồ sơ đủ chuẩn lên Hiệu trưởng?</p>
+        <span style="font-size: 13px; color: #64748B; line-height: 1.5; display: block;">Hệ thống sẽ đối soát chuẩn tốt nghiệp và đồng loạt chuyển tiếp các hồ sơ hợp lệ sang bước ký số của Ban Giám hiệu.</span>
+      </div>
+      <div class="gov-modal-footer" style="justify-content: center; gap: 12px; background: #FAFBFD; padding: 14px 20px;">
+        <button type="button" class="btn-gov-subtle" onclick="closeModal('modalBatchApprove')" style="padding: 8px 18px; font-weight: 600;">Hủy bỏ</button>
+        <button type="button" class="btn-gov-primary" onclick="executeBatchApprove()" style="padding: 8px 22px; font-weight: 600;">Xác nhận duyệt</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

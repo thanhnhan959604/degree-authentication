@@ -1,0 +1,1246 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cổng Sinh viên - Văn bằng Điện tử & Chia sẻ Xác minh</title>
+  <link rel="icon" type="image/png" href="/media/ctut_logo.png">
+  <link rel="shortcut icon" type="image/png" href="/media/ctut_logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Merriweather:wght@700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'style.css' %}">
+  
+</head>
+<body>
+
+
+  <!-- HEADER CHUẨN CỔNG DỊCH VỤ CÔNG QUỐC GIA & CTUT -->
+  <header class="dvc-header">
+    <div class="container dvc-top-main">
+      <div class="dvc-brand">
+        <!-- Logo Trường ĐH Kỹ thuật - Công nghệ Cần Thơ (CTUT) -->
+        <div class="dvc-emblem-wrap" style="width: 68px; height: 68px;">
+          <img src="/media/ctut_logo.png" alt="Logo CTUT" class="dvc-emblem" style="width: 68px; height: 68px; object-fit: contain;">
+        </div>
+
+        <!-- Tên Trường & Khẩu hiệu hành động -->
+        <div class="dvc-title-block">
+          <div class="dvc-title-row">
+            <h1 class="dvc-brand-heading">TRƯỜNG ĐẠI HỌC KỸ THUẬT - CÔNG NGHỆ CẦN THƠ</h1>
+          </div>
+          <div class="dvc-brand-slogan">Đức trí – Kỹ năng – Sáng tạo – Hội nhập</div>
+        </div>
+      </div>
+
+      <!-- Thông tin tài khoản sinh viên đăng nhập -->
+      <div style="display: flex; align-items: center; gap: 14px;">
+        <div style="text-align: right;">
+          <div style="font-size: 13.5px; font-weight: 700; color: #1E293B;">{{ request.user.profile.full_name|default:cert.student_name|default:request.user.username }}</div>
+          <div style="font-size: 11.5px; color: #64748B;">Mã SV: {{ cert.student_id|default:request.user.username }} - Cổng Sinh viên</div>
+        </div>
+        <button type="button" onclick="openModal('modalLogout')" class="sp-btn-single" title="Đăng xuất khỏi hệ thống" style="cursor: pointer; font-family: inherit;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          <span>Đăng xuất</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Thanh menu điều hướng xám với tab Home cam đất -->
+    <nav class="dvc-navbar">
+      <div class="container dvc-nav-container">
+        <a href="{% url 'search' %}" class="dvc-nav-home" title="Trang chủ tra cứu">
+          <img src="/media/home_icon.png" alt="Trang chủ" style="width: 22px; height: 20px; display: block;">
+        </a>
+
+        <ul class="dvc-nav-list">
+          <li class="dvc-nav-item">
+            <a href="javascript:void(0)" onclick="switchPortalTab('van-bang')" id="nav-tab-van-bang" class="dvc-nav-link active">
+              Văn bằng của tôi
+            </a>
+          </li>
+          <li class="dvc-nav-item">
+            <a href="javascript:void(0)" onclick="switchPortalTab('chia-se')" id="nav-tab-chia-se" class="dvc-nav-link">
+              Chia sẻ
+            </a>
+          </li>
+          <li class="dvc-nav-item">
+            <a href="javascript:void(0)" onclick="switchPortalTab('nhat-ky')" id="nav-tab-nhat-ky" class="dvc-nav-link">
+              Nhật ký truy cập
+            </a>
+          </li>
+          <li class="dvc-nav-item">
+            <a href="{% url 'search' %}" class="dvc-nav-link" target="_blank">
+              Tra cứu công khai
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left: 3px;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+  </header>
+
+  <!-- BANNER XANH CTUT ĐỒNG BỘ VỚI TRANG CHỦ & CỔNG DVC QUỐC GIA -->
+  <section class="portal-banner">
+    <div class="container portal-banner-container">
+      <h1 class="portal-banner-title">CỔNG VĂN BẰNG SINH VIÊN</h1>
+      <p class="portal-banner-subtitle">Hệ thống quản lý, xác thực và chia sẻ văn bằng điện tử chính thức của Nhà trường</p>
+    </div>
+  </section>
+
+  <!-- NỘI DUNG CHÍNH CỔNG SINH VIÊN -->
+  <main class="container" style="padding-top: 10px; padding-bottom: 40px;">
+
+    <!-- TAB PANEL 1: VĂN BẰNG CỦA TÔI -->
+    <div id="panel-van-bang">
+
+      <!-- 1. KHỐI TỔNG QUAN TÀI KHOẢN (THEO NHÁNH VAN-PHUOC) -->
+      <div class="sp-summary-grid">
+        <div class="sp-stat-card">
+          <div class="sp-stat-label">VĂN BẰNG / CHỨNG CHỈ</div>
+          <div class="sp-stat-val">{% if certs %}{{ certs|length }}{% elif cert %}1{% else %}0{% endif %}</div>
+        </div>
+        <div class="sp-stat-card">
+          <div class="sp-stat-label">HỒ SƠ ĐANG XÉT DUYỆT</div>
+          <div class="sp-stat-val" style="color: #64748B;">0</div>
+        </div>
+        <div class="sp-stat-card sp-account-card">
+          <div class="sp-stat-label">THÔNG TIN TÀI KHOẢN SINH VIÊN</div>
+          <div class="sp-account-name">{% if request.user.profile.full_name %}{{ request.user.profile.full_name }}{% elif cert %}{{ cert.student_name }}{% else %}{{ request.user.username }}{% endif %}{% if cert.student_id %} - {{ cert.student_id }}{% endif %}</div>
+          <div class="sp-account-detail">Email nhận tin: {% if request.user.email %}{{ request.user.email }}{% elif cert.student_id %}{{ cert.student_id|lower }}@student.ctuet.edu.vn{% else %}{{ request.user.username }}@student.ctuet.edu.vn{% endif %}</div>
+        </div>
+      </div>
+
+      <!-- THANH CHỌN VĂN BẰNG (ĐƠN GIẢN, GỌN GÀNG) -->
+      <div class="sp-degree-select-bar">
+        <label for="degree-select" class="sp-degree-select-label">Chọn văn bằng:</label>
+        <div class="sp-select-wrapper">
+          <select id="degree-select" class="sp-degree-dropdown" onchange="switchDegree(this.value)">
+            {% if certs %}
+              {% for c in certs %}
+                <option value="{{ forloop.counter }}" {% if forloop.first %}selected{% endif %}>{{ c.degree_type }} - {{ c.major }} ({{ c.serial_number }}){% if c.status == 'REVOKED' %} [ĐÃ THU HỒI]{% endif %}</option>
+              {% endfor %}
+            {% elif cert %}
+              <option value="1" selected>{{ cert.degree_type }} - {{ cert.major }} ({{ cert.serial_number }}){% if cert.status == 'REVOKED' %} [ĐÃ THU HỒI]{% endif %}</option>
+            {% else %}
+              <option value="">Chưa có văn bằng nào được phát hành</option>
+            {% endif %}
+          </select>
+          <svg class="sp-select-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+      </div>
+
+      <div class="sp-cert-card" id="van-bang">
+      <div class="sp-cert-header">
+        <div class="sp-cert-title-group">
+          <h3 id="cert-title">{% if cert %}{{ cert.degree_type|upper }} - {{ cert.major|upper }}{% else %}VĂN BẰNG ĐIỆN TỬ{% endif %}</h3>
+          <div class="sp-cert-meta">
+            Số hiệu văn bằng: <strong id="cert-serial" style="color: #26457F; font-family: monospace;">{{ cert.serial_number|default:"-" }}</strong> - Cấp ngày <span id="cert-date">{{ cert.issue_date|default:cert.created_at|date:"d/m/Y"|default:"-" }}</span>
+            <span id="cert-status-badge" style="{% if cert.status == 'REVOKED' %}display: inline-block;{% else %}display: none;{% endif %} margin-left: 8px; font-size: 11.5px; padding: 2px 8px; border-radius: 4px; font-weight: 700; background: #FEE2E2; color: #DC2626; border: 1px solid #FECACA;">ĐÃ THU HỒI</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sp-cert-body">
+        <!-- Lưới 2 cột: Thông tin trên văn bằng + Khối mã xác minh công khai -->
+        <div class="sp-cert-columns">
+          
+          <!-- Cột 1: Thông tin chi tiết trên văn bằng -->
+          <div>
+            <div class="sp-col-title">Thông tin trên văn bằng</div>
+            <div class="sp-details-list">
+              <div class="sp-detail-row">
+                <span class="sp-detail-label">Họ và tên:</span>
+                <span class="sp-detail-value">{{ cert.student_name|upper|default:"-" }}</span>
+              </div>
+              <div class="sp-detail-row">
+                <span class="sp-detail-label">Ngày sinh:</span>
+                <span class="sp-detail-value">{{ cert.date_of_birth|date:"d/m/Y"|default:"-" }}</span>
+              </div>
+              <div class="sp-detail-row">
+                <span class="sp-detail-label">Mã sinh viên:</span>
+                <span class="sp-detail-value">{{ cert.student_id|default:"-" }}</span>
+              </div>
+              <div class="sp-detail-row">
+                <span class="sp-detail-label">Xếp loại tốt nghiệp:</span>
+                <span class="sp-detail-value" id="cert-rank">{{ cert.classification|default:"-" }}</span>
+              </div>
+              <div class="sp-detail-row">
+                <span class="sp-detail-label">Năm tốt nghiệp:</span>
+                <span class="sp-detail-value">{{ cert.graduation_year|default:"-" }}</span>
+              </div>
+              <!-- Số CCCD có nút con mắt bảo mật (Cơ chế Zero-Knowledge từ trình duyệt: 12 số, che 8 số đầu, hiển thị 4 số cuối) -->
+              <div class="sp-detail-row">
+                <span class="sp-detail-label">Số CCCD (Bảo mật):</span>
+                <span class="sp-detail-value" style="display: flex; align-items: center; gap: 8px;">
+                  <span id="cccd-display" style="font-family: monospace; font-weight: 600;">•••• •••• {% if cert.national_id_last4 %}{{ cert.national_id_last4 }}{% else %}••••{% endif %}</span>
+                  <button type="button" class="sp-cccd-toggle" id="btn-toggle-cccd" onclick="toggleCccdVisibility()" title="Hiện / Ẩn số CCCD từ phiên đăng nhập">
+                    <svg id="cccd-eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  </button>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cột 2: Mã xác minh công khai in trên phôi -->
+          <div>
+            <div class="sp-col-title">Mã xác minh công khai</div>
+            <div class="sp-verify-box">
+              <img src="{% if cert %}/api/qr/?data={{ cert.serial_number }}{% else %}/api/qr/?data=CTUT{% endif %}" alt="Mã QR tra cứu" class="sp-qr-img">
+              <div>
+                <div class="sp-verify-code" id="cert-code">{{ cert.serial_number|default:"-" }}</div>
+                <div class="sp-verify-note">
+                  Mã in trên góc văn bằng. Người tra cứu công khai chỉ xem được thông tin cơ bản đã che để bảo vệ quyền riêng tư.
+                </div>
+                <div class="sp-verify-actions">
+                  <a href="{% url 'search' %}" target="_blank" class="sp-btn-single" title="Xem kết quả như một nhà tuyển dụng">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    <span>Xem như người tra cứu</span>
+                  </a>
+                  <button type="button" class="sp-btn-single" onclick="window.print()" title="In bản sao văn bằng">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                    <span>In bản sao</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="sp-section-divider"></div>
+
+        <!-- 3. TRÌNH XEM VĂN BẰNG ĐẦY ĐỦ CỦA CHÍNH SINH VIÊN -->
+        <div class="diploma-viewer-card result-card" style="box-shadow: none; border: 1px solid #CBD5E1;">
+          <!-- Header thanh công cụ văn bằng -->
+          <div class="diploma-viewer-header">
+            <div class="viewer-header-left">
+              <svg class="viewer-doc-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+              </svg>
+              <span class="viewer-title">Văn bằng của tôi</span>
+            </div>
+
+            <!-- Bộ nút thu phóng, In chứng nhận & Tải về -->
+            <div class="viewer-header-right">
+              <div class="viewer-zoom-group">
+                <button type="button" class="viewer-tool-btn" onclick="zoomDiploma(-10)" title="Thu nhỏ">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+                </button>
+                <span class="viewer-zoom-val" id="zoom-val-text">100%</span>
+                <button type="button" class="viewer-tool-btn" onclick="zoomDiploma(10)" title="Phóng to">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+                </button>
+              </div>
+              <div class="viewer-divider"></div>
+
+              <!-- Nút In chứng nhận xác thực -->
+              <button type="button" class="viewer-tool-btn-print" onclick="window.print()" title="In chứng nhận xác thực">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="6 9 6 2 18 2 18 9"/>
+                  <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                  <rect x="6" y="14" width="12" height="8"/>
+                </svg>
+                <span>In chứng nhận xác thực</span>
+              </button>
+
+              <!-- Nút Tải về -->
+              <button type="button" class="viewer-tool-btn-action" onclick="downloadDiploma()" title="Tải về ảnh văn bằng đầy đủ">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                <span>Tải về</span>
+              </button>
+
+              <button type="button" class="viewer-tool-btn" onclick="toggleDiplomaFullscreen()" title="Toàn màn hình">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Khu vực hiển thị phôi văn bằng số -->
+          <div class="diploma-viewer-stage" id="diploma-viewer-stage">
+            <div class="diploma-canvas-container" id="diploma-canvas-container">
+              {% if cert %}
+              <img src="{% url 'owner_diploma_image' cert.serial_number %}" alt="Ảnh văn bằng kỹ thuật số đầy đủ" class="diploma-document-image" id="diploma-document-image">
+              {% else %}
+              <div style="padding: 60px 20px; text-align: center; color: #64748B;">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.8" style="margin-bottom: 12px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <div style="font-weight: 600; font-size: 15px; color: #334155;">Chưa có văn bằng nào được phát hành</div>
+                <div style="font-size: 13px; margin-top: 4px;">Tài khoản sinh viên của bạn hiện chưa có hồ sơ văn bằng tốt nghiệp nào trên hệ thống.</div>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Chú thích bảo mật pháp lý -->
+          <div class="diploma-viewer-note">
+            <span>Đây là bản đầy đủ chỉ hiển thị cho bạn. Người tra cứu công khai chỉ thấy bản đã che ngày sinh và xếp loại theo chính sách bảo vệ dữ liệu cá nhân.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- KẾT THÚC TAB PANEL 1: VĂN BẰNG CỦA TÔI -->
+
+    <!-- TAB PANEL 2: CHIA SẺ CHO NHÀ TUYỂN DỤNG / ĐƠN VỊ XÁC MINH -->
+    <div id="panel-chia-se" style="display: none;">
+      <div class="sp-cert-card" id="chia-se">
+        <div class="sp-cert-body">
+          <div class="sp-col-title" style="margin-bottom: 8px;">Chia sẻ cho nhà tuyển dụng / đơn vị xác minh</div>
+          <p style="font-size: 13px; color: #64748B; margin-bottom: 14px;">
+            Chủ động tạo liên kết xác thực có thời hạn và chọn chính xác phạm vi thông tin cho phép người nhận được xem (không cần công chứng bản giấy).
+          </p>
+
+          <!-- Form tạo liên kết chia sẻ -->
+          <form onsubmit="handleCreateShare(event); return false;" style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 6px; padding: 16px; margin-bottom: 16px;">
+            {% csrf_token %}
+            <div class="sp-share-form-grid-2">
+              <div>
+                <label class="sp-form-label">Văn bằng cần chia sẻ:</label>
+                <select id="share-degree-target" class="sp-form-select" onchange="switchDegree(this.value)">
+                  {% if certs %}
+                    {% for c in certs %}
+                      <option value="{{ forloop.counter }}" {% if forloop.first %}selected{% endif %}>{{ c.degree_type }} - {{ c.major }} ({{ c.serial_number }}){% if c.status == 'REVOKED' %} [ĐÃ THU HỒI]{% endif %}</option>
+                    {% endfor %}
+                  {% elif cert %}
+                    <option value="1" selected>{{ cert.degree_type }} - {{ cert.major }} ({{ cert.serial_number }}){% if cert.status == 'REVOKED' %} [ĐÃ THU HỒI]{% endif %}</option>
+                  {% else %}
+                    <option value="">Chưa có văn bằng nào</option>
+                  {% endif %}
+                </select>
+              </div>
+              <div>
+                <label class="sp-form-label">Gửi cho (Nhà tuyển dụng / Người nhận):</label>
+                <input type="text" id="share-recipient" class="sp-form-input" placeholder="Ví dụ: Công ty TNHH Phần mềm FPT - Phòng Nhân sự">
+              </div>
+            </div>
+
+            <div class="sp-share-form-grid-2" style="margin-top: 12px; margin-bottom: 14px;">
+              <div>
+                <label class="sp-form-label">Thời hạn hiệu lực:</label>
+                <select id="share-days" class="sp-form-select">
+                  <option value="1">1 ngày</option>
+                  <option value="3">3 ngày</option>
+                  <option value="7" selected>7 ngày</option>
+                  <option value="14">14 ngày</option>
+                  <option value="30">30 ngày</option>
+                </select>
+              </div>
+              <div>
+                <label class="sp-form-label">Lượt xem tối đa:</label>
+                <input type="number" id="share-max-views" class="sp-form-input" min="1" max="1000" placeholder="Không giới hạn">
+              </div>
+            </div>
+
+            <!-- Phạm vi thông tin cho phép xem thêm -->
+            <div>
+              <label class="sp-form-label">Cho phép người nhận xem thêm thông tin:</label>
+              <div class="sp-checkbox-group">
+                <label class="sp-checkbox-item">
+                  <input type="checkbox" id="chk-fullname">
+                  <span>Họ tên đầy đủ</span>
+                </label>
+                <label class="sp-checkbox-item">
+                  <input type="checkbox" id="chk-dob">
+                  <span>Ngày sinh</span>
+                </label>
+                <label class="sp-checkbox-item">
+                  <input type="checkbox" id="chk-sid">
+                  <span>Mã sinh viên</span>
+                </label>
+                <label class="sp-checkbox-item">
+                  <input type="checkbox" id="chk-rank">
+                  <span>Xếp loại tốt nghiệp</span>
+                </label>
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end;">
+              <button type="button" class="sp-btn-single-primary" onclick="handleCreateShare(event)">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                <span>Tạo liên kết chia sẻ</span>
+              </button>
+            </div>
+          </form>
+
+          <!-- Khối hiển thị liên kết vừa tạo (mặc định ẩn, bật lên khi tạo xong) -->
+          <div id="new-share-box" class="sp-new-share-box" style="display: none; align-items: flex-start; gap: 16px; background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 8px; padding: 18px 20px; margin-bottom: 20px;">
+            <!-- Cột mã QR chia sẻ + nút Share -->
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 8px; flex-shrink: 0;">
+              <div style="width: 88px; height: 88px; background: #FFF; border: 1px solid #CBD5E1; border-radius: 6px; display: flex; align-items: center; justify-content: center; padding: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
+                <img id="new-share-qr-img" src="" alt="Mã QR chia sẻ" style="width: 100%; height: 100%; object-fit: contain;">
+              </div>
+              <button type="button" class="sp-btn-single" onclick="shareQrOrLink()" title="Chia sẻ mã QR và liên kết" style="font-size: 11.5px; padding: 4px 10px; width: 100%; justify-content: center; background: #059669; color: #FFF; border-color: #059669; font-weight: 600;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                <span>Chia sẻ</span>
+              </button>
+            </div>
+
+            <!-- Cột thông tin mã tra cứu và liên kết -->
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-weight: 700; color: #065F46; font-size: 14.5px; margin-bottom: 3px;">
+                Đã tạo thành công liên kết chia sẻ cho: <span id="new-share-target" style="color: #047857;">...</span>
+              </div>
+              <div style="font-size: 12.5px; color: #047857; margin-bottom: 12px; line-height: 1.4;">
+                Vì lý do an toàn bảo mật, bạn hãy gửi mã tra cứu ngẫu nhiên hoặc liên kết này kèm mã QR cho nhà tuyển dụng để xác minh.
+              </div>
+
+              <!-- Dòng 1: Mã tra cứu ngẫu nhiên + nút copy mã -->
+              <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 10px; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; background: #FFF; border: 1px solid #CBD5E1; border-radius: 4px; padding: 0 12px; height: 34px;">
+                  <span style="font-size: 12px; color: #64748B; margin-right: 8px; font-weight: 500;">Mã tra cứu ngẫu nhiên:</span>
+                  <strong id="new-share-code" style="font-family: monospace; font-size: 14px; color: #1E3A8A; letter-spacing: 1px;">-</strong>
+                </div>
+                <button type="button" class="sp-btn-single" onclick="copyShareCode()" title="Sao chép mã tra cứu ngẫu nhiên" style="height: 34px;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  <span>Sao chép mã</span>
+                </button>
+              </div>
+
+              <!-- Dòng 2: Đường dẫn liên kết chia sẻ + nút sao chép link -->
+              <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <input type="text" id="new-share-url" class="sp-form-input" style="height: 34px; font-size: 12px; background: #FFF; max-width: 440px; font-family: monospace;" readonly>
+                <button type="button" class="sp-btn-single" onclick="copyNewShareUrl()" title="Sao chép đường dẫn liên kết" style="height: 34px;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  <span>Sao chép liên kết</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bảng danh sách liên kết chia sẻ đang hiệu lực -->
+          <div style="overflow-x: auto;">
+            <table class="sp-table">
+              <thead>
+                <tr>
+                  <th>Văn bằng chia sẻ</th>
+                  <th>Gửi cho</th>
+                  <th>Được xem thêm</th>
+                  <th>Hết hạn</th>
+                  <th>Lượt xem</th>
+                  <th>Trạng thái</th>
+                  <th style="text-align: right;">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="share-table-body">
+                {% if cert.shares.all %}
+                  {% for s in cert.shares.all %}
+                  <tr>
+                    <td><strong style="color: #26457F;">{{ cert.degree_type }} - {{ cert.major }}</strong></td>
+                    <td><strong>{{ s.recipient_name }}</strong></td>
+                    <td>{{ s.permissions_display }}</td>
+                    <td>{{ s.expiry_display }}</td>
+                    <td>{{ s.views_display }}</td>
+                    <td>
+                      <span class="{% if s.status == 'ACTIVE' %}sp-badge-active{% else %}sp-badge-inactive{% endif %}" {% if s.status != 'ACTIVE' %}style="background: #FEE2E2; color: #DC2626;"{% endif %}>
+                        {% if s.status == 'ACTIVE' %}Đang hiệu lực{% else %}Đã thu hồi{% endif %}
+                      </span>
+                    </td>
+                    <td style="text-align: right;">
+                      <button type="button" class="sp-btn-single-danger" {% if s.status != 'ACTIVE' %}disabled style="opacity:0.5; cursor:not-allowed;"{% endif %} onclick="revokeShare(this, '{{ s.recipient_name|escapejs }}', {{ s.id }})">
+                        {% if s.status == 'ACTIVE' %}Thu hồi{% else %}Đã thu hồi{% endif %}
+                      </button>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                {% else %}
+                  <tr>
+                    <td colspan="7" style="text-align: center; color: #64748B; padding: 26px;">
+                      Chưa có liên kết chia sẻ nào được tạo cho văn bằng này. Điền thông tin vào biểu mẫu phía trên để tạo liên kết xác thực gửi cho nhà tuyển dụng.
+                    </td>
+                  </tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- KẾT THÚC TAB PANEL 2: CHIA SẺ -->
+
+    <!-- TAB PANEL 3: NHẬT KÝ TRUY CẬP -->
+    <div id="panel-nhat-ky" style="display: none;">
+      <div class="sp-cert-card" id="nhat-ky">
+        <div class="sp-cert-body">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 16px;">
+            <div>
+              <div class="sp-col-title" style="margin-bottom: 4px;">Nhật ký truy cập văn bằng</div>
+              <p style="font-size: 13px; color: #64748B; margin: 0;">
+                Ghi nhận toàn bộ thời điểm và phương thức các đơn vị tra cứu, truy cập văn bằng của bạn:
+              </p>
+            </div>
+            
+            <!-- Thanh chọn văn bằng để lọc nhật ký -->
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <label for="log-degree-target" style="font-size: 13px; font-weight: 600; color: #334155; white-space: nowrap;">Chọn văn bằng:</label>
+              <div style="position: relative; min-width: 320px;">
+                <select id="log-degree-target" class="sp-form-select" onchange="switchDegree(this.value)" style="height: 36px; font-size: 13px; padding-right: 30px;">
+                  {% if certs %}
+                    {% for c in certs %}
+                      <option value="{{ forloop.counter }}" {% if forloop.first %}selected{% endif %}>{{ c.degree_type }} - {{ c.major }} ({{ c.serial_number }}){% if c.status == 'REVOKED' %} [ĐÃ THU HỒI]{% endif %}</option>
+                    {% endfor %}
+                  {% elif cert %}
+                    <option value="1" selected>{{ cert.degree_type }} - {{ cert.major }} ({{ cert.serial_number }}){% if cert.status == 'REVOKED' %} [ĐÃ THU HỒI]{% endif %}</option>
+                  {% else %}
+                    <option value="">Chưa có văn bằng nào</option>
+                  {% endif %}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div id="nhat-ky-logs-container" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 6px; overflow: hidden;">
+            {% for log in cert.logs.all %}
+            <div class="sp-log-row">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#26457F" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <span><strong>{{ log.created_at|date:"d/m/Y H:i" }}</strong> - <strong>{{ log.action }}</strong>: {{ log.comment }}{% if log.tx_hash %}<br><span style="font-size: 11px; font-family: monospace; color: #64748B;">Tx: {{ log.tx_hash }}</span>{% endif %}</span>
+              </div>
+              <span style="color: #059669; font-weight: 600;">{{ log.actor }}</span>
+            </div>
+            {% empty %}
+            <div style="padding: 24px; text-align: center; color: #64748B; font-size: 13px;">
+              Chưa có lịch sử tra cứu nào cho văn bằng này.
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- KẾT THÚC TAB PANEL 3: NHẬT KÝ -->
+
+    <!-- LƯU Ý BẢO MẬT DƯỚI CÙNG -->
+    <div class="sp-privacy-note">
+      * Lưu ý: Ngày sinh, mã sinh viên và xếp loại không hiển thị công khai trên Cổng tra cứu, chỉ xem được khi bạn chủ động tạo liên kết chia sẻ.
+    </div>
+
+  </main>
+
+  <!-- FOOTER CHUẨN CỔNG DỊCH VỤ CÔNG QUỐC GIA (1 DÒNG DUY NHẤT) -->
+  <footer class="main-footer">
+    <div class="container footer-container">
+      Cơ quan chủ quản: Trường Đại học Kỹ Thuật - Công nghệ Cần Thơ. Hotline hỗ trợ: 0000000000
+    </div>
+  </footer>
+
+  <script src="{% static 'toast.js' %}"></script>
+  <script>
+    // 1. Quản lý Thu phóng Văn bằng
+    let currentZoom = 100;
+    function zoomDiploma(delta) {
+      currentZoom = Math.max(50, Math.min(200, currentZoom + delta));
+      const img = document.getElementById('diploma-document-image');
+      if (img) {
+        img.style.transform = `scale(${currentZoom / 100})`;
+      }
+      const text = document.getElementById('zoom-val-text');
+      if (text) {
+        text.innerText = currentZoom + '%';
+      }
+    }
+
+    function toggleDiplomaFullscreen() {
+      const stage = document.getElementById('diploma-viewer-stage');
+      if (!document.fullscreenElement) {
+        stage.requestFullscreen().catch(err => {
+          showToast('Không thể mở toàn màn hình: ' + err.message, 'warning');
+        });
+      } else {
+        document.exitFullscreen();
+      }
+    }
+
+    function downloadDiploma() {
+      const img = document.getElementById('diploma-document-image');
+      if (img && img.src) {
+        const link = document.createElement('a');
+        link.href = img.src + (img.src.includes('?') ? '&' : '?') + 'download=1';
+        link.download = 'Van_Bang_Tot_Nghiep_{{ cert.serial_number|default:"CTUT" }}.png';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    }
+
+    // 2. Chức năng Ẩn / Hiện số CCCD - Cơ chế Zero-Knowledge:
+    // Số CCCD lấy trực tiếp từ sessionStorage do sinh viên vừa nhập khi đăng nhập.
+    // CSDL của Nhà trường không lưu số thật, chỉ lưu 4 số cuối và mã băm HMAC-SHA256.
+    let cccdVisible = false;
+    let cccdTimer = null;
+
+    function getStudentCccd() {
+      const raw = sessionStorage.getItem('student_cccd_raw') || '';
+      const last4 = sessionStorage.getItem('student_cccd_last4') || (raw ? raw.slice(-4) : '••••');
+      const formatted = (raw.length === 12)
+        ? raw.slice(0, 3) + ' ' + raw.slice(3, 6) + ' ' + raw.slice(6, 9) + ' ' + raw.slice(9, 12)
+        : (raw || '•••• •••• ••••');
+      const masked = '•••• •••• ' + last4;
+      return { raw, formatted, masked, last4 };
+    }
+
+    function toggleCccdVisibility() {
+      cccdVisible = !cccdVisible;
+      const display = document.getElementById('cccd-display');
+      const icon = document.getElementById('cccd-eye-icon');
+      const cccd = getStudentCccd();
+
+      if (cccdVisible) {
+        display.innerText = cccd.formatted;
+        display.style.color = '#26457F';
+        icon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+
+        clearTimeout(cccdTimer);
+        // Tự động ẩn sau 30 giây để chống nhìn trộm màn hình
+        cccdTimer = setTimeout(() => {
+          if (cccdVisible) toggleCccdVisibility();
+        }, 30000);
+      } else {
+        display.innerText = cccd.masked;
+        display.style.color = '#1E293B';
+        icon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+        clearTimeout(cccdTimer);
+      }
+    }
+
+    // Khởi tạo hiển thị CCCD che từ đầu
+    window.addEventListener('DOMContentLoaded', () => {
+      const display = document.getElementById('cccd-display');
+      if (display) display.innerText = getStudentCccd().masked;
+    });
+
+    // 3. Xử lý tạo liên kết chia sẻ mới & Sinh mã tra cứu ngẫu nhiên
+    function generateRandomLookupCode() {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let part1 = '', part2 = '';
+      for (let i = 0; i < 4; i++) part1 += chars.charAt(Math.floor(Math.random() * chars.length));
+      for (let i = 0; i < 4; i++) part2 += chars.charAt(Math.floor(Math.random() * chars.length));
+      return `${part1}-${part2}`;
+    }
+
+    function getCsrfToken() {
+      const match = document.cookie.match(/csrftoken=([^;]+)/);
+      if (match) return match[1];
+      const input = document.querySelector('[name=csrfmiddlewaretoken]');
+      return input ? input.value : '';
+    }
+
+    async function handleCreateShare(e) {
+      if (e) {
+        if (e.preventDefault) e.preventDefault();
+        if (e.stopPropagation) e.stopPropagation();
+      }
+
+      const degreeSel = document.getElementById('share-degree-target');
+      let degreeName = 'Văn bằng tốt nghiệp';
+      let degreeSerial = (typeof degreesData !== 'undefined' && degreesData[activeDegreeId])
+        ? degreesData[activeDegreeId].serial
+        : '{{ cert.serial_number|default:"" }}';
+      
+      if (degreeSel && degreeSel.options && degreeSel.selectedIndex >= 0) {
+        const degreeText = degreeSel.options[degreeSel.selectedIndex].text;
+        degreeName = degreeText.split('(')[0].trim();
+        const match = degreeText.match(/\(([^)]+)\)/);
+        if (match) degreeSerial = match[1];
+      }
+
+      const recInput = document.getElementById('share-recipient');
+      let recipient = recInput ? recInput.value.trim() : '';
+      if (!recipient) {
+        recipient = 'Đơn vị xác minh / Nhà tuyển dụng';
+      }
+
+      const daysEl = document.getElementById('share-days');
+      const days = daysEl ? daysEl.value : '7';
+      const maxViewsEl = document.getElementById('share-max-views');
+      const maxViews = (maxViewsEl && maxViewsEl.value) ? maxViewsEl.value : '';
+
+      const allowFullname = !!(document.getElementById('chk-fullname') && document.getElementById('chk-fullname').checked);
+      const allowDob = !!(document.getElementById('chk-dob') && document.getElementById('chk-dob').checked);
+      const allowSid = !!(document.getElementById('chk-sid') && document.getElementById('chk-sid').checked);
+      const allowRank = !!(document.getElementById('chk-rank') && document.getElementById('chk-rank').checked);
+
+      const permsArray = [];
+      if (allowFullname) permsArray.push('Họ tên');
+      if (allowDob) permsArray.push('Ngày sinh');
+      if (allowSid) permsArray.push('Mã SV');
+      if (allowRank) permsArray.push('Xếp loại');
+      let permsText = permsArray.join(', ') || 'Chỉ thông tin cơ bản';
+
+      let shareId = null;
+      let shareCode = generateRandomLookupCode();
+      let shareUrl = `${window.location.origin}/?q=${encodeURIComponent(shareCode)}`;
+      let qrUrl = `/api/qr/?data=${encodeURIComponent(shareUrl)}`;
+      let expiryText = `Còn ${days} ngày`;
+      let viewsText = maxViews ? `0/${maxViews} lượt` : '0/Không giới hạn';
+
+      // Gửi request lên Backend API
+      try {
+        const payload = {
+          degree_serial: degreeSerial,
+          recipient_name: recipient,
+          days_valid: parseInt(days) || 7,
+          max_views: maxViews ? parseInt(maxViews) : null,
+          allow_fullname: allowFullname,
+          allow_dob: allowDob,
+          allow_student_id: allowSid,
+          allow_classification: allowRank
+        };
+
+        const res = await fetch('/api/shares/create/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+          const respData = await res.json();
+          if (respData.success) {
+            shareId = respData.share_id;
+            shareCode = respData.share_code || shareCode;
+            shareUrl = respData.share_url || shareUrl;
+            qrUrl = respData.qr_url || qrUrl;
+            expiryText = respData.expiry || expiryText;
+            viewsText = respData.views || viewsText;
+            if (respData.permissions) permsText = respData.permissions;
+          }
+        }
+      } catch (err) {
+        console.warn('API share error, using local fallback:', err);
+      }
+
+      // Cập nhật giao diện khung liên kết vừa tạo
+      const targetEl = document.getElementById('new-share-target');
+      if (targetEl) targetEl.innerText = recipient;
+      const codeEl = document.getElementById('new-share-code');
+      if (codeEl) codeEl.innerText = shareCode;
+      const urlEl = document.getElementById('new-share-url');
+      if (urlEl) urlEl.value = shareUrl;
+
+      const qrImg = document.getElementById('new-share-qr-img');
+      if (qrImg) {
+        qrImg.src = qrUrl;
+      }
+
+      const box = document.getElementById('new-share-box');
+      if (box) {
+        box.style.display = 'flex';
+        box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+
+      // Thêm dòng mới vào bảng liên kết
+      const tbody = document.getElementById('share-table-body');
+      if (tbody) {
+        const emptyCell = tbody.querySelector('td[colspan]');
+        if (emptyCell) {
+          tbody.innerHTML = '';
+        }
+        const safeRecipient = recipient.replace(/'/g, "\\'");
+        const newRow = document.createElement('tr');
+        newRow.innerHTML = `
+          <td><strong style="color: #26457F;">${degreeName}</strong></td>
+          <td><strong>${recipient}</strong></td>
+          <td>${permsText}</td>
+          <td>${expiryText}</td>
+          <td>${viewsText}</td>
+          <td><span class="sp-badge-active">Đang hiệu lực</span></td>
+          <td style="text-align: right;">
+            <button type="button" class="sp-btn-single-danger" onclick="revokeShare(this, '${safeRecipient}', ${shareId || 'null'})">Thu hồi</button>
+          </td>
+        `;
+        tbody.insertBefore(newRow, tbody.firstChild);
+      }
+
+      // Lưu lại vào degreesData để khi chuyển tab/bằng dữ liệu vẫn còn
+      if (typeof degreesData !== 'undefined' && degreesData[activeDegreeId]) {
+        if (!degreesData[activeDegreeId].shares) degreesData[activeDegreeId].shares = [];
+        degreesData[activeDegreeId].shares.unshift({
+          id: shareId,
+          target: recipient,
+          perms: permsText,
+          expiry: expiryText,
+          views: viewsText,
+          status: 'ACTIVE'
+        });
+      }
+
+      // Cập nhật ngay vào nhật ký truy cập trên giao diện
+      const nowFormatted = new Date().toLocaleDateString('vi-VN', {day:'2-digit', month:'2-digit', year:'numeric'}) + ' ' +
+                           new Date().toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'});
+      const newCreateLogText = `Tạo liên kết chia sẻ cho ${recipient} (Hết hạn: ${days} ngày, Mã: ${shareCode})`;
+      if (typeof degreesData !== 'undefined' && degreesData[activeDegreeId]) {
+        if (!degreesData[activeDegreeId].logs) degreesData[activeDegreeId].logs = [];
+        degreesData[activeDegreeId].logs.unshift({
+          time: nowFormatted,
+          text: newCreateLogText,
+          status: 'Thành công',
+          ok: true
+        });
+      }
+      const logContainer = document.getElementById('nhat-ky-logs-container');
+      if (logContainer) {
+        const logRow = document.createElement('div');
+        logRow.className = 'sp-log-row';
+        logRow.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#26457F" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <span><strong>${nowFormatted}</strong> - <strong>SHARE_CREATED</strong>: ${newCreateLogText}</span>
+          </div>
+          <span style="color: #059669; font-weight: 600;">Sinh viên</span>
+        `;
+        logContainer.insertBefore(logRow, logContainer.firstChild);
+      }
+
+      // Reset ô nhập
+      if (recInput) recInput.value = '';
+
+      // Bật Toast thông báo ở góc phải
+      if (window.showToast) {
+        showToast(`Đã tạo thành công liên kết chia sẻ cho: ${recipient}!`, 'success');
+      }
+
+      return false;
+    }
+
+    function copyShareCode() {
+      const code = document.getElementById('new-share-code').innerText;
+      if (code) {
+        navigator.clipboard.writeText(code).then(() => {
+          showToast(`Đã sao chép mã tra cứu ngẫu nhiên: ${code}`, 'success');
+        }).catch(() => {
+          prompt('Mã tra cứu ngẫu nhiên:', code);
+        });
+      }
+    }
+
+    function copyNewShareUrl() {
+      const input = document.getElementById('new-share-url');
+      if (input && input.value) {
+        navigator.clipboard.writeText(input.value).then(() => {
+          showToast('Đã sao chép liên kết chia sẻ thành công!', 'success');
+        }).catch(() => {
+          prompt('Liên kết chia sẻ:', input.value);
+        });
+      }
+    }
+
+    function shareQrOrLink() {
+      const target = document.getElementById('new-share-target').innerText;
+      const code = document.getElementById('new-share-code').innerText;
+      const url = document.getElementById('new-share-url').value;
+      const shareTitle = 'Xác thực văn bằng điện tử - Trường ĐH Kỹ thuật - Công nghệ Cần Thơ';
+      const shareText = `Văn bằng tốt nghiệp được chia sẻ cho: ${target}\nMã tra cứu ngẫu nhiên: ${code}\nLiên kết xác minh: ${url}`;
+
+      if (navigator.share) {
+        navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url: url
+        }).catch(err => {
+          if (err.name !== 'AbortError') {
+            copyNewShareUrl();
+          }
+        });
+      } else {
+        navigator.clipboard.writeText(shareText).then(() => {
+          showToast('Đã sao chép nội dung chia sẻ thành công!', 'success');
+        }).catch(() => {
+          prompt('Nội dung chia sẻ:', shareText);
+        });
+      }
+    }
+
+    let pendingRevokeBtn = null;
+    let pendingRevokeTarget = '';
+    let pendingRevokeId = null;
+
+    function revokeShare(btn, target, shareId) {
+      pendingRevokeBtn = btn;
+      pendingRevokeTarget = target;
+      pendingRevokeId = shareId || null;
+      const targetNameEl = document.getElementById('revoke-target-name');
+      if (targetNameEl) targetNameEl.innerText = target;
+      openModal('modalRevokeShare');
+    }
+
+    async function confirmRevokeShareAction() {
+      if (pendingRevokeBtn) {
+        const row = pendingRevokeBtn.closest('tr');
+        if (row) {
+          const badge = row.querySelector('.sp-badge-active');
+          if (badge) {
+            badge.className = 'sp-badge-inactive';
+            badge.style.background = '#FEE2E2';
+            badge.style.color = '#DC2626';
+            badge.innerText = 'Đã thu hồi';
+          }
+          pendingRevokeBtn.disabled = true;
+          pendingRevokeBtn.innerText = 'Đã thu hồi';
+          pendingRevokeBtn.style.opacity = '0.5';
+          pendingRevokeBtn.style.cursor = 'not-allowed';
+        }
+
+        // Cập nhật trong degreesData
+        if (typeof degreesData !== 'undefined' && degreesData[activeDegreeId] && degreesData[activeDegreeId].shares) {
+          const sObj = degreesData[activeDegreeId].shares.find(s => s.target === pendingRevokeTarget || (pendingRevokeId && s.id === pendingRevokeId));
+          if (sObj) {
+            sObj.status = 'REVOKED';
+          }
+        }
+
+        // Bổ sung bản ghi thu hồi vào nhật ký truy cập ngay lập tức
+        const nowRevokeFormatted = new Date().toLocaleDateString('vi-VN', {day:'2-digit', month:'2-digit', year:'numeric'}) + ' ' +
+                                   new Date().toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'});
+        const newRevokeLogText = `Thu hồi liên kết chia sẻ cấp cho ${pendingRevokeTarget}`;
+        if (typeof degreesData !== 'undefined' && degreesData[activeDegreeId]) {
+          if (!degreesData[activeDegreeId].logs) degreesData[activeDegreeId].logs = [];
+          degreesData[activeDegreeId].logs.unshift({
+            time: nowRevokeFormatted,
+            text: newRevokeLogText,
+            status: 'Sinh viên',
+            ok: false
+          });
+        }
+        const logContainer = document.getElementById('nhat-ky-logs-container');
+        if (logContainer) {
+          const logRow = document.createElement('div');
+          logRow.className = 'sp-log-row';
+          logRow.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              <span><strong>${nowRevokeFormatted}</strong> - <strong>SHARE_REVOKED</strong>: ${newRevokeLogText}</span>
+            </div>
+            <span style="color: #DC2626; font-weight: 600;">Sinh viên</span>
+          `;
+          logContainer.insertBefore(logRow, logContainer.firstChild);
+        }
+
+        // Gọi API thu hồi lên server nếu có ID
+        if (pendingRevokeId) {
+          try {
+            await fetch(`/api/shares/${pendingRevokeId}/revoke/`, {
+              method: 'POST',
+              headers: {
+                'X-CSRFToken': getCsrfToken()
+              }
+            });
+          } catch (err) {
+            console.warn('API revoke error:', err);
+          }
+        }
+      }
+      closeModal('modalRevokeShare');
+      if (window.showToast) {
+        showToast(`Đã thu hồi thành công liên kết chia sẻ cho "${pendingRevokeTarget}".`, 'success');
+      }
+      pendingRevokeBtn = null;
+      pendingRevokeTarget = '';
+      pendingRevokeId = null;
+    }
+
+    // 4. Cơ chế chuyển đổi khi sinh viên sở hữu nhiều văn bằng (hỗ trợ không giới hạn số lượng bằng)
+    const degreesData = {
+      {% if certs %}
+        {% for c in certs %}
+        {{ forloop.counter }}: {
+          title: '{{ c.degree_type|upper }} - {{ c.major|upper }}',
+          serial: '{{ c.serial_number }}',
+          date: '{{ c.issue_date|default:c.created_at|date:"d/m/Y" }}',
+          rank: '{{ c.classification|default:"-" }}',
+          code: '{{ c.serial_number }}',
+          status: '{{ c.status }}',
+          shares: [
+            {% for s in c.shares.all %}
+            {
+              id: {{ s.id }},
+              target: '{{ s.recipient_name|escapejs }}',
+              perms: '{{ s.permissions_display|escapejs }}',
+              expiry: '{{ s.expiry_display|escapejs }}',
+              views: '{{ s.views_display|escapejs }}',
+              status: '{{ s.status }}'
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+          ],
+          logs: [
+            {% for l in c.logs.all %}
+            {
+              time: '{{ l.created_at|date:"d/m/Y H:i" }}',
+              action: '{{ l.action|escapejs }}',
+              text: '{{ l.comment|default:l.action|escapejs }}',
+              tx: '{{ l.tx_hash|default:"" }}',
+              actor: '{{ l.actor|escapejs }}',
+              ok: true
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+          ]
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+      {% elif cert %}
+        1: {
+          title: '{{ cert.degree_type|upper }} - {{ cert.major|upper }}',
+          serial: '{{ cert.serial_number }}',
+          date: '{{ cert.issue_date|default:cert.created_at|date:"d/m/Y" }}',
+          rank: '{{ cert.classification|default:"-" }}',
+          code: '{{ cert.serial_number }}',
+          status: '{{ cert.status }}',
+          shares: [
+            {% for s in cert.shares.all %}
+            {
+              id: {{ s.id }},
+              target: '{{ s.recipient_name|escapejs }}',
+              perms: '{{ s.permissions_display|escapejs }}',
+              expiry: '{{ s.expiry_display|escapejs }}',
+              views: '{{ s.views_display|escapejs }}',
+              status: '{{ s.status }}'
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+          ],
+          logs: [
+            {% for l in cert.logs.all %}
+            {
+              time: '{{ l.created_at|date:"d/m/Y H:i" }}',
+              action: '{{ l.action|escapejs }}',
+              text: '{{ l.comment|default:l.action|escapejs }}',
+              tx: '{{ l.tx_hash|default:"" }}',
+              actor: '{{ l.actor|escapejs }}',
+              ok: true
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+          ]
+        }
+      {% endif %}
+    };
+
+    let activeDegreeId = 1;
+
+    function switchDegree(id) {
+      activeDegreeId = id;
+      const data = degreesData[id];
+      if (!data) return;
+
+      // Cập nhật giá trị thanh sổ dropdown nếu được gọi bằng hàm
+      const sel = document.getElementById('degree-select');
+      if (sel && sel.value !== String(id)) {
+        sel.value = String(id);
+      }
+
+      // Đồng bộ ô chọn văn bằng ở form chia sẻ
+      const shareDegreeSel = document.getElementById('share-degree-target');
+      if (shareDegreeSel && shareDegreeSel.value !== String(id)) {
+        shareDegreeSel.value = String(id);
+      }
+
+      // Đồng bộ ô chọn văn bằng ở tab nhật ký truy cập
+      const logDegreeSel = document.getElementById('log-degree-target');
+      if (logDegreeSel && logDegreeSel.value !== String(id)) {
+        logDegreeSel.value = String(id);
+      }
+
+      // Cập nhật thông tin chi tiết trên văn bằng
+      document.getElementById('cert-title').innerText = data.title;
+      document.getElementById('cert-serial').innerText = data.serial;
+      document.getElementById('cert-date').innerText = data.date;
+      document.getElementById('cert-rank').innerText = data.rank;
+      document.getElementById('cert-code').innerText = data.code;
+
+      // Cập nhật nhãn trạng thái thu hồi
+      const statusBadge = document.getElementById('cert-status-badge');
+      if (statusBadge) {
+        statusBadge.style.display = (data.status === 'REVOKED') ? 'inline-block' : 'none';
+      }
+
+      // Cập nhật ảnh mã QR tra cứu
+      const qrImgEl = document.querySelector('.sp-qr-img');
+      if (qrImgEl && data.serial) {
+        qrImgEl.src = '/api/qr/?data=' + encodeURIComponent(data.serial);
+      }
+
+      // Cập nhật ảnh văn bằng động theo số hiệu mới
+      const img = document.getElementById('diploma-document-image');
+      if (img && data.serial) {
+        img.src = '/me/diploma/' + encodeURIComponent(data.serial) + '.png';
+      }
+
+      // Ẩn thông báo link vừa tạo nếu đang mở
+      const newBox = document.getElementById('new-share-box');
+      if (newBox) newBox.style.display = 'none';
+
+      // Cập nhật bảng liên kết chia sẻ của riêng văn bằng này
+      const tbody = document.getElementById('share-table-body');
+      if (data.shares && data.shares.length > 0) {
+        tbody.innerHTML = data.shares.map(s => {
+          const isRevoked = (s.status === 'REVOKED');
+          const safeTarget = (s.target || '').replace(/'/g, "\\'");
+          return `
+            <tr>
+              <td><strong style="color: #26457F;">${data.title}</strong></td>
+              <td><strong>${s.target}</strong></td>
+              <td>${s.perms}</td>
+              <td>${s.expiry}</td>
+              <td>${s.views}</td>
+              <td>
+                <span class="${isRevoked ? 'sp-badge-inactive' : 'sp-badge-active'}" ${isRevoked ? 'style="background: #FEE2E2; color: #DC2626;"' : ''}>
+                  ${isRevoked ? 'Đã thu hồi' : 'Đang hiệu lực'}
+                </span>
+              </td>
+              <td style="text-align: right;">
+                <button type="button" class="sp-btn-single-danger" ${isRevoked ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''} onclick="revokeShare(this, '${safeTarget}', ${s.id || 'null'})">
+                  ${isRevoked ? 'Đã thu hồi' : 'Thu hồi'}
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } else {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" style="text-align: center; color: #64748B; padding: 20px;">
+              Chưa có liên kết chia sẻ nào được tạo cho văn bằng này.
+            </td>
+          </tr>
+        `;
+      }
+
+      // Cập nhật nhật ký tra cứu của riêng văn bằng này
+      const logContainer = document.getElementById('nhat-ky-logs-container');
+      if (logContainer) {
+        if (data.logs && data.logs.length > 0) {
+          logContainer.innerHTML = data.logs.map(l => `
+            <div class="sp-log-row">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="${l.ok ? '#26457F' : '#DC2626'}" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  ${l.ok ? '<polyline points="12 6 12 12 16 14"/>' : '<line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>'}
+                </svg>
+                <span><strong>${l.time}</strong> - <strong>${l.action || ''}</strong>: ${l.text}${l.tx ? '<br><span style="font-size: 11px; font-family: monospace; color: #64748B;">Tx: ' + l.tx + '</span>' : ''}</span>
+              </div>
+              <span style="color: #059669; font-weight: 600;">${l.actor || l.status || ''}</span>
+            </div>
+          `).join('');
+        } else {
+          logContainer.innerHTML = `
+            <div style="padding: 16px; text-align: center; color: #64748B; font-size: 13px;">
+              Chưa có ai tra cứu văn bằng này.
+            </div>
+          `;
+        }
+      }
+    }
+
+    // 5. Cơ chế chuyển Tab độc lập: Văn bằng của tôi | Chia sẻ | Nhật ký xác minh
+    function switchPortalTab(tabName) {
+      const tabs = ['van-bang', 'chia-se', 'nhat-ky'];
+      tabs.forEach(t => {
+        const panel = document.getElementById('panel-' + t);
+        const navItem = document.getElementById('nav-tab-' + t);
+        if (panel) panel.style.display = (t === tabName) ? 'block' : 'none';
+        if (navItem) navItem.classList.toggle('active', t === tabName);
+      });
+
+      if (history.pushState) {
+        history.pushState(null, null, '#' + tabName);
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const hash = window.location.hash.replace('#', '');
+      if (['van-bang', 'chia-se', 'nhat-ky'].includes(hash)) {
+        switchPortalTab(hash);
+      }
+    });
+
+    function openModal(id) {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'flex';
+    }
+
+    function closeModal(id) {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    }
+
+    window.addEventListener('click', function(e) {
+      if (e.target.classList.contains('gov-modal-backdrop')) {
+        e.target.style.display = 'none';
+      }
+    });
+  </script>
+
+  <!-- MODAL XÁC NHẬN ĐĂNG XUẤT -->
+  <div class="gov-modal-backdrop" id="modalLogout" style="display: none;">
+    <div class="gov-modal" style="max-width: 440px;">
+      <div class="gov-modal-header">
+        <div class="gov-modal-title" style="color: #0F172A; display: flex; align-items: center; gap: 8px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          <span>Xác nhận đăng xuất</span>
+        </div>
+        <button class="gov-modal-close" onclick="closeModal('modalLogout')">&times;</button>
+      </div>
+      <div class="gov-modal-body" style="text-align: center; padding: 28px 20px 20px;">
+        <div style="width: 52px; height: 52px; border-radius: 50%; background: #FEE2E2; color: #DC2626; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </div>
+        <p style="font-size: 15px; font-weight: 600; color: #0F172A; margin-bottom: 8px;">Bạn có chắc chắn muốn đăng xuất khỏi hệ thống?</p>
+        <span style="font-size: 13px; color: #64748B; line-height: 1.5; display: block;">Sau khi đăng xuất, phiên làm việc sẽ kết thúc và bạn sẽ được chuyển về Cổng tra cứu văn bằng công khai.</span>
+      </div>
+      <div class="gov-modal-footer" style="justify-content: center; gap: 12px; background: #FAFBFD; padding: 14px 20px;">
+        <button type="button" class="btn-gov-subtle" onclick="closeModal('modalLogout')" style="padding: 8px 18px; font-weight: 600;">Hủy bỏ</button>
+        <a href="{% url 'logout' %}" class="btn-gov-danger" style="text-decoration: none; padding: 8px 22px; font-weight: 600; background: #DC2626; color: #FFFFFF; border-color: #DC2626;">Đăng xuất</a>
+      </div>
+    </div>
+  </div>
+  <!-- MODAL XÁC NHẬN THU HỒI LIÊN KẾT CHIA SẺ -->
+  <div class="gov-modal-backdrop" id="modalRevokeShare" style="display: none;">
+    <div class="gov-modal" style="max-width: 440px;">
+      <div class="gov-modal-header" style="background: #FEF2F2; border-bottom: 1px solid #FECACA;">
+        <div class="gov-modal-title" style="color: #991B1B; display: flex; align-items: center; gap: 8px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2.2">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          <span>Xác nhận thu hồi liên kết</span>
+        </div>
+        <button type="button" class="gov-modal-close" onclick="closeModal('modalRevokeShare')">&times;</button>
+      </div>
+      <div class="gov-modal-body" style="text-align: center; padding: 26px 20px 20px;">
+        <div style="width: 52px; height: 52px; border-radius: 50%; background: #FEE2E2; color: #DC2626; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="15" y1="9" x2="9" y2="15"/>
+            <line x1="9" y1="9" x2="15" y2="15"/>
+          </svg>
+        </div>
+        <p style="font-size: 15px; font-weight: 600; color: #0F172A; margin-bottom: 8px;">
+          Bạn có chắc chắn muốn thu hồi liên kết chia sẻ cấp cho <br>
+          <span id="revoke-target-name" style="color: #DC2626;">...</span> không?
+        </p>
+        <span style="font-size: 13px; color: #64748B; line-height: 1.5; display: block;">
+          Sau khi thu hồi, liên kết này sẽ mất hiệu lực vĩnh viễn. Đơn vị nhận sẽ không thể sử dụng để xem dữ liệu văn bằng được nữa.
+        </span>
+      </div>
+      <div class="gov-modal-footer" style="justify-content: center; gap: 12px; background: #FAFBFD; padding: 14px 20px;">
+        <button type="button" class="btn-gov-subtle" onclick="closeModal('modalRevokeShare')" style="padding: 8px 18px; font-weight: 600;">Hủy bỏ</button>
+        <button type="button" class="btn-gov-danger" onclick="confirmRevokeShareAction()" style="padding: 8px 22px; font-weight: 600; background: #DC2626; color: #FFFFFF; border-color: #DC2626; cursor: pointer;">
+          Xác nhận thu hồi
+        </button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

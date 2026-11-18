@@ -1,0 +1,604 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cổng Tra cứu & Xác thực Văn bằng - Dành cho Nhà tuyển dụng & Công chúng</title>
+  <link rel="icon" type="image/png" href="/media/ctut_logo.png">
+  <link rel="shortcut icon" type="image/png" href="/media/ctut_logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Merriweather:wght@700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'style.css' %}">
+  <style>
+
+    .employer-tip-box {
+      background: #EFF6FF;
+      border: 1px solid #BFDBFE;
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+      color: #1E40AF;
+    }
+  </style>
+</head>
+<body>
+
+
+  <!-- ==================== HEADER CHUẨN CỔNG DỊCH VỤ CÔNG QUỐC GIA (THEO MẪU ẢNH) ==================== -->
+  <header class="dvc-header">
+    <div class="container dvc-top-main">
+            <div class="dvc-brand">
+        <!-- Logo Trường ĐH Kỹ thuật - Công nghệ Cần Thơ (CTUT) -->
+        <div class="dvc-emblem-wrap" style="width: 68px; height: 68px;">
+          <img src="/media/ctut_logo.png" alt="Logo Trường ĐH Kỹ thuật - Công nghệ Cần Thơ" class="dvc-emblem" style="width: 68px; height: 68px; object-fit: contain;">
+        </div>
+
+        <!-- Tên Trường & Triết lý giáo dục từ Website ctuet.edu.vn -->
+        <div class="dvc-title-block">
+          <div class="dvc-title-row">
+            <h1 class="dvc-brand-heading">TRƯỜNG ĐẠI HỌC KỸ THUẬT - CÔNG NGHỆ CẦN THƠ</h1>
+          </div>
+          <div class="dvc-brand-slogan">Đức trí – Kỹ năng – Sáng tạo – Hội nhập</div>
+        </div>
+      </div>
+      <!-- Nút Đăng nhập / Bàn làm việc & Đăng xuất -->
+      <div style="display: flex; align-items: center; gap: 8px;">
+        {% if user.is_authenticated %}
+          {% if user.is_superuser or user.username == 'admin' %}
+            <a href="/admin/" class="dvc-btn-login" target="_blank">Trang quản trị Django</a>
+          {% else %}
+            <a href="{% url 'dashboard' %}" class="dvc-btn-login">Bàn làm việc ({{ user.username }})</a>
+          {% endif %}
+          <button type="button" onclick="openModal('modalLogout')" class="dvc-btn-login" style="background: transparent; color: #DC2626; border: 1px solid #DC2626; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            <span>Đăng xuất</span>
+          </button>
+        {% else %}
+          <a href="{% url 'login' %}" class="dvc-btn-login">Đăng nhập</a>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Thanh menu điều hướng xám với tab Home cam đất -->
+    <nav class="dvc-navbar">
+      <div class="container dvc-nav-container">
+        <!-- Nút Home ngôi nhà theo đúng mẫu ảnh -->
+        <a href="{% url 'search' %}" class="dvc-nav-home" title="Trang chủ">
+          <img src="/media/home_icon.png" alt="Trang chủ" style="width: 22px; height: 20px; display: block;">
+        </a>
+
+        <!-- Danh sách menu -->
+        <ul class="dvc-nav-list">
+          <li class="dvc-nav-item">
+            <a href="{% url 'search' %}" class="dvc-nav-link active">
+              Thông tin và dịch vụ
+              <svg class="dvc-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            </a>
+          </li>
+          <li class="dvc-nav-item">
+            <a href="#" class="dvc-nav-link">
+              Hỗ trợ
+              <svg class="dvc-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+  </header>
+
+  <!-- HERO SECTION: KHUNG TRA CỨU DÀNH CHO NHÀ TUYỂN DỤNG -->
+  <section class="hero-section">
+    <div class="container hero-content">
+      <h1 class="hero-title">CỔNG XÁC MINH VĂN BẰNG TRỰC TUYẾN</h1>
+
+      <!-- THANH TÌM KIẾM CHUẨN MẪU PHÁC THẢO (CỔNG DỊCH VỤ CÔNG QUỐC GIA) -->
+      <div class="search-container-wrap">
+        <form method="get" action="{% url 'search' %}" id="employer-search-form">
+          <div class="dvc-search-bar">
+            <!-- Ô nhập liệu: Nhập mã được chia sẻ -->
+            <input type="text" name="q" id="employer-search-input" class="dvc-search-input" placeholder="Nhập mã được chia sẻ hoặc số hiệu văn bằng" value="{{ query|default:'' }}">
+
+            <!-- Vạch phân cách dọc -->
+            <div class="dvc-search-divider"></div>
+
+            <!-- Nút Tìm kiếm nâng cao (đã xóa dấu mũi tên xuống theo Hình 1, kích hoạt popup) -->
+            <button type="button" class="dvc-search-advanced-btn" id="btn-toggle-advanced" onclick="openAdvancedModal()">
+              <span>Tìm kiếm nâng cao</span>
+            </button>
+
+            <!-- Nút kính lúp với dấu | liền khối và nền đậm hơn ô tìm kiếm (theo Hình 2) -->
+            <button type="submit" class="dvc-search-submit-btn" title="Tìm kiếm / Xác thực">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+            </button>
+          </div>
+          <input type="file" id="qr-file-input" accept="image/*,.pdf" style="display: none;" onchange="handleFileSelect(event)">
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- DẢI THÔNG BÁO TỐT NGHIỆP LIỀN KỀ BANNER (THEO MẪU CỔNG DVCQG VỚI HÌNH TRƯỜNG CTUT) -->
+  <section class="announcement-strip">
+    <div class="container announcement-strip-container">
+      <div class="announcement-content-wrap">
+        <!-- Nút lùi thông báo -->
+        <button type="button" class="announcement-nav-btn" title="Tin trước" onclick="prevAnnouncement()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+
+        <!-- Danh sách thông báo sinh viên tốt nghiệp / công bố dữ liệu văn bằng -->
+        <div class="announcement-list">
+          <a href="#employer-result" class="announcement-item" title="Xem chi tiết thông báo">
+            <div class="announcement-title">Thông báo danh sách sinh viên tốt nghiệp đợt 1 năm 2026</div>
+            <div class="announcement-desc">Quyết định số 128/QĐ-ĐHKTCN về việc công nhận tốt nghiệp và cấp bằng kỹ sư đợt 1 cho 680 sinh viên các ngành...</div>
+          </a>
+
+          <div class="announcement-divider"></div>
+
+          <a href="#employer-result" class="announcement-item" title="Xem chi tiết thông báo">
+            <div class="announcement-title">Công bố dữ liệu và hướng dẫn tra cứu văn bằng điện tử chính thức</div>
+            <div class="announcement-desc">Nhà trường hoàn tất tích hợp 1.248 hồ sơ văn bằng số lên mạng lưới Blockchain Hyperledger Besu phục vụ doanh nghiệp...</div>
+          </a>
+
+          <div class="announcement-divider"></div>
+
+          <a href="#employer-result" class="announcement-item" title="Xem chi tiết thông báo">
+            <div class="announcement-title">Xác thực chứng nhận điện tử và hướng dẫn kiểm tra chữ ký số</div>
+            <div class="announcement-desc">Việc công bố dữ liệu giúp doanh nghiệp xác minh tức thì tính hợp lệ của văn bằng, phòng ngừa bằng giả tuyệt đối...</div>
+          </a>
+        </div>
+
+        <!-- Nút tiến thông báo -->
+        <button type="button" class="announcement-nav-btn" title="Tin tiếp theo" onclick="nextAnnouncement()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Hình ảnh trường ĐH Kỹ thuật - Công nghệ Cần Thơ (căn sát mép phải màn hình ngang bằng với banner) -->
+    <div class="announcement-campus-illus">
+      <img src="/media/ctut_campus_faded.png" alt="Trường Đại học Kỹ thuật - Công nghệ Cần Thơ" class="campus-illus-img">
+    </div>
+  </section>
+  {% if query %}
+  <!-- KẾT QUẢ XÁC MINH CHO NHÀ TUYỂN DỤNG (CHỈ HIỂN THỊ KHI CÓ NHẬP TRA CỨU) -->
+  <section class="result-section" id="employer-result">
+    <div class="container">
+
+      <!-- TIÊU ĐỀ PHÂN ĐOẠN: KẾT QUẢ TRA CỨU -->
+      <div class="result-section-heading">
+        <h2 class="result-section-title">Kết quả tra cứu</h2>
+        <div class="result-section-line"></div>
+      </div>
+
+      {% if share_error %}
+      <div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: 8px; padding: 18px 22px; margin-bottom: 24px; display: flex; align-items: center; gap: 14px;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <div>
+          <strong style="color: #991B1B; font-size: 15px;">Liên kết chia sẻ không khả dụng:</strong>
+          <span style="display: block; color: #B91C1C; font-size: 13.5px; margin-top: 2px;">{{ share_error }}</span>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if share_info %}
+      <div style="background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 8px; padding: 16px 20px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 36px; height: 36px; border-radius: 50%; background: #D1FAE5; color: #059669; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div>
+            <div style="font-weight: 700; color: #065F46; font-size: 14.5px;">Văn bằng được chia sẻ trực tiếp cho: <span style="color: #047857;">{{ share_info.recipient_name }}</span></div>
+            <div style="font-size: 12.5px; color: #047857; margin-top: 3px;">
+              Thời hạn: <strong>{{ share_info.expiry_display }}</strong> &bull; Lượt xem: <strong>{{ share_info.views_display }}</strong> &bull; Phạm vi cho phép: <strong>{{ share_info.permissions_display }}</strong>
+            </div>
+          </div>
+        </div>
+        <span style="background: #059669; color: #FFF; font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 4px; letter-spacing: 0.5px;">LIÊN KẾT HỢP LỆ</span>
+      </div>
+      {% endif %}
+
+      {% if not result %}
+      <!-- Thông báo khi không tìm thấy kết quả -->
+      <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 48px 24px; text-align: center; margin-bottom: 30px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.8" style="margin-bottom: 14px;">
+          <circle cx="11" cy="11" r="8"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          <line x1="8" y1="11" x2="14" y2="11"/>
+        </svg>
+        <h3 style="font-size: 17px; font-weight: 700; color: #1E293B; margin-bottom: 6px;">Không tìm thấy kết quả phù hợp</h3>
+        <p style="font-size: 13.5px; color: #64748B; margin: 0; max-width: 520px; margin-inline: auto;">
+          Không có văn bằng nào khớp với từ khóa "<strong>{{ query }}</strong>". Vui lòng kiểm tra lại số hiệu văn bằng, mã sinh viên hoặc họ tên.
+        </p>
+      </div>
+
+      {% elif result.status == 'REVOKED' %}
+      <!-- Card hiển thị bằng bị thu hồi -->
+      <div class="result-card" id="view-revoked">
+        <div class="result-header" style="background: #EEF3FA;">
+          <span class="result-status-badge badge-revoked">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            CẢNH BÁO: VĂN BẰNG ĐÃ BỊ THU HỒI HIỆU LỰC
+          </span>
+          <span class="blockchain-badge" style="background: #FEE2E2; color: #DC2626; border-color: #FECACA; font-weight: 700;">
+            Trạng thái văn bằng: ĐÃ THU HỒI
+          </span>
+        </div>
+        <div class="result-body">
+          <div class="diploma-frame" style="border-color: #C5D5EB; background: #FFFBFB;">
+            <div style="background: #EEF3FA; border-left: 4px solid var(--dvc-red-primary); padding: 16px; margin-bottom: 20px; border-radius: 4px;">
+              <h4 style="color: #26457F; margin-bottom: 6px;">LÝ DO THU HỒI CHÍNH THỨC TỪ NHÀ TRƯỜNG:</h4>
+              <p style="color: #15284D; font-size: 14px;">
+                {{ result.revoke_reason|default:"Thu hồi theo quyết định của Hội đồng cấp văn bằng nhà trường." }}
+              </p>
+            </div>
+            <div class="info-grid">
+              <div class="info-item">
+                <span class="info-label">Người học</span>
+                <span class="info-value">{{ result.student_name|upper }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Số hiệu bị thu hồi</span>
+                <span class="info-value" style="font-family: monospace; text-decoration: line-through; color: #DC2626;">{{ result.serial_number }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Mã sinh viên</span>
+                <span class="info-value">{{ result.student_id }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Ngành đào tạo</span>
+                <span class="info-value">{{ result.major }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {% else %}
+      <!-- Card hiển thị bằng hợp lệ (Khung xem ảnh văn bằng trực tiếp theo đúng mẫu) -->
+      <div class="diploma-viewer-card result-card" id="view-issued">
+        <!-- Header thanh công cụ văn bằng -->
+        <div class="diploma-viewer-header">
+          <div class="viewer-header-left">
+            <svg class="viewer-doc-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+              <polyline points="10 9 9 9 8 9"/>
+            </svg>
+            <span class="viewer-title">Ảnh văn bằng: <strong>{{ result.serial_number|default:"-" }}</strong> - {% if share_info and share_info.allow_fullname %}{{ result.student_name }}{% else %}{{ result.student_name_masked }}{% endif %}</span>
+          </div>
+
+          <!-- Bộ nút thu phóng, In chứng nhận & toàn màn hình -->
+          <div class="viewer-header-right">
+            <div class="viewer-zoom-group">
+              <button type="button" class="viewer-tool-btn" onclick="zoomDiploma(-10)" title="Thu nhỏ">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+              </button>
+              <span class="viewer-zoom-val" id="zoom-val-text">100%</span>
+              <button type="button" class="viewer-tool-btn" onclick="zoomDiploma(10)" title="Phóng to">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+              </button>
+            </div>
+            <div class="viewer-divider"></div>
+
+            <!-- Nút In chứng nhận xác thực -->
+            <button type="button" class="viewer-tool-btn-print" onclick="window.print()" title="In chứng nhận xác thực">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 6 2 18 2 18 9"/>
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                <rect x="6" y="14" width="12" height="8"/>
+              </svg>
+              <span>In chứng nhận xác thực</span>
+            </button>
+
+            <!-- Nút Tải về -->
+            <button type="button" class="viewer-tool-btn-action" onclick="downloadDiploma()" title="Tải về ảnh văn bằng">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              <span>Tải về</span>
+            </button>
+
+            <button type="button" class="viewer-tool-btn" onclick="toggleDiplomaFullscreen()" title="Toàn màn hình">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Khu vực hiển thị văn bằng (Sân khấu xem ảnh) -->
+        <div class="diploma-viewer-stage" id="diploma-viewer-stage">
+          <div class="diploma-canvas-container" id="diploma-canvas-container">
+            {% if result %}
+            <img src="{% url 'public_diploma_image' result.serial_number %}{% if share_info %}?code={{ share_info.share_code }}{% endif %}" alt="Ảnh văn bằng - Trường ĐH Kỹ thuật - Công nghệ Cần Thơ" class="diploma-document-image" id="diploma-document-image">
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Dòng xác nhận hiệu lực pháp lý của văn bằng (đã bỏ icon ở đầu) -->
+        <div class="diploma-viewer-note">
+          <span>Đây là văn bằng chính thức đã được Trường Đại học Kỹ thuật - Công nghệ Cần Thơ cấp và đang có đầy đủ hiệu lực pháp lý.</span>
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- MODAL TÌM KIẾM NÂNG CAO (POPUP KHI BẤM NÚT 'TÌM KIẾM NÂNG CAO') -->
+  <div class="qr-modal-backdrop" id="advancedSearchModal" onclick="if(event.target === this) closeAdvancedModal()">
+    <div class="qr-modal-card" style="max-width: 520px; text-align: left; padding: 24px;">
+      <!-- Tiêu đề modal (đổi thành Tìm kiếm nâng cao, không emoji) -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #E2E8F0; padding-bottom: 12px;">
+        <h3 style="margin: 0; font-size: 18px; color: #26457F; display: flex; align-items: center; gap: 8px; font-weight: 700;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Tìm kiếm nâng cao
+        </h3>
+        <button type="button" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748B; line-height: 1;" onclick="closeAdvancedModal()">&times;</button>
+      </div>
+
+      <!-- 1. Thanh tìm kiếm như ở ngoài -->
+      <div style="margin-bottom: 16px;">
+        <div class="modal-search-bar">
+          <input type="text" id="modal-search-input" class="modal-search-input-field" 
+                 placeholder="Nhập mã được chia sẻ / số hiệu văn bằng" 
+                 value=""
+                 onkeydown="if(event.key === 'Enter') applyAdvancedModalSearch()">
+          <button type="button" class="modal-search-submit-btn" onclick="applyAdvancedModalSearch()" title="Tìm kiếm">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- 2. Hai nút nằm ở dưới cái thanh: Quét và Tải tệp (không emoji, dùng icon SVG) -->
+      <div class="modal-search-tools-grid">
+        <button type="button" class="modal-tool-action-btn" onclick="closeAdvancedModal(); openQrScannerModal();">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+            <circle cx="12" cy="13" r="4"/>
+          </svg>
+          <span>Quét mã QR</span>
+        </button>
+
+        <button type="button" class="modal-tool-action-btn" onclick="closeAdvancedModal(); document.getElementById('qr-file-input').click();">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+          <span>Tải tệp</span>
+        </button>
+      </div>
+
+      <!-- 3. Nút Đóng không có viền -->
+      <div style="display: flex; justify-content: flex-end; margin-top: 20px; border-top: 1px solid #E2E8F0; padding-top: 14px;">
+        <button type="button" class="modal-btn-close-clean" onclick="closeAdvancedModal()">
+          Đóng
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL CHỤP & QUÉT MÃ QR QUA CAMERA -->
+  <div class="qr-modal-backdrop" id="qrScannerModal" onclick="if(event.target === this) closeQrScannerModal()">
+    <div class="qr-modal-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h3 style="margin: 0; font-size: 17px; color: #26457F; display: flex; align-items: center; gap: 8px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          Chụp & Quét mã QR Văn bằng
+        </h3>
+        <button type="button" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748B; line-height: 1;" onclick="closeQrScannerModal()">&times;</button>
+      </div>
+      <p style="font-size: 13px; color: #64748B; margin-bottom: 8px;">
+        Hướng camera về phía mã QR in trên góc văn bằng hoặc bản sao công chứng để tự động nhận diện.
+      </p>
+
+      <!-- Khung ngắm quét mã mô phỏng camera với tia laser quét -->
+      <div class="qr-viewfinder">
+        <video id="qr-video" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover; display: none;"></video>
+        <div id="qr-mock-view" style="color: #94A3B8; text-align: center; padding: 20px;">
+          <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1.5" style="margin-bottom: 8px;">
+            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+          </svg>
+          <div style="font-size: 13px; color: rgba(255,255,255,0.75);">Đang tìm kiếm mã QR trên văn bằng...</div>
+        </div>
+        <div class="qr-scanner-laser"></div>
+      </div>
+
+      <div style="display: flex; gap: 10px; justify-content: center; margin-top: 16px;">
+        <button type="button" class="btn-secondary" style="height: 42px; font-size: 13px; padding: 0 16px;" onclick="closeQrScannerModal()">
+          Đóng
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER CHUẨN CỔNG THÔNG TIN QUỐC GIA (1 DÒNG DUY NHẤT THEO MẪU BỘ CÔNG AN / CỔNG DVCQG) -->
+  <footer class="main-footer">
+    <div class="container footer-container">
+      Cơ quan chủ quản: Trường Đại học Kỹ Thuật - Công nghệ Cần Thơ. Hotline hỗ trợ: 0000000000
+    </div>
+  </footer>
+
+  <script src="{% static 'toast.js' %}"></script>
+  <script>
+    function openAdvancedModal() {
+      document.getElementById('advancedSearchModal').classList.add('active');
+    }
+
+    function closeAdvancedModal() {
+      document.getElementById('advancedSearchModal').classList.remove('active');
+    }
+
+    function applyAdvancedModalSearch() {
+      const input = document.getElementById('modal-search-input');
+      const val = input ? input.value.trim() : '';
+      if (val) {
+        document.getElementById('employer-search-input').value = val;
+      }
+      closeAdvancedModal();
+      doSearch();
+    }
+
+    function prevAnnouncement() {
+      const list = document.querySelector('.announcement-list');
+      if (list) list.scrollBy({ left: -260, behavior: 'smooth' });
+    }
+
+    function nextAnnouncement() {
+      const list = document.querySelector('.announcement-list');
+      if (list) list.scrollBy({ left: 260, behavior: 'smooth' });
+    }
+
+    function openQrScannerModal() {
+      const modal = document.getElementById('qrScannerModal');
+      modal.classList.add('active');
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+          .then(stream => {
+            const video = document.getElementById('qr-video');
+            video.srcObject = stream;
+            video.style.display = 'block';
+            document.getElementById('qr-mock-view').style.display = 'none';
+          })
+          .catch(err => {
+            console.log('Camera access unavailable, using mock view');
+          });
+      }
+    }
+
+    function closeQrScannerModal() {
+      const modal = document.getElementById('qrScannerModal');
+      modal.classList.remove('active');
+      const video = document.getElementById('qr-video');
+      if (video && video.srcObject) {
+        video.srcObject.getTracks().forEach(track => track.stop());
+        video.srcObject = null;
+      }
+    }
+
+    function handleFileSelect(e) {
+      const file = e.target.files && e.target.files[0];
+      if (file) {
+        const match = file.name.match(/[A-Za-z0-9]{4,}-[A-Za-z0-9-]{4,}/);
+        if (match) {
+          document.getElementById('employer-search-input').value = match[0];
+          doSearch();
+        } else {
+          alert('Không tìm thấy mã văn bằng hoặc mã chia sẻ hợp lệ trong tên tệp: ' + file.name);
+        }
+      }
+    }
+
+    function doSearch(e) {
+      if (e && e.preventDefault) e.preventDefault();
+      const form = document.getElementById('employer-search-form');
+      if (form) {
+        form.submit();
+      }
+    }
+
+    // Các hàm tương tác với Khung xem ảnh văn bằng (theo mẫu Hình 2)
+    let currentDiplomaZoom = 100;
+    function zoomDiploma(delta) {
+      currentDiplomaZoom = Math.max(50, Math.min(200, currentDiplomaZoom + delta));
+      const el = document.getElementById('diploma-canvas-container');
+      const txt = document.getElementById('zoom-val-text');
+      if (el) el.style.transform = `scale(${currentDiplomaZoom / 100})`;
+      if (txt) txt.textContent = `${currentDiplomaZoom}%`;
+    }
+
+    function resetDiplomaZoom() {
+      currentDiplomaZoom = 100;
+      const el = document.getElementById('diploma-canvas-container');
+      const txt = document.getElementById('zoom-val-text');
+      if (el) el.style.transform = 'scale(1)';
+      if (txt) txt.textContent = '100%';
+    }
+
+    function downloadDiploma() {
+      const img = document.getElementById('diploma-document-image');
+      if (img && img.src) {
+        const link = document.createElement('a');
+        link.href = img.src + (img.src.includes('?') ? '&' : '?') + 'download=1';
+        link.download = 'Van_Bang_{{ result.serial_number|default:"CTUT" }}.png';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    }
+
+    function toggleDiplomaFullscreen() {
+      const stage = document.getElementById('diploma-viewer-stage');
+      if (!document.fullscreenElement) {
+        if (stage && stage.requestFullscreen) {
+          stage.requestFullscreen();
+        } else if (stage && stage.webkitRequestFullscreen) {
+          stage.webkitRequestFullscreen();
+        }
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
+    }
+
+    function openModal(id) {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'flex';
+    }
+
+    function closeModal(id) {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    }
+
+    window.addEventListener('click', function(e) {
+      if (e.target.classList.contains('gov-modal-backdrop')) {
+        e.target.style.display = 'none';
+      }
+    });
+  </script>
+
+  <!-- MODAL XÁC NHẬN ĐĂNG XUẤT -->
+  <div class="gov-modal-backdrop" id="modalLogout" style="display: none;">
+    <div class="gov-modal" style="max-width: 440px;">
+      <div class="gov-modal-header">
+        <div class="gov-modal-title" style="color: #0F172A; display: flex; align-items: center; gap: 8px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          <span>Xác nhận đăng xuất</span>
+        </div>
+        <button class="gov-modal-close" onclick="closeModal('modalLogout')">&times;</button>
+      </div>
+      <div class="gov-modal-body" style="text-align: center; padding: 28px 20px 20px;">
+        <div style="width: 52px; height: 52px; border-radius: 50%; background: #FEE2E2; color: #DC2626; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </div>
+        <p style="font-size: 15px; font-weight: 600; color: #0F172A; margin-bottom: 8px;">Bạn có chắc chắn muốn đăng xuất khỏi hệ thống?</p>
+        <span style="font-size: 13px; color: #64748B; line-height: 1.5; display: block;">Sau khi đăng xuất, phiên làm việc sẽ kết thúc và bạn sẽ được chuyển về Cổng tra cứu văn bằng công khai.</span>
+      </div>
+      <div class="gov-modal-footer" style="justify-content: center; gap: 12px; background: #FAFBFD; padding: 14px 20px;">
+        <button type="button" class="btn-gov-subtle" onclick="closeModal('modalLogout')" style="padding: 8px 18px; font-weight: 600;">Hủy bỏ</button>
+        <a href="{% url 'logout' %}" class="btn-gov-danger" style="text-decoration: none; padding: 8px 22px; font-weight: 600; background: #DC2626; color: #FFFFFF; border-color: #DC2626;">Đăng xuất</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+

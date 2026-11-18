@@ -1,0 +1,341 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đăng nhập hệ thống - Trường Đại học Kỹ thuật - Công nghệ Cần Thơ</title>
+  <link rel="icon" type="image/png" href="/media/ctut_logo.png">
+  <link rel="shortcut icon" type="image/png" href="/media/ctut_logo.png">
+  
+  <!-- Font chữ tiêu chuẩn Bộ TT&TT & Cổng DVCQG: Roboto, Inter & Merriweather -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Merriweather:ital,wght@0,400;0,700;0,900;1,400&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="{% static 'style.css' %}">
+</head>
+<body class="login-body">
+
+  <!-- HỌA TIẾT NỀN NƯỚC HOA VĂN & ĐỒNG TÂM PHÁT SÁNG THEO PHONG CÁCH VNEID / DVCQG (TONE XANH CTUT) -->
+  <div class="login-bg-overlay">
+    <div class="login-bg-concentric-circles"></div>
+  </div>
+
+  <!-- NÚT QUAY LẠI CỔNG TRA CỨU Ở GÓC TRÊN BÊN TRÁI -->
+  <div class="login-top-nav">
+    <a href="{% url 'search' %}" class="login-back-btn" title="Quay lại Cổng tra cứu">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <line x1="19" y1="12" x2="5" y2="12"></line>
+        <polyline points="12 19 5 12 12 5"></polyline>
+      </svg>
+      <span>Cổng tra cứu văn bằng</span>
+    </a>
+  </div>
+
+  <!-- NỘI DUNG TRUNG TÂM -->
+  <main class="login-main-wrapper">
+    
+    <!-- BRANDING ĐỈNH TRÊN CARD: LOGO VÀ TÊN TRƯỜNG CTUT (THEO BỐ CỤC ĐỈNH ĐẦU VNEID) -->
+    <div class="login-header-branding">
+      <div class="login-emblem-container">
+        <img src="/media/ctut_logo_watermark.png" alt="" class="login-emblem-watermark-bg">
+        <div class="login-emblem-wrap">
+          <img src="/media/ctut_logo.png" alt="CTUT Logo" class="login-emblem-img">
+        </div>
+      </div>
+      <h1 class="login-school-name">TRƯỜNG ĐẠI HỌC KỸ THUẬT - CÔNG NGHỆ CẦN THƠ</h1>
+      <div class="login-portal-subtitle">HỆ THỐNG QUẢN LÝ VÀ XÁC THỰC VĂN BẰNG SỐ</div>
+    </div>
+
+    <!-- KHUNG ĐĂNG NHẬP 2 CỘT THEO MẪU CHUẨN VNEID / DVCQG -->
+    <div class="login-card">
+      
+      <!-- CỘT TRÁI: FORM ĐĂNG NHẬP BẰNG TÀI KHOẢN VÀ MẬT KHẨU -->
+      <div class="login-col-form">
+        <h2 class="login-form-title">Đăng nhập tài khoản</h2>
+
+        <form id="loginForm" method="post" action="{% url 'login' %}" onsubmit="handleLoginSubmit(event)">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ request.GET.next|default:'' }}">
+          
+          <!-- Hộp thông báo lỗi khi đăng nhập không thành công -->
+          <div id="loginAlertBox" style="display: {% if error_msg %}block{% else %}none{% endif %}; margin-bottom: 14px; font-size: 13px; color: #DC2626; background: #FEF2F2; padding: 10px 12px; border-radius: 6px; border: 1px solid #FECACA; font-weight: 600; line-height: 1.5;">
+            {{ error_msg }}
+          </div>
+          
+          <!-- Trường Số CCCD (Yêu cầu duy nhất) -->
+          <div class="login-input-group">
+            <label for="usernameInput" class="login-label" style="display: block; font-size: 13px; font-weight: 600; color: #1E3A8A; margin-bottom: 6px;">Số Căn cước công dân (CCCD)</label>
+            <div class="login-input-wrapper">
+              <span class="login-input-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+              </span>
+              <input type="text" id="usernameInput" name="cccd" class="login-input-field" placeholder="Nhập số CCCD (12 chữ số)" inputmode="numeric" pattern="[0-9]{12}" maxlength="12" required autocomplete="username">
+            </div>
+          </div>
+
+          <!-- Trường Mật khẩu -->
+          <div class="login-input-group">
+            <label for="passwordInput" class="login-label" style="display: block; font-size: 13px; font-weight: 600; color: #1E3A8A; margin-bottom: 6px;">Mật khẩu</label>
+            <div class="login-input-wrapper">
+              <span class="login-input-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+              </span>
+              <input type="password" id="passwordInput" name="password" class="login-input-field" placeholder="Nhập mật khẩu" required autocomplete="current-password">
+              <button type="button" class="login-password-toggle" onclick="togglePasswordVisibility()" title="Ẩn/Hiện mật khẩu">
+                <svg id="eyeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Nút Đăng nhập chính -->
+          <button type="submit" id="loginBtn" class="login-submit-btn">
+            <span id="loginBtnText">Đăng nhập</span>
+          </button>
+        </form>
+
+        <!-- Dòng trợ giúp dưới form -->
+        <div class="login-form-footer-note">
+          Trường hợp không đăng nhập được, vui lòng <a href="#" onclick="openHelpModal(event)">xem hướng dẫn</a>
+        </div>
+      </div>
+
+      <!-- CỘT PHẢI: 4 NÚT ĐĂNG NHẬP TRỰC TIẾP CHO 3 PHÒNG BAN VÀ 1 CHO SINH VIÊN -->
+      <div class="login-col-roles">
+        <div class="login-roles-header">
+          <h3 class="login-roles-title">Cổng truy cập phân hệ</h3>
+          <p class="login-roles-subtitle">Đăng nhập trực tiếp theo chức năng công tác:</p>
+        </div>
+
+        <div class="login-roles-list">
+          <!-- 1. Phòng Công tác Sinh viên (QLSV) -->
+          <button type="button" class="login-role-btn" onclick="quickLoginRole('092204000001', '123456', 'qlsv')" title="Đăng nhập CCCD QLSV: 092204000001">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+            <span>Quản lý sinh viên (QLSV)</span>
+          </button>
+
+          <!-- 2. Phòng Đào tạo -->
+          <button type="button" class="login-role-btn" onclick="quickLoginRole('092204000002', '123456', 'daotao')" title="Đăng nhập CCCD Đào tạo: 092204000002">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+              <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+            </svg>
+            <span>Phòng Đào tạo</span>
+          </button>
+
+          <!-- 3. Ban Giám hiệu (Hiệu trưởng) -->
+          <button type="button" class="login-role-btn" onclick="quickLoginRole('092204000003', '123456', 'hieutruong')" title="Đăng nhập CCCD Hiệu trưởng: 092204000003">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              <polyline points="9 12 11 14 15 10"></polyline>
+            </svg>
+            <span>Ban Giám hiệu (Hiệu trưởng)</span>
+          </button>
+
+          <!-- 4. Sinh viên -->
+          <button type="button" class="login-role-btn" onclick="quickLoginRole('092204012345', '123456', 'sinhvien')" title="Đăng nhập CCCD Sinh viên: 092204012345">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+              <line x1="9" y1="9" x2="15" y2="9"></line>
+              <line x1="9" y1="13" x2="13" y2="13"></line>
+            </svg>
+            <span>Cổng Sinh viên</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- MODAL HƯỚNG DẪN ĐĂNG NHẬP -->
+  <div class="dvc-modal" id="helpModal">
+    <div class="dvc-modal-overlay" onclick="closeHelpModal()"></div>
+    <div class="dvc-modal-content login-help-dialog">
+      <div class="dvc-modal-header">
+        <div class="dvc-modal-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+          Quy định đăng nhập hệ thống
+        </div>
+        <button type="button" class="dvc-modal-close" onclick="closeHelpModal()">&times;</button>
+      </div>
+      <div class="dvc-modal-body">
+        <div class="help-section">
+          <h4>1. Quy định định danh bằng CCCD</h4>
+          <p>Hệ thống chỉ chấp nhận đăng nhập duy nhất bằng <strong>Số Căn cước công dân (CCCD gồm 12 chữ số)</strong> cho tất cả cán bộ nhà trường và sinh viên. Không dùng tên đăng nhập hoặc mã sinh viên.</p>
+        </div>
+        <div class="help-section">
+          <h4>2. Danh sách tài khoản thử nghiệm hệ thống</h4>
+          <p>• <strong>Phòng Quản lý sinh viên (QLSV):</strong> CCCD <code>092204000001</code> | Mật khẩu: <code>123456</code></p>
+          <p>• <strong>Phòng Đào tạo:</strong> CCCD <code>092204000002</code> | Mật khẩu: <code>123456</code></p>
+          <p>• <strong>Ban Giám hiệu (Hiệu trưởng):</strong> CCCD <code>092204000003</code> | Mật khẩu: <code>123456</code></p>
+          <p>• <strong>Cổng Sinh viên:</strong> CCCD <code>092204012345</code> | Mật khẩu: <code>123456</code></p>
+        </div>
+        <div class="help-section">
+          <h4>3. Cơ chế bảo mật Zero-Knowledge</h4>
+          <p>Số CCCD của sinh viên được bảo vệ riêng tư. Hệ thống hiển thị che danh tính <code>•••• ••• XXX</code> và chỉ lưu trữ chuỗi băm chuẩn mật mã học.</p>
+        </div>
+      </div>
+      <div class="dvc-modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeHelpModal()">Đã hiểu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER 1 DÒNG CHUẨN ĐỒNG BỘ VỚI TRANG NHÀ TUYỂN DỤNG -->
+  <footer class="main-footer">
+    <div class="container footer-container">
+      Cơ quan chủ quản: Trường Đại học Kỹ Thuật - Công nghệ Cần Thơ. Hotline hỗ trợ: 0000000000
+    </div>
+  </footer>
+
+  <!-- SCRIPT KẾT NỐI API ĐĂNG NHẬP THẬT BẰNG CCCD -->
+  <script src="{% static 'toast.js' %}"></script>
+  <script>
+    function showLoginError(msg) {
+      const box = document.getElementById('loginAlertBox');
+      if (box) {
+        box.innerText = msg;
+        box.style.display = 'block';
+      }
+      if (window.showToast) {
+        showToast(msg, 'error');
+      }
+    }
+
+    function hideLoginError() {
+      const box = document.getElementById('loginAlertBox');
+      if (box) box.style.display = 'none';
+    }
+
+    function setBtnLoading(isLoading) {
+      const btn = document.getElementById('loginBtn');
+      const text = document.getElementById('loginBtnText');
+      if (btn && text) {
+        btn.disabled = isLoading;
+        text.innerText = isLoading ? 'Đang xác thực API...' : 'Đăng nhập';
+        btn.style.opacity = isLoading ? '0.75' : '1';
+      }
+    }
+
+    // Xử lý nộp form đăng nhập qua API thật (Fetch/JSON hoặc FormData)
+    async function handleLoginSubmit(e) {
+      if (e) e.preventDefault();
+      hideLoginError();
+
+      const rawInput = (document.getElementById('usernameInput').value || '').trim();
+      const password = (document.getElementById('passwordInput').value || '').trim();
+
+      // Kiểm tra phía Client: RÀNG BUỘC CHỈ ĐĂNG NHẬP BẰNG CCCD
+      if (!rawInput) {
+        showLoginError('Vui lòng nhập Số Căn cước công dân (CCCD).');
+        document.getElementById('usernameInput').focus();
+        return;
+      }
+
+      if (rawInput.toLowerCase() === 'admin') {
+        showLoginError('Tài khoản Quản trị viên (admin) chỉ được phép đăng nhập tại Trang quản trị của Django (/admin/).');
+        return;
+      }
+
+      if (!/^\d+$/.test(rawInput)) {
+        showLoginError('Hệ thống chỉ chấp nhận đăng nhập bằng Số Căn cước công dân (CCCD gồm các chữ số). Vui lòng không sử dụng tên đăng nhập hoặc mã số sinh viên.');
+        document.getElementById('usernameInput').focus();
+        return;
+      }
+
+      if (rawInput.length !== 12) {
+        showLoginError('Số Căn cước công dân (CCCD) phải gồm chính xác 12 chữ số.');
+        document.getElementById('usernameInput').focus();
+        return;
+      }
+
+      if (!password) {
+        showLoginError('Vui lòng nhập mật khẩu.');
+        document.getElementById('passwordInput').focus();
+        return;
+      }
+
+      // Lưu CCCD vào sessionStorage phục vụ cơ chế hiển thị Zero-Knowledge của Cổng Sinh viên
+      sessionStorage.setItem('student_cccd_raw', rawInput);
+      sessionStorage.setItem('student_cccd_last4', rawInput.slice(-4));
+
+      setBtnLoading(true);
+
+      try {
+        const formData = new FormData(document.getElementById('loginForm'));
+        const response = await fetch("{% url 'login' %}", {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          // Thành công: chuyển hướng tức thì đến phân hệ tương ứng
+          window.location.href = data.redirect_url;
+        } else {
+          showLoginError(data.error || 'Đăng nhập không thành công. Vui lòng kiểm tra lại số CCCD và mật khẩu.');
+          setBtnLoading(false);
+        }
+      } catch (err) {
+        console.warn('Lỗi kết nối API fetch, chuyển sang gửi form chuẩn:', err);
+        // Fallback: nếu mạng hoặc CORS chặn AJAX, gửi form POST chuẩn
+        document.getElementById('loginForm').submit();
+      }
+    }
+
+    // Đăng nhập nhanh phân hệ bằng cách tự động điền CCCD mẫu và gọi API thật
+    function quickLoginRole(cccd, password, role) {
+      document.getElementById('usernameInput').value = cccd;
+      document.getElementById('passwordInput').value = password;
+      handleLoginSubmit();
+    }
+
+    // Ẩn / Hiện mật khẩu
+    function togglePasswordVisibility() {
+      const p = document.getElementById('passwordInput');
+      const icon = document.getElementById('eyeIcon');
+      if (p.type === 'password') {
+        p.type = 'text';
+        icon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
+      } else {
+        p.type = 'password';
+        icon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
+      }
+    }
+
+    // Mở / Đóng Modal Trợ giúp
+    function openHelpModal(e) {
+      if (e) e.preventDefault();
+      document.getElementById('helpModal').classList.add('active');
+    }
+
+    function closeHelpModal() {
+      document.getElementById('helpModal').classList.remove('active');
+    }
+  </script>
+</body>
+</html>
