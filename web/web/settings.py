@@ -124,10 +124,14 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATICFILES_DIRS = [
-    BASE_DIR / 'static', # Khai báo thư mục chứa CSS/JS
+    BASE_DIR / 'static',             # Khai báo thư mục chứa CSS/JS
+    ('media', BASE_DIR / 'media'),   # Thư mục media cùng cấp với static và templates
 ]
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -135,3 +139,19 @@ STATICFILES_DIRS = [
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_REDIRECT_URL = '/dashboard/' # Khi người dùng đăng nhập thành công, họ sẽ được chuyển hướng đến trang dashboard
 LOGOUT_REDIRECT_URL = '/' # Khi người dùng đăng xuất, họ sẽ được chuyển hướng đến trang chủ
+
+# Cấu hình định danh Trường ĐH Kỹ thuật - Công nghệ Cần Thơ cho phôi văn bằng số
+INSTITUTION = {
+    'name': 'Trường Đại học Kỹ thuật – Công nghệ Cần Thơ',
+    'name_upper': 'TRƯỜNG ĐẠI HỌC KỸ THUẬT – CÔNG NGHỆ CẦN THƠ',
+    'short': 'CTUT',
+    'name_en': 'Can Tho University of Technology',
+    'city': 'Cần Thơ',
+    'logo': 'media/ctut_logo.png',
+    'rector_title': 'HIỆU TRƯỞNG',
+    'rector_name': os.getenv('RECTOR_DISPLAY_NAME', 'Hoàng Nam Tiến'),
+}
+DIPLOMA_DEMO_SEAL = True
+PRIVATE_MEDIA_ROOT = BASE_DIR / 'private_media'
+DIPLOMA_MAX_UPLOAD_MB = 15
+PUBLIC_BASE_URL = os.getenv('PUBLIC_BASE_URL', '').strip().rstrip('/')
