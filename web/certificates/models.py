@@ -4,6 +4,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
 import hashlib
+import hmac
 
 class Certificate(models.Model):
     STATUS_CHOICES = [
@@ -22,6 +23,10 @@ class Certificate(models.Model):
     classification = models.CharField(max_length=50, verbose_name="Xếp loại")
     degree_type = models.CharField(max_length=100, default='Bằng Cử nhân', verbose_name="Loại văn bằng")
     issue_date = models.DateField(null=True, blank=True, verbose_name="Ngày cấp")
+
+    # Bảo mật thông tin định danh CCCD (Zero-Knowledge: CSDL chỉ lưu 4 số cuối và chuỗi băm HMAC-SHA256)
+    national_id_last4 = models.CharField(max_length=4, blank=True, null=True, verbose_name="4 số cuối CCCD")
+    national_id_hash = models.CharField(max_length=64, blank=True, null=True, db_index=True, verbose_name="Dấu băm CCCD (HMAC-SHA256)")
 
     # Tiến trình 3 phòng ban phê duyệt
     student_affairs_approved = models.BooleanField(default=False, verbose_name="Phòng QLSV đã xác nhận")
@@ -58,6 +63,29 @@ class Certificate(models.Model):
 
     def __str__(self):
         return f"{self.serial_number} - {self.student_name} ({self.student_id})"
+
+    @property
+    def student_name_masked(self):
+        """Họ tên đã che cho trang tra cứu công khai: giữ chữ đầu và đuôi, che phần giữa"""
+        parts = (self.student_name or '').split()
+        if not parts:
+            return ''
+        if len(parts) == 1:
+            return parts[0][0] + '***'
+        if len(parts) == 2:
+            return f"{parts[0]} {parts[1][0]}***"
+        middle = ' '.join(p[0] + '***' for p in parts[1:-1])
+        return f"{parts[0]} {middle} {parts[-1]}"
+
+    @property
+    def national_id_masked(self):
+        """Hiển thị số CCCD đã che (12 số: che 8 số đầu, hiển thị 4 số cuối): •••• •••• 1234"""
+        return f"•••• •••• {self.national_id_last4}" if self.national_id_last4 else ''
+
+    @property
+    def national_id_last3(self):
+        """Tương thích ngược với các trường cũ nếu có gọi"""
+        return self.national_id_last4[-3:] if self.national_id_last4 else ''
 
     def calculate_data_hash(self):
         """Tính toán dấu băm SHA-256 từ chuỗi chuẩn hóa theo kế hoạch"""
@@ -104,7 +132,7 @@ class Certificate(models.Model):
         if self.status == 'ISSUED':
             return {
                 'step': 4,
-                'name': 'Đã cấp (On-Chain)',
+                'name': 'Đã cấp chính thức',
                 'badge': 'success',
                 'desc': 'Đã hoàn thành phê duyệt 3 cấp và phát hành trên Blockchain'
             }
@@ -127,7 +155,7 @@ class Certificate(models.Model):
                 'step': 3,
                 'name': 'Chờ Hiệu trưởng ký',
                 'badge': 'primary',
-                'desc': 'Chờ Ban Giám hiệu / Hiệu trưởng ký duyệt và phát hành On-Chain'
+                'desc': 'Chờ Ban Giám hiệu / Hiệu trưởng ký duyệt và phát hành chính thức'
             }
         return {
             'step': 4,
@@ -161,6 +189,7 @@ class UserProfile(models.Model):
         ('qlsv',       'Phòng Quản lý Sinh viên'),
         ('daotao',     'Phòng Đào tạo'),
         ('hieutruong', 'Hiệu trưởng / Ban Giám hiệu'),
+        ('sinhvien',   'Sinh viên'),
         ('admin',      'Quản trị viên hệ thống'),
     ]
 
@@ -178,6 +207,20 @@ class UserProfile(models.Model):
         verbose_name="Vai trò",
         help_text="Vai trò quyết định luồng phê duyệt văn bằng mà tài khoản này được tham gia."
     )
+    cccd = models.CharField(
+        max_length=20,
+        unique=True,
+        blank=True,
+        null=True,
+        db_index=True,
+        verbose_name="Số CCCD"
+    )
+    full_name = models.CharField(
+        max_length=150,
+        blank=True,
+        null=True,
+        verbose_name="Họ và tên"
+    )
 
     class Meta:
         verbose_name = "Hồ sơ phân quyền"
@@ -186,6 +229,83 @@ class UserProfile(models.Model):
     def __str__(self):
         role_display = self.get_role_display() or "Chưa phân quyền"
         return f"{self.user.username} — {role_display}"
+
+
+class CertificateShare(models.Model):
+    STATUS_CHOICES = [
+        ('ACTIVE', 'Đang hiệu lực'),
+        ('REVOKED', 'Đã thu hồi'),
+        ('EXPIRED', 'Hết hạn'),
+    ]
+
+    certificate = models.ForeignKey(Certificate, on_delete=models.CASCADE, related_name='shares', verbose_name="Văn bằng")
+    share_code = models.CharField(max_length=32, unique=True, db_index=True, verbose_name="Mã tra cứu ngẫu nhiên")
+    recipient_name = models.CharField(max_length=255, verbose_name="Đơn vị nhận / Nhà tuyển dụng")
+
+    # Hiệu lực & Giới hạn
+    days_valid = models.IntegerField(default=7, verbose_name="Số ngày hiệu lực")
+    expires_at = models.DateTimeField(verbose_name="Thời điểm hết hạn")
+    max_views = models.IntegerField(null=True, blank=True, verbose_name="Lượt xem tối đa")
+    view_count = models.IntegerField(default=0, verbose_name="Số lượt đã xem")
+
+    # Quyền xem chi tiết (Privacy Scope)
+    allow_fullname = models.BooleanField(default=False, verbose_name="Xem họ tên đầy đủ")
+    allow_dob = models.BooleanField(default=False, verbose_name="Xem ngày sinh")
+    allow_student_id = models.BooleanField(default=False, verbose_name="Xem mã sinh viên")
+    allow_classification = models.BooleanField(default=False, verbose_name="Xem xếp loại tốt nghiệp")
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='ACTIVE', verbose_name="Trạng thái")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Thời gian tạo")
+
+    class Meta:
+        verbose_name = "Liên kết chia sẻ văn bằng"
+        verbose_name_plural = "Các liên kết chia sẻ văn bằng"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.share_code} -> {self.certificate.serial_number} ({self.recipient_name})"
+
+    def is_valid(self):
+        if self.status != 'ACTIVE':
+            return False, 'Liên kết chia sẻ này đã bị thu hồi hoặc không còn hiệu lực.'
+        if self.expires_at and timezone.now() > self.expires_at:
+            return False, 'Liên kết chia sẻ này đã hết thời hạn hiệu lực.'
+        if self.max_views and self.view_count >= self.max_views:
+            return False, 'Liên kết chia sẻ này đã đạt giới hạn số lượt xem tối đa.'
+        return True, ''
+
+    @property
+    def expiry_display(self):
+        if self.status == 'REVOKED':
+            return 'Đã thu hồi'
+        if not self.expires_at:
+            return 'Không giới hạn'
+        now = timezone.now()
+        if now > self.expires_at:
+            return 'Đã hết hạn'
+        diff = self.expires_at - now
+        days = diff.days
+        hours = diff.seconds // 3600
+        if days > 0:
+            return f"{self.expires_at.strftime('%d/%m/%Y %H:%M')} (còn {days} ngày)"
+        elif hours > 0:
+            return f"{self.expires_at.strftime('%d/%m/%Y %H:%M')} (còn {hours} giờ)"
+        else:
+            return f"{self.expires_at.strftime('%d/%m/%Y %H:%M')} (sắp hết hạn)"
+
+    @property
+    def views_display(self):
+        max_v = f"{self.max_views} lượt" if self.max_views else 'Không giới hạn'
+        return f"{self.view_count}/{max_v}"
+
+    @property
+    def permissions_display(self):
+        items = []
+        if self.allow_fullname: items.append('Họ tên')
+        if self.allow_dob: items.append('Ngày sinh')
+        if self.allow_student_id: items.append('Mã sinh viên')
+        if self.allow_classification: items.append('Xếp loại')
+        return ', '.join(items) if items else 'Chỉ thông tin cơ bản'
 
 
 # ── Signals: tự động tạo/lưu UserProfile khi tạo User mới ────────────────────
