@@ -16,16 +16,8 @@ Các đặc điểm cốt lõi:
 
 ---
 
-## 2. CÁC TÀI LIỆU HƯỚNG DẪN TRONG DỰ ÁN
 
-Hệ thống cung cấp các tài liệu hướng dẫn chi tiết:
-- PROJECT_DOCUMENTATION.md: Tài liệu toàn diện về kiến trúc kỹ thuật, quy trình nghiệp vụ, phân quyền 5 nhóm người dùng và cơ chế bảo mật.
-- NETWORK_AND_API_GUIDE.md: Hướng dẫn chi tiết về cấu trúc mạng Docker, cách kết nối Web3.py với node Besu, danh mục toàn bộ REST API và JSON-RPC API.
-- BAO_CAO_KIEN_TRUC_VA_LUONG_HE_THONG_BLOCKCHAIN.docx: File văn bản Word định dạng báo cáo nghiên cứu đầy đủ toàn bộ kỹ thuật và luồng hoạt động để nộp hoặc in ấn.
-
----
-
-## 3. CÔNG NGHỆ VÀ CÔNG CỤ SỬ DỤNG
+## 2. CÔNG NGHỆ VÀ CÔNG CỤ SỬ DỤNG
 
 - Nền tảng Blockchain: Hyperledger Besu (phiên bản 24.x), mạng Consortium nội bộ gồm 3 Validator Nodes.
 - Thuật toán đồng thuận: QBFT (Quorum Byzantine Fault Tolerance), chu kỳ tạo khối 2 giây/block, hoàn tất tức thì (instant finality), min-gas-price = 0 (không tốn phí giao dịch).
@@ -38,7 +30,7 @@ Hệ thống cung cấp các tài liệu hướng dẫn chi tiết:
 
 ---
 
-## 4. HƯỚNG DẪN KHỞI CHẠY HỆ THỐNG
+## 3. HƯỚNG DẪN KHỞI CHẠY HỆ THỐNG
 
 ### Bước 1: Chuẩn bị môi trường
 Máy tính cần cài đặt:
@@ -74,7 +66,7 @@ Script sẽ tự động biên dịch hợp đồng CertificateRegistry.sol, g�
 
 ---
 
-## 5. CẤU TRÚC THƯ MỤC DỰ ÁN
+## 4. CẤU TRÚC THƯ MỤC DỰ ÁN
 
 - besu/: Chứa cấu hình mạng QBFT (genesis.json, static-nodes.json, keys) và thư mục lưu trữ data của 3 nodes.
 - contracts/: Mã nguồn hợp đồng CertificateRegistry.sol và file contract_info.json sau khi deploy.
