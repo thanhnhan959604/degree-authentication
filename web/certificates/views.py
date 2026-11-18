@@ -14,7 +14,9 @@ from .models import Certificate, ApprovalLog, UserProfile, CertificateShare
 from .blockchain import (
     register_onchain,
     approve_onchain,
-    revoke_onchain
+    revoke_onchain,
+    get_web3_client,
+    ROLE_CONFIG
 )
 from .excel_helper import generate_sample_excel, process_excel_upload, hash_national_id
 from .qr_helper import generate_qr_base64
@@ -152,9 +154,33 @@ def get_cert(pk):
         return first_cert
     return get_object_or_404(Certificate, serial_number=str(pk))
 
+def clean_search_query(raw_query):
+    """Chuẩn hóa chuỗi tra cứu: trích xuất mã văn bằng / mã chia sẻ từ link URL, QR code text hoặc loại bỏ khoảng trắng dư thừa"""
+    if not raw_query:
+        return ''
+    q = str(raw_query).strip()
+    if '://' in q or q.startswith('/') or '?' in q:
+        try:
+            import urllib.parse
+            parsed = urllib.parse.urlparse(q)
+            params = urllib.parse.parse_qs(parsed.query)
+            if 'q' in params and params['q']:
+                return params['q'][0].strip()
+            parts = [p for p in parsed.path.strip('/').split('/') if p]
+            if len(parts) >= 2 and parts[0] == 'share':
+                return parts[1].strip()
+            if parts and len(parts) == 1 and parts[0] not in ('', 'search', 'api'):
+                return parts[0].strip()
+        except Exception:
+            pass
+    import re
+    q = re.sub(r'\s*-\s*', '-', q)
+    return q
+
 def search_view(request):
     """Trang tra cứu công khai văn bằng - ai cũng có thể truy cập"""
-    query = request.GET.get('q', '').strip()
+    raw_query = request.GET.get('q', '').strip()
+    query = clean_search_query(raw_query)
     result = None
     qr_data = None
     share_info = None
@@ -196,6 +222,7 @@ def search_view(request):
     return render(request, 'nha_tuyen_dung.html', {
         'result': result,
         'query': query,
+        'raw_query': raw_query,
         'qr_data': qr_data,
         'share_info': share_info,
         'share_error': share_error,
@@ -204,6 +231,119 @@ def search_view(request):
 def share_redirect_view(request, code):
     """Điều hướng từ /share/<code/ về cổng tra cứu công khai kèm mã xác minh"""
     return redirect(f"/?q={code}")
+
+def blockchain_explorer(request):
+    """Cổng Sổ cái Blockchain Hyperledger Besu - Xem lịch sử xác thực và ký số on-chain công khai"""
+    query = request.GET.get('q', '').strip()
+    action_filter = request.GET.get('action', 'ALL').strip().upper()
+
+    logs_qs = ApprovalLog.objects.filter(tx_hash__isnull=False).exclude(tx_hash='').select_related('certificate').order_by('-created_at', '-id')
+
+    if query:
+        logs_qs = logs_qs.filter(
+            Q(tx_hash__icontains=query) |
+            Q(certificate__serial_number__icontains=query) |
+            Q(certificate__data_hash__icontains=query) |
+            Q(action__icontains=query) |
+            Q(actor__icontains=query)
+        )
+
+    if action_filter == 'ISSUE':
+        logs_qs = logs_qs.filter(action__icontains='HIỆU TRƯỞNG').exclude(action__icontains='THU HỒI')
+    elif action_filter == 'ACADEMIC':
+        logs_qs = logs_qs.filter(action__icontains='ĐÀO TẠO').exclude(action__icontains='THU HỒI')
+    elif action_filter == 'IDENTITY':
+        logs_qs = logs_qs.filter(Q(action__icontains='QLSV') | Q(action__icontains='TẠO MỚI') | Q(action__icontains='EXCEL')).exclude(action__icontains='THU HỒI')
+    elif action_filter == 'REVOKE':
+        logs_qs = logs_qs.filter(action__icontains='THU HỒI')
+
+    # Web3 Besu node stats
+    w3 = get_web3_client()
+    node_online = False
+    latest_block = 0
+    chain_id = 1337
+    if w3:
+        try:
+            node_online = w3.is_connected()
+            if node_online:
+                latest_block = w3.eth.block_number
+                chain_id = w3.eth.chain_id
+        except Exception:
+            node_online = False
+
+    total_tx_count = ApprovalLog.objects.filter(tx_hash__isnull=False).exclude(tx_hash='').count()
+    total_issued_certs = Certificate.objects.filter(status='ISSUED').count()
+    total_revoked_certs = Certificate.objects.filter(status='REVOKED').count()
+
+    from django.core.paginator import Paginator
+    paginator = Paginator(logs_qs, 15)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'blockchain_explorer.html', {
+        'page_obj': page_obj,
+        'query': query,
+        'action_filter': action_filter,
+        'node_online': node_online,
+        'latest_block': latest_block,
+        'chain_id': chain_id,
+        'total_tx_count': total_tx_count,
+        'total_issued_certs': total_issued_certs,
+        'total_revoked_certs': total_revoked_certs,
+        'contract_address': '0xfeae27388A65eE984F452f86efFEd42AaBD438FD',
+        'active_tab': 'blockchain',
+    })
+
+def blockchain_tx_detail_api(request, tx_hash):
+    """API lấy thông tin chi tiết của một transaction hash trực tiếp từ Besu & Database"""
+    tx_hash = tx_hash.strip()
+    raw_hash = tx_hash if tx_hash.startswith('0x') else ('0x' + tx_hash)
+
+    log = ApprovalLog.objects.filter(
+        Q(tx_hash__iexact=tx_hash) | Q(tx_hash__iexact=tx_hash.lstrip('0x'))
+    ).select_related('certificate').first()
+
+    w3 = get_web3_client()
+    tx_data = None
+    if w3 and w3.is_connected():
+        try:
+            tx = w3.eth.get_transaction(raw_hash)
+            receipt = w3.eth.get_transaction_receipt(raw_hash)
+            from_addr = tx['from']
+            to_addr = tx['to']
+            role_name = None
+            for r_key, r_info in ROLE_CONFIG.items():
+                if r_info.get('address') and r_info['address'].lower() == from_addr.lower():
+                    role_name = r_info['name']
+                    break
+
+            tx_data = {
+                'from': from_addr,
+                'to': to_addr,
+                'blockNumber': tx['blockNumber'],
+                'gas': tx['gas'],
+                'gasPrice': str(tx.get('gasPrice', 0)),
+                'gasUsed': receipt['gasUsed'],
+                'status': receipt['status'],
+                'roleName': role_name
+            }
+        except Exception:
+            pass
+
+    return JsonResponse({
+        'success': True,
+        'tx_hash': raw_hash,
+        'action': log.action if log else 'GIAO DỊCH BLOCKCHAIN',
+        'actor': log.actor if log else 'Hệ thống',
+        'created_at': log.created_at.strftime('%d/%m/%Y %H:%M:%S') if log else '',
+        'comment': log.comment if log else '',
+        'serial_number': log.certificate.serial_number if log and log.certificate else '',
+        'data_hash': log.certificate.data_hash if log and log.certificate else '',
+        'cert_status': log.certificate.status if log and log.certificate else '',
+        'major': log.certificate.major if log and log.certificate else '',
+        'degree_type': log.certificate.degree_type if log and log.certificate else '',
+        'web3': tx_data
+    })
 
 @csrf_exempt
 def create_share_link(request):
@@ -287,7 +427,8 @@ def create_share_link(request):
     )
 
     share_url = request.build_absolute_uri(f"/?q={share_code}")
-    qr_url = f"/api/qr/?data={share_url}"
+    import urllib.parse
+    qr_url = f"/api/qr/?data={urllib.parse.quote(share_url)}"
 
     return JsonResponse({
         'success': True,
@@ -336,10 +477,12 @@ def student_portal(request):
         certs = list(Certificate.objects.filter(national_id_hash=h_nid).order_by('-id'))
 
     cert = certs[0] if certs else None
+    verify_url = request.build_absolute_uri(f"/?q={cert.serial_number}") if cert else ''
 
     return render(request, 'sinh_vien.html', {
         'cert': cert,
         'certs': certs,
+        'verify_url': verify_url,
     })
 
 def qlsv_portal(request):
@@ -347,9 +490,10 @@ def qlsv_portal(request):
     if request.user.is_authenticated and (request.user.is_superuser or request.user.username.lower() == 'admin'):
         return redirect('/admin/')
 
-    pending_certs = Certificate.objects.filter(status='PENDING', is_rejected=False, student_affairs_approved=False)
-    forwarded_certs = Certificate.objects.filter(student_affairs_approved=True)
-    returned_certs = Certificate.objects.filter(is_rejected=True, student_affairs_approved=False)
+    pending_certs = Certificate.objects.filter(status='PENDING', is_rejected=False, student_affairs_approved=False).order_by('-id')
+    forwarded_certs = Certificate.objects.filter(status='PENDING', is_rejected=False, student_affairs_approved=True).order_by('-id')
+    issued_certs = Certificate.objects.filter(status='ISSUED').order_by('-id')
+    returned_certs = Certificate.objects.filter(is_rejected=True, student_affairs_approved=False).order_by('-id')
     revoked_certs = Certificate.objects.filter(
         Q(status='REVOKED') | Q(student_affairs_revoke=True) | Q(academic_affairs_revoke=True) | Q(rector_revoke=True)
     ).distinct().order_by('-id')
@@ -357,17 +501,20 @@ def qlsv_portal(request):
     total_count = Certificate.objects.count()
     pending_count = pending_certs.count()
     forwarded_count = forwarded_certs.count()
+    issued_count = issued_certs.count()
     returned_count = returned_certs.count()
     revoked_count = revoked_certs.count()
 
     return render(request, 'qlsv.html', {
         'pending_certs': pending_certs,
         'forwarded_certs': forwarded_certs,
+        'issued_certs': issued_certs,
         'returned_certs': returned_certs,
         'revoked_certs': revoked_certs,
         'total_count': total_count,
         'pending_count': pending_count,
         'forwarded_count': forwarded_count,
+        'issued_count': issued_count,
         'returned_count': returned_count,
         'revoked_count': revoked_count,
     })
@@ -377,9 +524,10 @@ def daotao_portal(request):
     if request.user.is_authenticated and (request.user.is_superuser or request.user.username.lower() == 'admin'):
         return redirect('/admin/')
 
-    pending_certs = Certificate.objects.filter(status='PENDING', is_rejected=False, student_affairs_approved=True, academic_affairs_approved=False)
-    forwarded_certs = Certificate.objects.filter(academic_affairs_approved=True)
-    returned_certs = Certificate.objects.filter(is_rejected=True, rejected_by='hieutruong')
+    pending_certs = Certificate.objects.filter(status='PENDING', is_rejected=False, student_affairs_approved=True, academic_affairs_approved=False).order_by('-id')
+    forwarded_certs = Certificate.objects.filter(status='PENDING', is_rejected=False, academic_affairs_approved=True, rector_approved=False).order_by('-id')
+    issued_certs = Certificate.objects.filter(status='ISSUED').order_by('-id')
+    returned_certs = Certificate.objects.filter(is_rejected=True, rejected_by='hieutruong').order_by('-id')
     revoked_certs = Certificate.objects.filter(
         Q(status='REVOKED') | Q(student_affairs_revoke=True) | Q(academic_affairs_revoke=True) | Q(rector_revoke=True)
     ).distinct().order_by('-id')
@@ -387,17 +535,20 @@ def daotao_portal(request):
     total_count = Certificate.objects.count()
     pending_count = pending_certs.count()
     forwarded_count = forwarded_certs.count()
+    issued_count = issued_certs.count()
     returned_count = returned_certs.count()
     revoked_count = revoked_certs.count()
 
     return render(request, 'daotao.html', {
         'pending_certs': pending_certs,
         'forwarded_certs': forwarded_certs,
+        'issued_certs': issued_certs,
         'returned_certs': returned_certs,
         'revoked_certs': revoked_certs,
         'total_count': total_count,
         'pending_count': pending_count,
         'forwarded_count': forwarded_count,
+        'issued_count': issued_count,
         'returned_count': returned_count,
         'revoked_count': revoked_count,
     })
@@ -505,6 +656,26 @@ def certificate_create(request):
                 return JsonResponse({'success': False, 'error': msg}, status=400)
             messages.error(request, msg)
             return redirect('dashboard')
+
+    # Bắt buộc: Sinh viên phải có tài khoản trong hệ thống trước khi tạo văn bằng
+    student_user = None
+    if cccd:
+        student_user = User.objects.filter(profile__cccd=cccd).first()
+    if not student_user and student_id:
+        student_user = User.objects.filter(username__iexact=student_id).first()
+    if not student_user and cccd:
+        student_user = User.objects.filter(username__iexact=cccd).first()
+
+    if not student_user:
+        msg = f"Không thể tạo văn bằng: Sinh viên (Mã SV: {student_id}) chưa có tài khoản trong hệ thống! Vui lòng tạo tài khoản người học trước khi cấp văn bằng."
+        if is_api:
+            return JsonResponse({'success': False, 'error': msg}, status=400)
+        messages.error(request, msg)
+        return redirect('dashboard')
+
+    # Tự động lấy CCCD từ hồ sơ tài khoản sinh viên nếu chưa nhập
+    if not cccd and getattr(student_user, 'profile', None) and student_user.profile.cccd:
+        cccd = student_user.profile.cccd
 
     if Certificate.objects.filter(serial_number=serial_number).exists():
         existing = Certificate.objects.filter(serial_number=serial_number).first()

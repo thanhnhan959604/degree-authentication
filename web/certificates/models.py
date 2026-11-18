@@ -87,6 +87,20 @@ class Certificate(models.Model):
         """Tương thích ngược với các trường cũ nếu có gọi"""
         return self.national_id_last4[-3:] if self.national_id_last4 else ''
 
+    def clean(self):
+        super().clean()
+        from django.contrib.auth.models import User
+        from django.core.exceptions import ValidationError
+        if self.student_id:
+            user_exists = User.objects.filter(
+                models.Q(username__iexact=self.student_id) |
+                (models.Q(profile__cccd__endswith=self.national_id_last4) if self.national_id_last4 else models.Q(pk=None))
+            ).exists()
+            if not user_exists:
+                raise ValidationError({
+                    'student_id': f"Sinh viên (Mã SV: {self.student_id}) chưa có tài khoản trong hệ thống! Vui lòng tạo tài khoản người học trước khi cấp văn bằng."
+                })
+
     def calculate_data_hash(self):
         """Tính toán dấu băm SHA-256 từ chuỗi chuẩn hóa theo kế hoạch"""
         raw_str = f"{self.serial_number}|{self.student_id}|{self.student_name}|{self.date_of_birth}|{self.major}|{self.graduation_year}|{self.classification}"

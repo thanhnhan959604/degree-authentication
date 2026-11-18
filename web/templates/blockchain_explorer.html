@@ -1,0 +1,880 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lịch sử Giao dịch Xác thực - Trường ĐH Kỹ thuật - Công nghệ Cần Thơ</title>
+  <link rel="icon" type="image/png" href="/media/ctut_logo.png">
+  <link rel="shortcut icon" type="image/png" href="/media/ctut_logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'style.css' %}">
+  <style>
+    .explorer-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .explorer-stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 16px;
+      margin-top: -36px;
+      position: relative;
+      z-index: 10;
+      margin-bottom: 24px;
+    }
+    .explorer-stat-card {
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 8px;
+      padding: 18px 20px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .explorer-stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .explorer-stat-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #64748B;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .explorer-stat-value {
+      font-size: 22px;
+      font-weight: 800;
+      color: #1E293B;
+    }
+    .pulse-dot {
+      display: inline-block;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #10B981;
+      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+      animation: pulseGreen 1.8s infinite;
+    }
+    @keyframes pulseGreen {
+      0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+      70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+    .ledger-table-wrap {
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+      overflow: hidden;
+      margin-bottom: 30px;
+    }
+    .container {
+      max-width: 1260px;
+    }
+    .ledger-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      text-align: left;
+    }
+    .ledger-table th {
+      background: #F8FAFC;
+      color: #475569;
+      font-weight: 700;
+      font-size: 11.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      padding: 12px 10px;
+      border-bottom: 1px solid #E2E8F0;
+      white-space: nowrap;
+    }
+    .ledger-table td {
+      padding: 11px 10px;
+      border-bottom: 1px solid #F1F5F9;
+      vertical-align: middle;
+      color: #334155;
+      white-space: nowrap;
+    }
+    .ledger-table th:first-child, .ledger-table td:first-child {
+      padding-left: 14px;
+    }
+    .ledger-table th:last-child, .ledger-table td:last-child {
+      padding-right: 14px;
+    }
+    .ledger-table tbody tr:hover {
+      background: #F8FAFC;
+    }
+    .hash-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: #2563EB;
+      background: #EFF6FF;
+      border: 1px solid #DBEAFE;
+      padding: 3px 6px;
+      border-radius: 4px;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+    .hash-badge:hover {
+      background: #DBEAFE;
+      color: #1D4ED8;
+    }
+    .copy-icon-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 2px 4px;
+      color: #94A3B8;
+      border-radius: 3px;
+      display: inline-flex;
+      align-items: center;
+      transition: color 0.15s;
+    }
+    .copy-icon-btn:hover {
+      color: #2563EB;
+      background: #EFF6FF;
+    }
+    .action-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 20px;
+      letter-spacing: 0.2px;
+      white-space: nowrap;
+      line-height: 1.2;
+    }
+    .action-badge-hieutruong {
+      background: #ECFDF5;
+      color: #065F46;
+      border: 1px solid #A7F3D0;
+    }
+    .action-badge-daotao {
+      background: #EFF6FF;
+      color: #1E40AF;
+      border: 1px solid #BFDBFE;
+    }
+    .action-badge-qlsv {
+      background: #F5F3FF;
+      color: #5B21B6;
+      border: 1px solid #DDD6FE;
+    }
+    .action-badge-revoke {
+      background: #FEF2F2;
+      color: #991B1B;
+      border: 1px solid #FECACA;
+    }
+    .action-badge-default {
+      background: #F1F5F9;
+      color: #475569;
+      border: 1px solid #E2E8F0;
+    }
+    .search-filter-box {
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .filter-input {
+      flex: 1;
+      min-width: 260px;
+      height: 42px;
+      border: 1px solid #CBD5E1;
+      border-radius: 6px;
+      padding: 0 14px;
+      font-size: 13.5px;
+      font-family: inherit;
+    }
+    .filter-input:focus {
+      outline: none;
+      border-color: #26457F;
+      box-shadow: 0 0 0 3px rgba(38, 69, 127, 0.12);
+    }
+    .filter-select {
+      height: 42px;
+      border: 1px solid #CBD5E1;
+      border-radius: 6px;
+      padding: 0 14px;
+      font-size: 13.5px;
+      background: #FFF;
+      color: #334155;
+      cursor: pointer;
+    }
+    .filter-btn-submit {
+      height: 42px;
+      padding: 0 20px;
+      background: #26457F;
+      color: #FFF;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 13.5px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.2s;
+    }
+    .filter-btn-submit:hover {
+      background: #1B3564;
+    }
+    .filter-btn-reset {
+      height: 42px;
+      padding: 0 16px;
+      background: #F1F5F9;
+      color: #475569;
+      border: 1px solid #CBD5E1;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 13.5px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+    }
+    .filter-btn-reset:hover {
+      background: #E2E8F0;
+    }
+    .pagination-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 20px;
+      border-top: 1px solid #E2E8F0;
+      background: #FFF;
+      font-size: 13px;
+      color: #64748B;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .pagination-nav {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .page-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 34px;
+      height: 34px;
+      padding: 0 10px;
+      border-radius: 6px;
+      border: 1px solid #CBD5E1;
+      background: #FFF;
+      color: #334155;
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.15s;
+    }
+    .page-btn:hover {
+      border-color: #26457F;
+      color: #26457F;
+      background: #F8FAFC;
+    }
+    .page-btn.active {
+      background: #26457F;
+      border-color: #26457F;
+      color: #FFF;
+    }
+    .page-btn.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    /* Modal chi tiết Tx */
+    .tx-modal-backdrop {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(4px);
+      z-index: 9999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .tx-modal-backdrop.active {
+      display: flex;
+    }
+    .tx-modal-card {
+      background: #FFFFFF;
+      border-radius: 10px;
+      width: 100%;
+      max-width: 720px;
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+      overflow: hidden;
+      animation: modalFadeIn 0.2s ease-out;
+    }
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: scale(0.96); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .tx-detail-row {
+      display: flex;
+      padding: 12px 18px;
+      border-bottom: 1px solid #F1F5F9;
+      font-size: 13.5px;
+      align-items: flex-start;
+    }
+    .tx-detail-row:last-child {
+      border-bottom: none;
+    }
+    .tx-detail-label {
+      width: 190px;
+      flex-shrink: 0;
+      color: #64748B;
+      font-weight: 600;
+    }
+    .tx-detail-val {
+      flex: 1;
+      color: #1E293B;
+      word-break: break-all;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==================== HEADER CHUẨN CỔNG DỊCH VỤ CÔNG QUỐC GIA ==================== -->
+  <header class="dvc-header">
+    <div class="container dvc-top-main">
+      <div class="dvc-brand">
+        <!-- Logo Trường ĐH Kỹ thuật - Công nghệ Cần Thơ (CTUT) -->
+        <div class="dvc-emblem-wrap" style="width: 68px; height: 68px;">
+          <img src="/media/ctut_logo.png" alt="Logo Trường ĐH Kỹ thuật - Công nghệ Cần Thơ" class="dvc-emblem" style="width: 68px; height: 68px; object-fit: contain;">
+        </div>
+
+        <!-- Tên Trường & Triết lý giáo dục -->
+        <div class="dvc-title-block">
+          <div class="dvc-title-row">
+            <h1 class="dvc-brand-heading">TRƯỜNG ĐẠI HỌC KỸ THUẬT - CÔNG NGHỆ CẦN THƠ</h1>
+          </div>
+          <div class="dvc-brand-slogan">Đức trí – Kỹ năng – Sáng tạo – Hội nhập</div>
+        </div>
+      </div>
+
+      <!-- Nút Đăng nhập / Bàn làm việc & Đăng xuất -->
+      <div style="display: flex; align-items: center; gap: 8px;">
+        {% if user.is_authenticated %}
+          {% if user.is_superuser or user.username == 'admin' %}
+            <a href="/admin/" class="dvc-btn-login" target="_blank">Trang quản trị Django</a>
+          {% else %}
+            <a href="{% url 'dashboard' %}" class="dvc-btn-login">Bàn làm việc ({{ user.username }})</a>
+          {% endif %}
+          <button type="button" onclick="openModal('modalLogout')" class="dvc-btn-login" style="background: transparent; color: #DC2626; border: 1px solid #DC2626; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            <span>Đăng xuất</span>
+          </button>
+        {% else %}
+          <a href="{% url 'login' %}" class="dvc-btn-login">Đăng nhập</a>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  <!-- Thanh menu điều hướng xám với tab Home cam đất (Cố định sticky khi cuộn) -->
+  <nav class="dvc-navbar">
+    <div class="container dvc-nav-container">
+      <!-- Nút Home ngôi nhà -->
+      <a href="{% url 'search' %}" class="dvc-nav-home" title="Trang chủ">
+        <img src="/media/home_icon.png" alt="Trang chủ" style="width: 22px; height: 20px; display: block;">
+      </a>
+
+      <!-- Danh sách menu -->
+      <ul class="dvc-nav-list">
+        <li class="dvc-nav-item">
+          <a href="{% url 'search' %}" id="nav-tab-info" class="dvc-nav-link">
+            Thông tin và dịch vụ
+          </a>
+        </li>
+        <li class="dvc-nav-item">
+          <a href="{% url 'blockchain_explorer' %}" id="nav-tab-blockchain" class="dvc-nav-link active" title="Lịch sử giao dịch">
+            Lịch sử giao dịch
+          </a>
+        </li>
+        <li class="dvc-nav-item">
+          <a href="{% url 'search' %}#footer-support" id="nav-tab-support" class="dvc-nav-link">
+            Hỗ trợ
+          </a>
+        </li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- BANNER TIÊU ĐỀ LỊCH SỬ GIAO DỊCH -->
+  <section class="hero-section" style="padding-bottom: 56px;">
+    <div class="container hero-content" style="max-width: 1000px;">
+      <h1 class="hero-title" style="font-size: 26px; margin-bottom: 10px;">LỊCH SỬ GIAO DỊCH XÁC THỰC VĂN BẰNG</h1>
+      <p style="font-size: 14px; opacity: 0.92; margin: 0; max-width: 760px; margin-inline: auto; line-height: 1.6;">
+        Hệ thống ghi nhận và lưu trữ toàn bộ lịch sử các lượt thẩm định hồ sơ, ký số phát hành và thu hồi văn bằng chính thức của Trường Đại học Kỹ thuật - Công nghệ Cần Thơ.
+      </p>
+    </div>
+  </section>
+
+  <!-- THÂN TRANG: STATS + BỘ LỌC + BẢNG GIAO DỊCH -->
+  <main class="container" style="padding-top: 0; padding-bottom: 40px;">
+
+    <!-- 4 THẺ THỐNG KÊ HỆ THỐNG -->
+    <div class="explorer-stat-grid">
+      <div class="explorer-stat-card">
+        <div class="explorer-stat-label">
+          <span>Trạng thái hệ thống</span>
+        </div>
+        <div class="explorer-stat-value" style="color: #059669; font-size: 19px;">
+          HOẠT ĐỘNG
+        </div>
+        <div style="font-size: 12px; color: #64748B; margin-top: 6px;">
+          Đồng bộ dữ liệu thời gian thực
+        </div>
+      </div>
+
+      <div class="explorer-stat-card">
+        <div class="explorer-stat-label">
+          <span>Số thứ tự lô dữ liệu</span>
+        </div>
+        <div class="explorer-stat-value explorer-mono" style="color: #1E3A8A;">
+          #{{ latest_block|default:"26000" }}
+        </div>
+        <div style="font-size: 12px; color: #64748B; margin-top: 6px;">
+          Ghi nhận tự động liên tục
+        </div>
+      </div>
+
+      <div class="explorer-stat-card">
+        <div class="explorer-stat-label">
+          <span>Tổng lượt xác thực</span>
+        </div>
+        <div class="explorer-stat-value" style="color: #047857;">
+          {{ total_tx_count }} <span style="font-size: 14px; font-weight: 500; color: #64748B;">lượt</span>
+        </div>
+        <div style="font-size: 12px; color: #64748B; margin-top: 6px;">
+          Thẩm định, ký số & cấp bằng
+        </div>
+      </div>
+
+      <div class="explorer-stat-card">
+        <div class="explorer-stat-label">
+          <span>Mã nền tảng xác thực</span>
+        </div>
+        <div class="explorer-stat-value explorer-mono" style="font-size: 15px; color: #B45309; word-break: break-all;">
+          {{ contract_address|slice:":10" }}...{{ contract_address|slice:"-6:" }}
+          <button type="button" class="copy-icon-btn" onclick="copyText('{{ contract_address }}')" title="Sao chép">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          </button>
+        </div>
+        <div style="font-size: 12px; color: #64748B; margin-top: 6px;">
+          Cơ quan xác thực điện tử CTUT
+        </div>
+      </div>
+    </div>
+
+    <!-- KHUNG TÌM KIẾM & BỘ LỌC GIAO DỊCH -->
+    <div class="search-filter-box">
+      <form method="get" action="{% url 'blockchain_explorer' %}" style="display: flex; gap: 12px; width: 100%; flex-wrap: wrap; align-items: center;">
+        <div style="flex: 1; min-width: 280px; position: relative;">
+          <input type="text" name="q" value="{{ query|default:'' }}" class="filter-input" placeholder="Tìm theo mã giao dịch, số hiệu văn bằng hoặc mã dữ liệu...">
+        </div>
+
+        <select name="action" class="filter-select">
+          <option value="ALL" {% if action_filter == 'ALL' %}selected{% endif %}>Tất cả thao tác</option>
+          <option value="ISSUE" {% if action_filter == 'ISSUE' %}selected{% endif %}>Hiệu trưởng ký duyệt phát hành</option>
+          <option value="ACADEMIC" {% if action_filter == 'ACADEMIC' %}selected{% endif %}>Đào tạo xác nhận học vụ</option>
+          <option value="IDENTITY" {% if action_filter == 'IDENTITY' %}selected{% endif %}>QLSV xác nhận danh tính / Tạo hồ sơ</option>
+          <option value="REVOKE" {% if action_filter == 'REVOKE' %}selected{% endif %}>Thu hồi văn bằng</option>
+        </select>
+
+        <button type="submit" class="filter-btn-submit">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <span>Lọc giao dịch</span>
+        </button>
+
+        {% if query or action_filter != 'ALL' %}
+        <a href="{% url 'blockchain_explorer' %}" class="filter-btn-reset" title="Xóa bộ lọc">
+          Làm mới
+        </a>
+        {% endif %}
+      </form>
+    </div>
+
+    <!-- BẢNG DANH SÁCH GIAO DỊCH -->
+    <div class="ledger-table-wrap">
+      <div style="overflow-x: auto; scrollbar-width: none;">
+        <table class="ledger-table">
+          <thead>
+            <tr>
+              <th>Mã giao dịch</th>
+              <th>Nội dung thao tác</th>
+              <th>Số hiệu văn bằng</th>
+              <th>Mã xác thực dữ liệu</th>
+              <th>Đơn vị thực hiện</th>
+              <th>Thời gian</th>
+              <th style="text-align: center;">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in page_obj %}
+            <tr>
+              <!-- Tx Hash -->
+              <td>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <a href="javascript:void(0)" onclick="viewTxDetail('{{ item.tx_hash }}')" class="hash-badge" title="Xem chi tiết giao dịch">
+                    {{ item.tx_hash|slice:":10" }}...{{ item.tx_hash|slice:"-6:" }}
+                  </a>
+                  <button type="button" class="copy-icon-btn" onclick="copyText('{{ item.tx_hash }}')" title="Sao chép mã giao dịch">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  </button>
+                </div>
+              </td>
+
+              <!-- Hành động -->
+              <td>
+                {% if 'THU HỒI' in item.action %}
+                  <span class="action-badge action-badge-revoke" title="{{ item.action }}">
+                    Thu hồi văn bằng
+                  </span>
+                {% elif 'HIỆU TRƯỞNG' in item.action %}
+                  <span class="action-badge action-badge-hieutruong" title="{{ item.action }}">
+                    Hiệu trưởng ký phát hành
+                  </span>
+                {% elif 'ĐÀO TẠO' in item.action %}
+                  <span class="action-badge action-badge-daotao" title="{{ item.action }}">
+                    Đào tạo duyệt học vụ
+                  </span>
+                {% elif 'QLSV' in item.action or 'TẠO MỚI' in item.action or 'EXCEL' in item.action %}
+                  <span class="action-badge action-badge-qlsv" title="{{ item.action }}">
+                    QLSV xác thực hồ sơ
+                  </span>
+                {% else %}
+                  <span class="action-badge action-badge-default" title="{{ item.action }}">
+                    {{ item.action|truncatechars:24 }}
+                  </span>
+                {% endif %}
+              </td>
+
+              <!-- Số hiệu văn bằng -->
+              <td>
+                {% if item.certificate %}
+                <a href="{% url 'search' %}?q={{ item.certificate.serial_number }}" class="explorer-mono" style="font-weight: 700; color: #DC2626; text-decoration: none;" title="Bấm để chuyển sang tra cứu văn bằng này">
+                  {{ item.certificate.serial_number }}
+                </a>
+                {% else %}
+                <span class="explorer-mono" style="color: #94A3B8;">-</span>
+                {% endif %}
+              </td>
+
+              <!-- Data Hash -->
+              <td>
+                {% if item.certificate and item.certificate.data_hash %}
+                <div style="display: flex; align-items: center; gap: 4px;">
+                  <span class="explorer-mono" style="font-size: 12px; color: #475569;" title="{{ item.certificate.data_hash }}">
+                    {{ item.certificate.data_hash|slice:":10" }}...{{ item.certificate.data_hash|slice:"-6:" }}
+                  </span>
+                  <button type="button" class="copy-icon-btn" onclick="copyText('{{ item.certificate.data_hash }}')" title="Sao chép Data Hash">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  </button>
+                </div>
+                {% else %}
+                <span style="color: #94A3B8;">-</span>
+                {% endif %}
+              </td>
+
+              <!-- Actor / Người ký -->
+              <td>
+                <span style="font-size: 13px; font-weight: 500; color: #1E293B;">
+                  {% if item.actor == 'hieutruong' %}
+                    Hiệu trưởng
+                  {% elif item.actor == 'daotao' %}
+                    Phòng Đào tạo
+                  {% elif item.actor == 'qlsv' %}
+                    Phòng QLSV
+                  {% else %}
+                    {{ item.actor|default:"Hệ thống" }}
+                  {% endif %}
+                </span>
+              </td>
+
+              <!-- Thời gian -->
+              <td>
+                <span style="font-size: 12.5px; color: #64748B;">
+                  {{ item.created_at|date:"d/m/Y H:i:s" }}
+                </span>
+              </td>
+
+              <!-- Thao tác xem chi tiết -->
+              <td style="text-align: center;">
+                <button type="button" onclick="viewTxDetail('{{ item.tx_hash }}')" style="background: #F1F5F9; border: 1px solid #CBD5E1; border-radius: 4px; padding: 4px 10px; font-size: 12px; font-weight: 600; color: #26457F; cursor: pointer; transition: all 0.15s;" onmouseover="this.style.background='#26457F'; this.style.color='#FFF';" onmouseout="this.style.background='#F1F5F9'; this.style.color='#26457F';">
+                  Chi tiết
+                </button>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="7" style="text-align: center; padding: 40px; color: #94A3B8;">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#CBD5E1" stroke-width="1.5" style="margin-bottom: 8px;">
+                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <div>Không tìm thấy giao dịch blockchain nào phù hợp với bộ lọc.</div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- PHÂN TRANG -->
+      {% if page_obj.has_other_pages %}
+      <div class="pagination-bar">
+        <div>
+          Trang <strong>{{ page_obj.number }}</strong> / <strong>{{ page_obj.paginator.num_pages }}</strong>
+          (Tổng {{ page_obj.paginator.count }} giao dịch)
+        </div>
+        <div class="pagination-nav">
+          {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if action_filter != 'ALL' %}&action={{ action_filter }}{% endif %}" class="page-btn">
+              &laquo; Trước
+            </a>
+          {% else %}
+            <span class="page-btn disabled">&laquo; Trước</span>
+          {% endif %}
+
+          {% for p in page_obj.paginator.page_range %}
+            {% if p >= page_obj.number|add:"-2" and p <= page_obj.number|add:"2" %}
+              <a href="?page={{ p }}{% if query %}&q={{ query }}{% endif %}{% if action_filter != 'ALL' %}&action={{ action_filter }}{% endif %}" class="page-btn {% if p == page_obj.number %}active{% endif %}">
+                {{ p }}
+              </a>
+            {% endif %}
+          {% endfor %}
+
+          {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if action_filter != 'ALL' %}&action={{ action_filter }}{% endif %}" class="page-btn">
+              Sau &raquo;
+            </a>
+          {% else %}
+            <span class="page-btn disabled">Sau &raquo;</span>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+  </main>
+
+  <!-- MODAL XEM CHI TIẾT GIAO DỊCH BLOCKCHAIN -->
+  <div class="tx-modal-backdrop" id="txDetailModal" onclick="if(event.target === this) closeTxModal()">
+    <div class="tx-modal-card">
+      <div style="padding: 16px 20px; background: #F8FAFC; border-bottom: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="margin: 0; font-size: 16px; color: #1E293B; display: flex; align-items: center; gap: 8px; font-weight: 700;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2.2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+          Chi tiết Giao dịch On-chain
+        </h3>
+        <button type="button" onclick="closeTxModal()" style="background: none; border: none; font-size: 24px; color: #64748B; cursor: pointer; line-height: 1;">&times;</button>
+      </div>
+
+      <div style="padding: 18px 20px; max-height: 75vh; overflow-y: auto;" id="tx-modal-content">
+        <div style="text-align: center; padding: 40px; color: #64748B;">
+          Đang truy vấn dữ liệu từ nút Hyperledger Besu...
+        </div>
+      </div>
+
+      <div style="padding: 14px 20px; background: #F8FAFC; border-top: 1px solid #E2E8F0; display: flex; justify-content: flex-end;">
+        <button type="button" onclick="closeTxModal()" class="filter-btn-reset" style="height: 38px; padding: 0 20px;">
+          Đóng
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL XÁC NHẬN ĐĂNG XUẤT -->
+  <div class="gov-modal-backdrop" id="modalLogout" style="display: none;">
+    <div class="gov-modal" style="max-width: 440px;">
+      <div class="gov-modal-header">
+        <div class="gov-modal-title" style="color: #0F172A; display: flex; align-items: center; gap: 8px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          <span>Xác nhận đăng xuất</span>
+        </div>
+        <button class="gov-modal-close" onclick="closeModal('modalLogout')">&times;</button>
+      </div>
+      <div class="gov-modal-body" style="text-align: center; padding: 28px 20px 20px;">
+        <div style="width: 52px; height: 52px; border-radius: 50%; background: #FEE2E2; color: #DC2626; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </div>
+        <p style="font-size: 15px; font-weight: 600; color: #0F172A; margin-bottom: 8px;">Bạn có chắc chắn muốn đăng xuất khỏi hệ thống?</p>
+        <span style="font-size: 13px; color: #64748B; line-height: 1.5; display: block;">Sau khi đăng xuất, phiên làm việc sẽ kết thúc và bạn sẽ được chuyển về Cổng tra cứu văn bằng công khai.</span>
+      </div>
+      <div class="gov-modal-footer" style="justify-content: center; gap: 12px; background: #FAFBFD; padding: 14px 20px;">
+        <button type="button" class="btn-gov-subtle" onclick="closeModal('modalLogout')" style="padding: 8px 18px; font-weight: 600;">Hủy bỏ</button>
+        <a href="{% url 'logout' %}" class="btn-gov-danger" style="text-decoration: none; padding: 8px 22px; font-weight: 600; background: #DC2626; color: #FFFFFF; border-color: #DC2626;">Đăng xuất</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER CHUẨN CỔNG THÔNG TIN QUỐC GIA -->
+  <footer class="main-footer" id="footer-support">
+    <div class="container footer-container">
+      Cơ quan chủ quản: Trường Đại học Kỹ Thuật - Công nghệ Cần Thơ. Hotline hỗ trợ: 0000000000
+    </div>
+  </footer>
+
+  <script src="{% static 'toast.js' %}"></script>
+  <script>
+    function copyText(text) {
+      if (!text) return;
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('Đã sao chép vào bộ nhớ tạm: ' + text.slice(0, 20) + '...', 'success');
+      }).catch(() => {
+        prompt('Sao chép chuỗi mã:', text);
+      });
+    }
+
+    function viewTxDetail(txHash) {
+      const modal = document.getElementById('txDetailModal');
+      const content = document.getElementById('tx-modal-content');
+      modal.classList.add('active');
+      content.innerHTML = `
+        <div style="text-align: center; padding: 40px; color: #64748B;">
+          <div style="display: inline-block; width: 32px; height: 32px; border: 3px solid #CBD5E1; border-top-color: #2563EB; border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 12px;"></div>
+          <div>Đang đối soát giao dịch từ sổ cái Hyperledger Besu...</div>
+        </div>
+        <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+      `;
+
+      fetch(`/api/blockchain/tx/${encodeURIComponent(txHash)}/`)
+        .then(res => res.json())
+        .then(data => {
+          if (!data.success) {
+            content.innerHTML = `<div style="color: #DC2626; padding: 20px; text-align: center;">Không tìm thấy thông tin giao dịch.</div>`;
+            return;
+          }
+          const web3 = data.web3 || {};
+          content.innerHTML = `
+            <div class="tx-detail-row">
+              <div class="tx-detail-label">Mã giao dịch:</div>
+              <div class="tx-detail-val explorer-mono" style="color: #2563EB; font-weight: 600;">
+                ${data.tx_hash}
+                <button type="button" class="copy-icon-btn" onclick="copyText('${data.tx_hash}')" title="Sao chép">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="tx-detail-row">
+              <div class="tx-detail-label">Trạng thái xác thực:</div>
+              <div class="tx-detail-val">
+                <span style="background: #ECFDF5; color: #065F46; border: 1px solid #A7F3D0; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 4px;">
+                  HỢP LỆ & ĐÃ ĐỒNG BỘ THÀNH CÔNG
+                </span>
+              </div>
+            </div>
+
+            <div class="tx-detail-row">
+              <div class="tx-detail-label">Số thứ tự lô dữ liệu:</div>
+              <div class="tx-detail-val explorer-mono" style="font-weight: 700; color: #1E3A8A;">
+                #${web3.blockNumber || 'Đã ghi nhận'}
+              </div>
+            </div>
+
+            <div class="tx-detail-row">
+              <div class="tx-detail-label">Nội dung thao tác:</div>
+              <div class="tx-detail-val" style="font-weight: 700; color: #1E293B;">
+                ${data.action}
+              </div>
+            </div>
+
+            <div class="tx-detail-row">
+              <div class="tx-detail-label">Đơn vị thực hiện:</div>
+              <div class="tx-detail-val explorer-mono" style="font-size: 13px;">
+                ${web3.roleName ? `<strong>${web3.roleName}</strong> &bull; ` : ''}
+                ${web3.from || data.actor}
+              </div>
+            </div>
+
+            <div class="tx-detail-row">
+              <div class="tx-detail-label">Mã nền tảng xác thực:</div>
+              <div class="tx-detail-val explorer-mono" style="color: #475569;">
+                ${web3.to || '0xfeae27388A65eE984F452f86efFEd42AaBD438FD'}
+              </div>
+            </div>
+
+            <div class="tx-detail-row">
+              <div class="tx-detail-label">Số hiệu văn bằng:</div>
+              <div class="tx-detail-val explorer-mono" style="font-weight: 700; color: #DC2626;">
+                ${data.serial_number ? `<a href="/?q=${data.serial_number}" style="color: #DC2626; text-decoration: underline;">${data.serial_number}</a>` : '-'}
+              </div>
+            </div>
+
+            <div class="tx-detail-row">
+              <div class="tx-detail-label">Mã xác thực dữ liệu:</div>
+              <div class="tx-detail-val explorer-mono" style="font-size: 12.5px; color: #334155;">
+                ${data.data_hash || '-'}
+                ${data.data_hash ? `
+                  <button type="button" class="copy-icon-btn" onclick="copyText('${data.data_hash}')" title="Sao chép">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  </button>
+                ` : ''}
+              </div>
+            </div>
+
+            <div class="tx-detail-row">
+              <div class="tx-detail-label">Thời gian ghi nhận:</div>
+              <div class="tx-detail-val" style="color: #475569;">
+                ${data.created_at}
+              </div>
+            </div>
+
+            <div class="tx-detail-row">
+              <div class="tx-detail-label">Ghi chú hệ thống:</div>
+              <div class="tx-detail-val" style="font-size: 13px; color: #475569; font-style: italic;">
+                ${data.comment || 'Giao dịch xác thực văn bằng điện tử chính thức.'}
+              </div>
+            </div>
+          `;
+        })
+        .catch(err => {
+          content.innerHTML = `<div style="color: #DC2626; padding: 20px; text-align: center;">Lỗi kết nối khi đối soát giao dịch: ${err}</div>`;
+        });
+    }
+
+    function closeTxModal() {
+      const modal = document.getElementById('txDetailModal');
+      modal.classList.remove('active');
+    }
+
+    function openModal(id) {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'flex';
+    }
+
+    function closeModal(id) {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    }
+
+    window.addEventListener('click', function(e) {
+      if (e.target.classList.contains('gov-modal-backdrop')) {
+        e.target.style.display = 'none';
+      }
+    });
+  </script>
+</body>
+</html>
+

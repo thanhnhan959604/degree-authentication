@@ -140,6 +140,16 @@ def process_excel_upload(file):
 
         if not student_id:
             row_errors.append("Thiếu mã sinh viên")
+        else:
+            # Bắt buộc: Sinh viên phải có tài khoản trong hệ thống trước khi tạo văn bằng
+            from django.contrib.auth.models import User
+            from django.db.models import Q
+            student_user = User.objects.filter(
+                Q(username__iexact=student_id) |
+                (Q(profile__cccd=national_id) if national_id else Q(pk=None))
+            ).first()
+            if not student_user:
+                row_errors.append(f"Sinh viên '{student_name}' (Mã SV: {student_id}) chưa có tài khoản trong hệ thống")
 
         if not student_name:
             row_errors.append("Thiếu họ tên sinh viên")

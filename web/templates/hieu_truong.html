@@ -42,49 +42,49 @@
         </button>
       </div>
     </div>
-
-    <!-- Thanh menu điều hướng với các tab hàng đợi nghiệp vụ (thay cho các bước) -->
-    <nav class="dvc-navbar">
-      <div class="container dvc-nav-container">
-        <a href="{% url 'search' %}" class="dvc-nav-home" title="Trang chủ tra cứu">
-          <img src="/media/home_icon.png" alt="Trang chủ" style="width: 22px; height: 20px; display: block;">
-        </a>
-
-        <ul class="dvc-nav-list">
-          <li class="dvc-nav-item">
-            <a href="javascript:void(0)" onclick="switchQueueTab('pending')" id="nav-tab-pending" class="dvc-nav-link active">
-              <span>Chờ ký duyệt</span>
-              <span class="dvc-nav-badge badge-amber">{{ pending_count }}</span>
-            </a>
-          </li>
-          <li class="dvc-nav-item">
-            <a href="javascript:void(0)" onclick="switchQueueTab('issued')" id="nav-tab-issued" class="dvc-nav-link">
-              <span>Đã phát hành</span>
-              <span class="dvc-nav-badge">{{ issued_count }}</span>
-            </a>
-          </li>
-          <li class="dvc-nav-item">
-            <a href="javascript:void(0)" onclick="switchQueueTab('revoked')" id="nav-tab-revoked" class="dvc-nav-link">
-              <span>Văn bằng đã thu hồi</span>
-              <span class="dvc-nav-badge badge-red">{{ revoked_count }}</span>
-            </a>
-          </li>
-          <li class="dvc-nav-item">
-            <a href="javascript:void(0)" onclick="switchQueueTab('returned')" id="nav-tab-returned" class="dvc-nav-link">
-              <span>Đã trả về Đào tạo</span>
-              <span class="dvc-nav-badge">{{ returned_count }}</span>
-            </a>
-          </li>
-          <li class="dvc-nav-item">
-            <a href="{% url 'search' %}" class="dvc-nav-link" target="_blank">
-              Cổng tra cứu công khai
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left: 3px;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-            </a>
-          </li>
-        </ul>
-      </div>
-    </nav>
   </header>
+
+  <!-- Thanh menu điều hướng với các tab hàng đợi nghiệp vụ (Cố định sticky khi cuộn) -->
+  <nav class="dvc-navbar">
+    <div class="container dvc-nav-container">
+      <a href="{% url 'search' %}" class="dvc-nav-home" title="Trang chủ tra cứu">
+        <img src="/media/home_icon.png" alt="Trang chủ" style="width: 22px; height: 20px; display: block;">
+      </a>
+
+      <ul class="dvc-nav-list">
+        <li class="dvc-nav-item">
+          <a href="javascript:void(0)" onclick="switchQueueTab('pending')" id="nav-tab-pending" class="dvc-nav-link active">
+            <span>Chờ ký duyệt</span>
+            <span class="dvc-nav-badge badge-amber">{{ pending_count }}</span>
+          </a>
+        </li>
+        <li class="dvc-nav-item">
+          <a href="javascript:void(0)" onclick="switchQueueTab('issued')" id="nav-tab-issued" class="dvc-nav-link">
+            <span>Đã phát hành</span>
+            <span class="dvc-nav-badge">{{ issued_count }}</span>
+          </a>
+        </li>
+        <li class="dvc-nav-item">
+          <a href="javascript:void(0)" onclick="switchQueueTab('revoked')" id="nav-tab-revoked" class="dvc-nav-link">
+            <span>Đã thu hồi</span>
+            <span class="dvc-nav-badge badge-red">{{ revoked_count }}</span>
+          </a>
+        </li>
+        <li class="dvc-nav-item">
+          <a href="javascript:void(0)" onclick="switchQueueTab('returned')" id="nav-tab-returned" class="dvc-nav-link">
+            <span>Trả về Đào tạo</span>
+            <span class="dvc-nav-badge">{{ returned_count }}</span>
+          </a>
+        </li>
+        <li class="dvc-nav-item">
+          <a href="{% url 'search' %}" class="dvc-nav-link" target="_blank" title="Mở Cổng tra cứu công khai">
+            Tra cứu
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left: 2px;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </nav>
 
   <!-- BANNER XANH CTUT ĐỒNG BỘ CỔNG DVC QUỐC GIA -->
   <section class="portal-banner">

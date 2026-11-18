@@ -42,49 +42,55 @@
         </button>
       </div>
     </div>
-
-    <!-- Thanh menu điều hướng với các tab hàng đợi nghiệp vụ (thay cho các bước) -->
-    <nav class="dvc-navbar">
-      <div class="container dvc-nav-container">
-        <a href="{% url 'search' %}" class="dvc-nav-home" title="Trang chủ tra cứu">
-          <img src="/media/home_icon.png" alt="Trang chủ" style="width: 22px; height: 20px; display: block;">
-        </a>
-
-        <ul class="dvc-nav-list">
-          <li class="dvc-nav-item">
-            <a href="javascript:void(0)" onclick="switchQueueTab('pending')" id="nav-tab-pending" class="dvc-nav-link active">
-              <span>Hàng đợi Đào tạo thẩm định</span>
-              <span class="dvc-nav-badge">{{ pending_count }}</span>
-            </a>
-          </li>
-          <li class="dvc-nav-item">
-            <a href="javascript:void(0)" onclick="switchQueueTab('returned')" id="nav-tab-returned" class="dvc-nav-link">
-              <span>Hiệu trưởng trả về</span>
-              <span class="dvc-nav-badge badge-red">{{ returned_count }}</span>
-            </a>
-          </li>
-          <li class="dvc-nav-item">
-            <a href="javascript:void(0)" onclick="switchQueueTab('forwarded')" id="nav-tab-forwarded" class="dvc-nav-link">
-              <span>Đã chuyển lên Hiệu trưởng</span>
-              <span class="dvc-nav-badge">{{ forwarded_count }}</span>
-            </a>
-          </li>
-          <li class="dvc-nav-item">
-            <a href="javascript:void(0)" onclick="switchQueueTab('revoked')" id="nav-tab-revoked" class="dvc-nav-link">
-              <span>Xác nhận thu hồi</span>
-              <span class="dvc-nav-badge badge-red" id="nav-count-revoked">{{ revoked_count }}</span>
-            </a>
-          </li>
-          <li class="dvc-nav-item">
-            <a href="{% url 'search' %}" class="dvc-nav-link" target="_blank">
-              Cổng tra cứu công khai
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left: 3px;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-            </a>
-          </li>
-        </ul>
-      </div>
-    </nav>
   </header>
+
+  <!-- Thanh menu điều hướng với các tab hàng đợi nghiệp vụ (Cố định sticky khi cuộn) -->
+  <nav class="dvc-navbar">
+    <div class="container dvc-nav-container">
+      <a href="{% url 'search' %}" class="dvc-nav-home" title="Trang chủ tra cứu">
+        <img src="/media/home_icon.png" alt="Trang chủ" style="width: 22px; height: 20px; display: block;">
+      </a>
+
+      <ul class="dvc-nav-list">
+        <li class="dvc-nav-item">
+          <a href="javascript:void(0)" onclick="switchQueueTab('pending')" id="nav-tab-pending" class="dvc-nav-link active">
+            <span>Chờ thẩm định</span>
+            <span class="dvc-nav-badge">{{ pending_count }}</span>
+          </a>
+        </li>
+        <li class="dvc-nav-item">
+          <a href="javascript:void(0)" onclick="switchQueueTab('forwarded')" id="nav-tab-forwarded" class="dvc-nav-link">
+            <span>Trình Hiệu trưởng</span>
+            <span class="dvc-nav-badge">{{ forwarded_count }}</span>
+          </a>
+        </li>
+        <li class="dvc-nav-item">
+          <a href="javascript:void(0)" onclick="switchQueueTab('issued')" id="nav-tab-issued" class="dvc-nav-link">
+            <span>Đã cấp bằng</span>
+            <span class="dvc-nav-badge">{{ issued_count }}</span>
+          </a>
+        </li>
+        <li class="dvc-nav-item">
+          <a href="javascript:void(0)" onclick="switchQueueTab('revoked')" id="nav-tab-revoked" class="dvc-nav-link">
+            <span>Đã thu hồi</span>
+            <span class="dvc-nav-badge badge-red" id="nav-count-revoked">{{ revoked_count }}</span>
+          </a>
+        </li>
+        <li class="dvc-nav-item">
+          <a href="javascript:void(0)" onclick="switchQueueTab('returned')" id="nav-tab-returned" class="dvc-nav-link">
+            <span>BGH trả về</span>
+            <span class="dvc-nav-badge badge-red">{{ returned_count }}</span>
+          </a>
+        </li>
+        <li class="dvc-nav-item">
+          <a href="{% url 'search' %}" class="dvc-nav-link" target="_blank" title="Mở Cổng tra cứu công khai">
+            Tra cứu
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left: 2px;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </nav>
 
   <!-- BANNER XANH CTUT ĐỒNG BỘ CỔNG DVC QUỐC GIA -->
   <section class="portal-banner">
@@ -215,50 +221,7 @@
         </table>
       </div>
 
-      <!-- BẢNG DỮ LIỆU: TAB 2 - HIỆU TRƯỞNG TRẢ VỀ -->
-      <div class="admin-table-wrap" id="panel-returned" style="display: none;">
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th style="width: 140px;">Số hiệu</th>
-              <th>Mã SV - Sinh viên</th>
-              <th>Ngành đào tạo</th>
-              <th>Xếp loại</th>
-              <th>Ý kiến chỉ đạo của Ban Giám hiệu</th>
-              <th style="text-align: right; width: 240px; min-width: 240px; white-space: nowrap;">Thao tác xử lý</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for cert in returned_certs %}
-            <tr class="row-highlight">
-              <td><code style="color: #26457F; font-weight: 700;">{{ cert.serial_number }}</code></td>
-              <td><strong>{{ cert.student_name }}</strong> <br><span style="color: #64748B; font-size: 11.5px;">MSSV: {{ cert.student_id|default:"-" }}</span></td>
-              <td>{{ cert.major }}</td>
-              <td><strong>{{ cert.classification }}</strong></td>
-              <td>
-                <span class="admin-badge admin-badge-danger">Hiệu trưởng trả về</span>
-                <div style="color: #DC2626; font-size: 12px; margin-top: 4px; font-weight: 500;">
-                  "{{ cert.rejection_reason|default:'Kiểm tra lại hồ sơ tốt nghiệp' }}"
-                </div>
-              </td>
-              <td style="text-align: right; white-space: nowrap;">
-                <button class="btn-gov-primary" onclick="openAdjustModal('{{ cert.id }}', '{{ cert.serial_number|escapejs }}', '{{ cert.student_name|escapejs }}', '{{ cert.major|escapejs }}', '{{ cert.classification|escapejs }}')">
-                  Điều chỉnh & Trình lại BGH
-                </button>
-              </td>
-            </tr>
-            {% empty %}
-            <tr>
-              <td colspan="6" style="text-align: center; padding: 36px; color: #64748B;">
-                Không có hồ sơ nào bị Hiệu trưởng hoàn trả.
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-
-      <!-- BẢNG DỮ LIỆU: TAB 3 - ĐÃ THẨM ĐỊNH LÊN HIỆU TRƯỞNG -->
+      <!-- BẢNG DỮ LIỆU: TAB 2 - ĐÃ THẨM ĐỊNH LÊN HIỆU TRƯỞNG -->
       <div class="admin-table-wrap" id="panel-forwarded" style="display: none;">
         <table class="admin-table">
           <thead>
@@ -268,7 +231,7 @@
               <th>Ngành đào tạo</th>
               <th>Xếp loại</th>
               <th>Thời gian Đào tạo duyệt</th>
-              <th>Trạng thái bước 3</th>
+              <th style="text-align: right; width: 260px;">Trạng thái trình BGH</th>
             </tr>
           </thead>
           <tbody>
@@ -279,29 +242,16 @@
               <td>{{ cert.major }}</td>
               <td>{{ cert.classification }}</td>
               <td>{{ cert.academic_affairs_approved_at|date:"d/m/Y H:i"|default:"-" }}</td>
-              <td>
-                {% if cert.status == 'ISSUED' %}
-                  <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
-                    <span class="admin-badge admin-badge-success">Hiệu trưởng đã phát hành</span>
-                    {% if not cert.academic_affairs_revoke %}
-                      <button type="button" class="btn-gov-subtle" style="font-size: 11.5px; padding: 4px 8px; color: #DC2626; border-color: #FECACA;" onclick="openRevokeModal('{{ cert.id }}', '{{ cert.serial_number|escapejs }}', '{{ cert.student_name|escapejs }}')">
-                        Đề xuất thu hồi
-                      </button>
-                    {% else %}
-                      <span class="admin-badge admin-badge-warning">Đào tạo đã ký thu hồi</span>
-                    {% endif %}
-                  </div>
-                {% elif cert.status == 'REVOKED' %}
-                  <span class="admin-badge admin-badge-danger">Đã thu hồi</span>
-                {% else %}
-                  <span class="admin-badge admin-badge-warning">Đang chờ Hiệu trưởng ký duyệt</span>
-                {% endif %}
+              <td style="text-align: right;">
+                <span class="admin-badge admin-badge-warning" style="background: #FFFBEB; color: #B45309; border: 1px solid #FDE68A;">
+                  Đã trình BGH &rarr; Chờ Hiệu trưởng ký số
+                </span>
               </td>
             </tr>
             {% empty %}
             <tr>
               <td colspan="6" style="text-align: center; padding: 36px; color: #64748B;">
-                Chưa có hồ sơ nào được chuyển lên Hiệu trưởng.
+                Không có hồ sơ nào đang chờ Hiệu trưởng ký duyệt.
               </td>
             </tr>
             {% endfor %}
@@ -309,7 +259,67 @@
         </table>
       </div>
 
-      <!-- BẢNG DỮ LIỆU: TAB 4 - XÁC NHẬN THU HỒI (ĐỒNG THUẬN 3 BÊN) -->
+      <!-- BẢNG DỮ LIỆU: TAB 3 - VĂN BẰNG ĐÃ CẤP -->
+      <div class="admin-table-wrap" id="panel-issued" style="display: none;">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th style="width: 140px;">Số hiệu văn bằng</th>
+              <th>Họ và tên người học</th>
+              <th>Mã SV</th>
+              <th>Ngành tốt nghiệp</th>
+              <th>Xếp loại</th>
+              <th>Mã giao dịch (Tx Hash)</th>
+              <th>Ngày cấp phát</th>
+              <th style="text-align: right; width: 180px; white-space: nowrap;">Thao tác quản lý</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for cert in issued_certs %}
+            <tr>
+              <td><code style="color: #26457F; font-weight: 700;">{{ cert.serial_number }}</code></td>
+              <td><strong>{{ cert.student_name }}</strong></td>
+              <td>{{ cert.student_id|default:"-" }}</td>
+              <td>{{ cert.major }}</td>
+              <td><strong>{{ cert.classification|default:"-" }}</strong></td>
+              <td>
+                {% if cert.tx_hash %}
+                <span class="gov-hash-box" style="padding: 2px 6px; font-size: 11px; color: #26457F;" title="{{ cert.tx_hash }}">
+                  {{ cert.tx_hash|slice:":10" }}...{{ cert.tx_hash|slice:"-6:" }}
+                </span>
+                {% else %}
+                <span style="color: #94A3B8; font-size: 11.5px;">Chưa đồng bộ on-chain</span>
+                {% endif %}
+              </td>
+              <td>{{ cert.issue_date|date:"d/m/Y"|default:"-" }}</td>
+              <td style="text-align: right; white-space: nowrap;">
+                {% if cert.academic_affairs_revoke %}
+                  <span class="admin-badge admin-badge-warning" style="background: #FEF3C7; color: #B45309; border: 1px solid #FCD34D; font-weight: 600; padding: 4px 10px; border-radius: 4px;">
+                    Đào tạo đã ký thu hồi
+                  </span>
+                {% elif cert.student_affairs_revoke or cert.rector_revoke %}
+                  <button type="button" class="btn-gov-danger" onclick="openRevokeModal('{{ cert.id }}', '{{ cert.serial_number|escapejs }}', '{{ cert.student_name|escapejs }}')">
+                    Ký xác nhận thu hồi
+                  </button>
+                {% else %}
+                  <button type="button" class="btn-gov-danger" onclick="openRevokeModal('{{ cert.id }}', '{{ cert.serial_number|escapejs }}', '{{ cert.student_name|escapejs }}')">
+                    Đề xuất thu hồi
+                  </button>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="8" style="text-align: center; padding: 36px; color: #64748B;">
+                Chưa có văn bằng nào được phát hành chính thức.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- BẢNG DỮ LIỆU: TAB 4 - VĂN BẰNG ĐÃ THU HỒI (ĐỒNG THUẬN 3 BÊN) -->
       <div class="admin-table-wrap" id="panel-revoked" style="display: none;">
         <table class="admin-table">
           <thead>
@@ -362,6 +372,49 @@
             <tr>
               <td colspan="6" style="text-align: center; padding: 36px; color: #64748B;">
                 Hiện chưa có hồ sơ nào thuộc diện đề xuất hoặc xác nhận thu hồi.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- BẢNG DỮ LIỆU: TAB 5 - HIỆU TRƯỞNG TRẢ VỀ -->
+      <div class="admin-table-wrap" id="panel-returned" style="display: none;">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th style="width: 140px;">Số hiệu</th>
+              <th>Mã SV - Sinh viên</th>
+              <th>Ngành đào tạo</th>
+              <th>Xếp loại</th>
+              <th>Ý kiến chỉ đạo của Ban Giám hiệu</th>
+              <th style="text-align: right; width: 240px; min-width: 240px; white-space: nowrap;">Thao tác xử lý</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for cert in returned_certs %}
+            <tr class="row-highlight">
+              <td><code style="color: #26457F; font-weight: 700;">{{ cert.serial_number }}</code></td>
+              <td><strong>{{ cert.student_name }}</strong> <br><span style="color: #64748B; font-size: 11.5px;">MSSV: {{ cert.student_id|default:"-" }}</span></td>
+              <td>{{ cert.major }}</td>
+              <td><strong>{{ cert.classification }}</strong></td>
+              <td>
+                <span class="admin-badge admin-badge-danger">Hiệu trưởng trả về</span>
+                <div style="color: #DC2626; font-size: 12px; margin-top: 4px; font-weight: 500;">
+                  "{{ cert.rejection_reason|default:'Kiểm tra lại hồ sơ tốt nghiệp' }}"
+                </div>
+              </td>
+              <td style="text-align: right; white-space: nowrap;">
+                <button class="btn-gov-primary" onclick="openAdjustModal('{{ cert.id }}', '{{ cert.serial_number|escapejs }}', '{{ cert.student_name|escapejs }}', '{{ cert.major|escapejs }}', '{{ cert.classification|escapejs }}')">
+                  Điều chỉnh & Trình lại BGH
+                </button>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="6" style="text-align: center; padding: 36px; color: #64748B;">
+                Không có hồ sơ nào bị Hiệu trưởng hoàn trả.
               </td>
             </tr>
             {% endfor %}
@@ -634,18 +687,20 @@
     }
 
     function switchQueueTab(tabName) {
-      const tabs = ['pending', 'returned', 'forwarded', 'revoked'];
+      const tabs = ['pending', 'forwarded', 'issued', 'revoked', 'returned'];
       const titles = {
         'pending': 'HỒ SƠ ĐÃ QUA BƯỚC 1 (QLSV ĐÃ XÁC NHẬN) - CHỜ PHÒNG ĐÀO TẠO THẨM ĐỊNH',
-        'returned': 'HỒ SƠ HIỆU TRƯỞNG HOÀN TRẢ PHÒNG ĐÀO TẠO XEM XÉT LẠI',
-        'forwarded': 'HỒ SƠ ĐÃ THẨM ĐỊNH HỢP LỆ - ĐÃ CHUYỂN BAN GIÁM HIỆU / HIỆU TRƯỞNG',
-        'revoked': 'DANH SÁCH HỒ SƠ PHÒNG ĐÀO TẠO XÁC NHẬN THU HỒI HIỆU LỰC'
+        'forwarded': 'HỒ SƠ ĐÃ THẨM ĐỊNH HỢP LỆ - ĐANG TRÌNH BAN GIÁM HIỆU / HIỆU TRƯỞNG',
+        'issued': 'DANH SÁCH VĂN BẰNG ĐÃ ĐƯỢC HIỆU TRƯỞNG KÝ SỐ VÀ PHÁT HÀNH CHÍNH THỨC',
+        'revoked': 'DANH SÁCH VĂN BẰNG ĐANG ĐỒNG THUẬN HOẶC ĐÃ THU HỒI HIỆU LỰC',
+        'returned': 'HỒ SƠ HIỆU TRƯỞNG HOÀN TRẢ PHÒNG ĐÀO TẠO XEM XÉT LẠI'
       };
       const counts = {
         'pending': '{{ pending_count }}',
-        'returned': '{{ returned_count }}',
         'forwarded': '{{ forwarded_count }}',
-        'revoked': '{{ revoked_count }}'
+        'issued': '{{ issued_count }}',
+        'revoked': '{{ revoked_count }}',
+        'returned': '{{ returned_count }}'
       };
 
       tabs.forEach(t => {
@@ -677,7 +732,7 @@
 
     window.addEventListener('DOMContentLoaded', () => {
       const hash = window.location.hash.replace('#', '');
-      if (['pending', 'returned', 'forwarded', 'revoked'].includes(hash)) {
+      if (['pending', 'forwarded', 'issued', 'revoked', 'returned'].includes(hash)) {
         switchQueueTab(hash);
       }
     });

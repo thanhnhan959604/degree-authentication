@@ -5,6 +5,8 @@ from . import views
 urlpatterns = [
     # Tra cứu công khai & Chia sẻ
     path('', views.search_view, name='search'),
+    path('blockchain/', views.blockchain_explorer, name='blockchain_explorer'),
+    path('api/blockchain/tx/<str:tx_hash>/', views.blockchain_tx_detail_api, name='blockchain_tx_detail_api'),
     path('share/<str:code>/', views.share_redirect_view, name='share_redirect'),
     path('api/shares/create/', views.create_share_link, name='create_share_link'),
     path('api/shares/<int:pk>/revoke/', views.revoke_share_link, name='revoke_share_link'),

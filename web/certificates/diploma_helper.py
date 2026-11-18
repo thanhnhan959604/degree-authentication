@@ -456,6 +456,7 @@ def build_image(cert, mode='public', *, allowed=frozenset(), masked_name=None, v
             reveal = set(allowed) & {'name', 'dob', 'classification', 'student_id'}
             mname = None if 'name' in reveal else (masked_name or get_masked_name(cert))
         else:
+            # Tra cứu công khai / quét mã QR trên bằng: bảo vệ quyền riêng tư, không để lộ thông tin cá nhân
             reveal = set()
             mname = masked_name or get_masked_name(cert)
         img, _ = render_demo(cert, reveal=reveal, masked_name=mname, verify_url=verify_url)

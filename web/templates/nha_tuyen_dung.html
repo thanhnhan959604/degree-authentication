@@ -64,33 +64,36 @@
         {% endif %}
       </div>
     </div>
-
-    <!-- Thanh menu điều hướng xám với tab Home cam đất -->
-    <nav class="dvc-navbar">
-      <div class="container dvc-nav-container">
-        <!-- Nút Home ngôi nhà theo đúng mẫu ảnh -->
-        <a href="{% url 'search' %}" class="dvc-nav-home" title="Trang chủ">
-          <img src="/media/home_icon.png" alt="Trang chủ" style="width: 22px; height: 20px; display: block;">
-        </a>
-
-        <!-- Danh sách menu -->
-        <ul class="dvc-nav-list">
-          <li class="dvc-nav-item">
-            <a href="{% url 'search' %}" id="nav-tab-info" class="dvc-nav-link active" onclick="switchPublicNav('info')">
-              Thông tin và dịch vụ
-              <svg class="dvc-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-            </a>
-          </li>
-          <li class="dvc-nav-item">
-            <a href="javascript:void(0)" id="nav-tab-support" class="dvc-nav-link" onclick="switchPublicNav('support')">
-              Hỗ trợ
-              <svg class="dvc-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-            </a>
-          </li>
-        </ul>
-      </div>
-    </nav>
   </header>
+
+  <!-- Thanh menu điều hướng xám với tab Home cam đất (Cố định sticky khi cuộn) -->
+  <nav class="dvc-navbar">
+    <div class="container dvc-nav-container">
+      <!-- Nút Home ngôi nhà theo đúng mẫu ảnh -->
+      <a href="{% url 'search' %}" class="dvc-nav-home" title="Trang chủ">
+        <img src="/media/home_icon.png" alt="Trang chủ" style="width: 22px; height: 20px; display: block;">
+      </a>
+
+      <!-- Danh sách menu -->
+      <ul class="dvc-nav-list">
+        <li class="dvc-nav-item">
+          <a href="{% url 'search' %}" id="nav-tab-info" class="dvc-nav-link active" onclick="switchPublicNav('info')">
+            Thông tin và dịch vụ
+          </a>
+        </li>
+        <li class="dvc-nav-item">
+          <a href="{% url 'blockchain_explorer' %}" id="nav-tab-blockchain" class="dvc-nav-link" title="Lịch sử giao dịch">
+            Lịch sử giao dịch
+          </a>
+        </li>
+        <li class="dvc-nav-item">
+          <a href="javascript:void(0)" id="nav-tab-support" class="dvc-nav-link" onclick="switchPublicNav('support')">
+            Hỗ trợ
+          </a>
+        </li>
+      </ul>
+    </div>
+  </nav>
 
   <!-- HERO SECTION: KHUNG TRA CỨU DÀNH CHO NHÀ TUYỂN DỤNG -->
   <section class="hero-section">
@@ -437,6 +440,7 @@
   </footer>
 
   <script src="{% static 'toast.js' %}"></script>
+  <script src="{% static 'jsqr.js' %}"></script>
   <script>
     function switchPublicNav(tab) {
       const infoBtn = document.getElementById('nav-tab-info');
@@ -477,44 +481,153 @@
       if (list) list.scrollBy({ left: 260, behavior: 'smooth' });
     }
 
+    function cleanQrQuery(data) {
+      if (!data) return '';
+      let q = data.trim();
+      try {
+        if (q.includes('://') || q.startsWith('/') || q.includes('?')) {
+          const url = new URL(q, window.location.origin);
+          if (url.searchParams.has('q')) {
+            return url.searchParams.get('q').trim();
+          }
+          const parts = url.pathname.split('/').filter(Boolean);
+          if (parts.length >= 2 && parts[0] === 'share') {
+            return parts[1].trim();
+          }
+          if (parts.length > 0 && !['search', 'api'].includes(parts[parts.length - 1])) {
+            return parts[parts.length - 1].trim();
+          }
+        }
+      } catch (err) {
+        // Not a URL
+      }
+      return q;
+    }
+
+    let qrScannerStream = null;
+    let qrScanAnimFrame = null;
+
     function openQrScannerModal() {
       const modal = document.getElementById('qrScannerModal');
       modal.classList.add('active');
+      const video = document.getElementById('qr-video');
+      const mockView = document.getElementById('qr-mock-view');
+
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
         navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
           .then(stream => {
-            const video = document.getElementById('qr-video');
+            qrScannerStream = stream;
             video.srcObject = stream;
+            video.setAttribute('playsinline', 'true');
             video.style.display = 'block';
-            document.getElementById('qr-mock-view').style.display = 'none';
+            if (mockView) mockView.style.display = 'none';
+            video.play().then(() => {
+              qrScanAnimFrame = requestAnimationFrame(scanQrVideoFrame);
+            }).catch(() => {
+              qrScanAnimFrame = requestAnimationFrame(scanQrVideoFrame);
+            });
           })
           .catch(err => {
-            console.log('Camera access unavailable, using mock view');
+            console.log('Camera access unavailable:', err);
+            if (mockView) mockView.style.display = 'block';
+            video.style.display = 'none';
           });
       }
     }
 
-    function closeQrScannerModal() {
-      const modal = document.getElementById('qrScannerModal');
-      modal.classList.remove('active');
+    function scanQrVideoFrame() {
       const video = document.getElementById('qr-video');
-      if (video && video.srcObject) {
-        video.srcObject.getTracks().forEach(track => track.stop());
-        video.srcObject = null;
+      if (video && video.readyState === video.HAVE_ENOUGH_DATA) {
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+        if (typeof jsQR !== 'undefined') {
+          const code = jsQR(imageData.data, imageData.width, imageData.height, {
+            inversionAttempts: "dontInvert"
+          });
+          if (code && code.data) {
+            handleQrCodeDetected(code.data);
+            return;
+          }
+        }
       }
+      qrScanAnimFrame = requestAnimationFrame(scanQrVideoFrame);
+    }
+
+    function closeQrScannerModal() {
+      if (qrScanAnimFrame) {
+        cancelAnimationFrame(qrScanAnimFrame);
+        qrScanAnimFrame = null;
+      }
+      if (qrScannerStream) {
+        qrScannerStream.getTracks().forEach(track => track.stop());
+        qrScannerStream = null;
+      }
+      const video = document.getElementById('qr-video');
+      if (video) {
+        video.srcObject = null;
+        video.style.display = 'none';
+      }
+      const modal = document.getElementById('qrScannerModal');
+      if (modal) modal.classList.remove('active');
+    }
+
+    function handleQrCodeDetected(rawCode) {
+      closeQrScannerModal();
+      closeAdvancedModal();
+      const code = cleanQrQuery(rawCode);
+      if (!code) return;
+      const input = document.getElementById('employer-search-input');
+      if (input) input.value = code;
+      const modalInput = document.getElementById('modal-search-input');
+      if (modalInput) modalInput.value = code;
+      doSearch();
     }
 
     function handleFileSelect(e) {
       const file = e.target.files && e.target.files[0];
-      if (file) {
-        const match = file.name.match(/[A-Za-z0-9]{4,}-[A-Za-z0-9-]{4,}/);
-        if (match) {
-          document.getElementById('employer-search-input').value = match[0];
-          doSearch();
-        } else {
-          alert('Không tìm thấy mã văn bằng hoặc mã chia sẻ hợp lệ trong tên tệp: ' + file.name);
-        }
-      }
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+          let decoded = null;
+          if (typeof jsQR !== 'undefined') {
+            const qr = jsQR(imageData.data, imageData.width, imageData.height);
+            if (qr && qr.data) {
+              decoded = qr.data;
+            }
+          }
+
+          if (!decoded) {
+            // Thử phân tích tên file nếu mã QR mờ hoặc không nhận diện được
+            const match = file.name.match(/[A-Za-z0-9]{4,}-[A-Za-z0-9-]{4,}/);
+            if (match) {
+              decoded = match[0];
+            }
+          }
+
+          if (decoded) {
+            handleQrCodeDetected(decoded);
+          } else {
+            alert('Không thể nhận diện mã QR trong ảnh vừa chọn. Vui lòng thử ảnh rõ nét hơn hoặc nhập trực tiếp mã vào ô tra cứu.');
+          }
+        };
+        img.src = evt.target.result;
+      };
+      reader.readAsDataURL(file);
     }
 
     function doSearch(e) {

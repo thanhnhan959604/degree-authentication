@@ -46,40 +46,40 @@
         </button>
       </div>
     </div>
-
-    <!-- Thanh menu điều hướng xám với tab Home cam đất -->
-    <nav class="dvc-navbar">
-      <div class="container dvc-nav-container">
-        <a href="{% url 'search' %}" class="dvc-nav-home" title="Trang chủ tra cứu">
-          <img src="/media/home_icon.png" alt="Trang chủ" style="width: 22px; height: 20px; display: block;">
-        </a>
-
-        <ul class="dvc-nav-list">
-          <li class="dvc-nav-item">
-            <a href="javascript:void(0)" onclick="switchPortalTab('van-bang')" id="nav-tab-van-bang" class="dvc-nav-link active">
-              Văn bằng của tôi
-            </a>
-          </li>
-          <li class="dvc-nav-item">
-            <a href="javascript:void(0)" onclick="switchPortalTab('chia-se')" id="nav-tab-chia-se" class="dvc-nav-link">
-              Chia sẻ
-            </a>
-          </li>
-          <li class="dvc-nav-item">
-            <a href="javascript:void(0)" onclick="switchPortalTab('nhat-ky')" id="nav-tab-nhat-ky" class="dvc-nav-link">
-              Nhật ký truy cập
-            </a>
-          </li>
-          <li class="dvc-nav-item">
-            <a href="{% url 'search' %}" class="dvc-nav-link" target="_blank">
-              Tra cứu công khai
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left: 3px;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-            </a>
-          </li>
-        </ul>
-      </div>
-    </nav>
   </header>
+
+  <!-- Thanh menu điều hướng xám với tab Home cam đất (Cố định sticky khi cuộn) -->
+  <nav class="dvc-navbar">
+    <div class="container dvc-nav-container">
+      <a href="{% url 'search' %}" class="dvc-nav-home" title="Trang chủ tra cứu">
+        <img src="/media/home_icon.png" alt="Trang chủ" style="width: 22px; height: 20px; display: block;">
+      </a>
+
+      <ul class="dvc-nav-list">
+        <li class="dvc-nav-item">
+          <a href="javascript:void(0)" onclick="switchPortalTab('van-bang')" id="nav-tab-van-bang" class="dvc-nav-link active">
+            Văn bằng của tôi
+          </a>
+        </li>
+        <li class="dvc-nav-item">
+          <a href="javascript:void(0)" onclick="switchPortalTab('chia-se')" id="nav-tab-chia-se" class="dvc-nav-link">
+            Chia sẻ
+          </a>
+        </li>
+        <li class="dvc-nav-item">
+          <a href="javascript:void(0)" onclick="switchPortalTab('nhat-ky')" id="nav-tab-nhat-ky" class="dvc-nav-link">
+            Nhật ký truy cập
+          </a>
+        </li>
+        <li class="dvc-nav-item">
+          <a href="{% url 'search' %}" class="dvc-nav-link" target="_blank">
+            Tra cứu công khai
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left: 3px;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </nav>
 
   <!-- BANNER XANH CTUT ĐỒNG BỘ VỚI TRANG CHỦ & CỔNG DVC QUỐC GIA -->
   <section class="portal-banner">
@@ -119,10 +119,10 @@
           <select id="degree-select" class="sp-degree-dropdown" onchange="switchDegree(this.value)">
             {% if certs %}
               {% for c in certs %}
-                <option value="{{ forloop.counter }}" {% if forloop.first %}selected{% endif %}>{{ c.degree_type }} - {{ c.major }} ({{ c.serial_number }}){% if c.status == 'REVOKED' %} [ĐÃ THU HỒI]{% endif %}</option>
+                <option value="{{ forloop.counter }}" {% if forloop.first %}selected{% endif %}>{{ c.degree_type }} - {{ c.major }} ({{ c.serial_number }}){% if c.status == 'REVOKED' %} [ĐÃ THU HỒI]{% elif c.status == 'ISSUED' %} [ĐÃ PHÁT HÀNH]{% else %} [ĐANG CHỜ DUYỆT]{% endif %}</option>
               {% endfor %}
             {% elif cert %}
-              <option value="1" selected>{{ cert.degree_type }} - {{ cert.major }} ({{ cert.serial_number }}){% if cert.status == 'REVOKED' %} [ĐÃ THU HỒI]{% endif %}</option>
+              <option value="1" selected>{{ cert.degree_type }} - {{ cert.major }} ({{ cert.serial_number }}){% if cert.status == 'REVOKED' %} [ĐÃ THU HỒI]{% elif cert.status == 'ISSUED' %} [ĐÃ PHÁT HÀNH]{% else %} [ĐANG CHỜ DUYỆT]{% endif %}</option>
             {% else %}
               <option value="">Chưa có văn bằng nào được phát hành</option>
             {% endif %}
@@ -134,10 +134,14 @@
       <div class="sp-cert-card" id="van-bang">
       <div class="sp-cert-header">
         <div class="sp-cert-title-group">
-          <h3 id="cert-title">{% if cert %}{{ cert.degree_type|upper }} - {{ cert.major|upper }}{% else %}VĂN BẰNG ĐIỆN TỬ{% endif %}</h3>
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 4px;">
+            <h3 id="cert-title" style="margin: 0;">{% if cert %}{{ cert.degree_type|upper }} - {{ cert.major|upper }}{% else %}VĂN BẰNG ĐIỆN TỬ{% endif %}</h3>
+            <span id="cert-status-badge" class="admin-badge {% if cert.status == 'REVOKED' %}admin-badge-danger{% elif cert.status == 'ISSUED' %}admin-badge-success{% else %}admin-badge-warning{% endif %}" {% if not cert %}style="display: none;"{% endif %}>
+              {% if cert.status == 'REVOKED' %}ĐÃ THU HỒI{% elif cert.status == 'ISSUED' %}ĐÃ PHÁT HÀNH{% else %}ĐANG CHỜ DUYỆT{% endif %}
+            </span>
+          </div>
           <div class="sp-cert-meta">
             Số hiệu văn bằng: <strong id="cert-serial" style="color: #26457F; font-family: monospace;">{{ cert.serial_number|default:"-" }}</strong> - Cấp ngày <span id="cert-date">{% if cert.issue_date %}{{ cert.issue_date|date:"d/m/Y" }}{% elif cert.created_at %}{{ cert.created_at|date:"d/m/Y" }}{% else %}-{% endif %}</span>
-            <span id="cert-status-badge" style="{% if cert.status == 'REVOKED' %}display: inline-block;{% else %}display: none;{% endif %} margin-left: 8px; font-size: 11.5px; padding: 2px 8px; border-radius: 4px; font-weight: 700; background: #FEE2E2; color: #DC2626; border: 1px solid #FECACA;">ĐÃ THU HỒI</span>
           </div>
         </div>
       </div>
@@ -190,7 +194,7 @@
           <div>
             <div class="sp-col-title">Mã xác minh công khai</div>
             <div class="sp-verify-box">
-              <img src="{% if cert %}/api/qr/?data={{ cert.serial_number }}{% else %}/api/qr/?data=CTUT{% endif %}" alt="Mã QR tra cứu" class="sp-qr-img">
+              <img src="{% if verify_url %}/api/qr/?data={{ verify_url|urlencode }}{% elif cert %}/api/qr/?data={{ cert.serial_number }}{% else %}/api/qr/?data=CTUT{% endif %}" alt="Mã QR tra cứu" class="sp-qr-img">
               <div>
                 <div class="sp-verify-code" id="cert-code">{{ cert.serial_number|default:"-" }}</div>
                 <div class="sp-verify-note">
@@ -310,10 +314,10 @@
                 <select id="share-degree-target" class="sp-form-select" onchange="switchDegree(this.value)">
                   {% if certs %}
                     {% for c in certs %}
-                      <option value="{{ forloop.counter }}" {% if forloop.first %}selected{% endif %}>{{ c.degree_type }} - {{ c.major }} ({{ c.serial_number }}){% if c.status == 'REVOKED' %} [ĐÃ THU HỒI]{% endif %}</option>
+                      <option value="{{ forloop.counter }}" {% if forloop.first %}selected{% endif %}>{{ c.degree_type }} - {{ c.major }} ({{ c.serial_number }}){% if c.status == 'REVOKED' %} [ĐÃ THU HỒI]{% elif c.status == 'ISSUED' %} [ĐÃ PHÁT HÀNH]{% else %} [ĐANG CHỜ DUYỆT]{% endif %}</option>
                     {% endfor %}
                   {% elif cert %}
-                    <option value="1" selected>{{ cert.degree_type }} - {{ cert.major }} ({{ cert.serial_number }}){% if cert.status == 'REVOKED' %} [ĐÃ THU HỒI]{% endif %}</option>
+                    <option value="1" selected>{{ cert.degree_type }} - {{ cert.major }} ({{ cert.serial_number }}){% if cert.status == 'REVOKED' %} [ĐÃ THU HỒI]{% elif cert.status == 'ISSUED' %} [ĐÃ PHÁT HÀNH]{% else %} [ĐANG CHỜ DUYỆT]{% endif %}</option>
                   {% else %}
                     <option value="">Chưa có văn bằng nào</option>
                   {% endif %}
@@ -347,19 +351,19 @@
               <label class="sp-form-label">Cho phép người nhận xem thêm thông tin:</label>
               <div class="sp-checkbox-group">
                 <label class="sp-checkbox-item">
-                  <input type="checkbox" id="chk-fullname">
+                  <input type="checkbox" id="chk-fullname" checked>
                   <span>Họ tên đầy đủ</span>
                 </label>
                 <label class="sp-checkbox-item">
-                  <input type="checkbox" id="chk-dob">
+                  <input type="checkbox" id="chk-dob" checked>
                   <span>Ngày sinh</span>
                 </label>
                 <label class="sp-checkbox-item">
-                  <input type="checkbox" id="chk-sid">
+                  <input type="checkbox" id="chk-sid" checked>
                   <span>Mã sinh viên</span>
                 </label>
                 <label class="sp-checkbox-item">
-                  <input type="checkbox" id="chk-rank">
+                  <input type="checkbox" id="chk-rank" checked>
                   <span>Xếp loại tốt nghiệp</span>
                 </label>
               </div>
@@ -487,10 +491,10 @@
                 <select id="log-degree-target" class="sp-form-select" onchange="switchDegree(this.value)" style="height: 36px; font-size: 13px; padding-right: 30px;">
                   {% if certs %}
                     {% for c in certs %}
-                      <option value="{{ forloop.counter }}" {% if forloop.first %}selected{% endif %}>{{ c.degree_type }} - {{ c.major }} ({{ c.serial_number }}){% if c.status == 'REVOKED' %} [ĐÃ THU HỒI]{% endif %}</option>
+                      <option value="{{ forloop.counter }}" {% if forloop.first %}selected{% endif %}>{{ c.degree_type }} - {{ c.major }} ({{ c.serial_number }}){% if c.status == 'REVOKED' %} [ĐÃ THU HỒI]{% elif c.status == 'ISSUED' %} [ĐÃ PHÁT HÀNH]{% else %} [ĐANG CHỜ DUYỆT]{% endif %}</option>
                     {% endfor %}
                   {% elif cert %}
-                    <option value="1" selected>{{ cert.degree_type }} - {{ cert.major }} ({{ cert.serial_number }}){% if cert.status == 'REVOKED' %} [ĐÃ THU HỒI]{% endif %}</option>
+                    <option value="1" selected>{{ cert.degree_type }} - {{ cert.major }} ({{ cert.serial_number }}){% if cert.status == 'REVOKED' %} [ĐÃ THU HỒI]{% elif cert.status == 'ISSUED' %} [ĐÃ PHÁT HÀNH]{% else %} [ĐANG CHỜ DUYỆT]{% endif %}</option>
                   {% else %}
                     <option value="">Chưa có văn bằng nào</option>
                   {% endif %}
@@ -1058,16 +1062,29 @@
       document.getElementById('cert-rank').innerText = data.rank;
       document.getElementById('cert-code').innerText = data.code;
 
-      // Cập nhật nhãn trạng thái thu hồi
+      // Cập nhật nhãn trạng thái văn bằng (Đã thu hồi / Đã phát hành / Đang chờ duyệt)
       const statusBadge = document.getElementById('cert-status-badge');
       if (statusBadge) {
-        statusBadge.style.display = (data.status === 'REVOKED') ? 'inline-block' : 'none';
+        statusBadge.className = 'admin-badge';
+        if (data.status === 'REVOKED') {
+          statusBadge.classList.add('admin-badge-danger');
+          statusBadge.innerText = 'ĐÃ THU HỒI';
+          statusBadge.style.display = 'inline-flex';
+        } else if (data.status === 'ISSUED') {
+          statusBadge.classList.add('admin-badge-success');
+          statusBadge.innerText = 'ĐÃ PHÁT HÀNH';
+          statusBadge.style.display = 'inline-flex';
+        } else {
+          statusBadge.classList.add('admin-badge-warning');
+          statusBadge.innerText = 'ĐANG CHỜ DUYỆT';
+          statusBadge.style.display = 'inline-flex';
+        }
       }
 
       // Cập nhật ảnh mã QR tra cứu
       const qrImgEl = document.querySelector('.sp-qr-img');
       if (qrImgEl && data.serial) {
-        qrImgEl.src = '/api/qr/?data=' + encodeURIComponent(data.serial);
+        qrImgEl.src = '/api/qr/?data=' + encodeURIComponent(window.location.origin + '/?q=' + data.serial);
       }
 
       // Cập nhật ảnh văn bằng động theo số hiệu mới
