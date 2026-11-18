@@ -45,8 +45,6 @@ Pipfile
 Pipfile.lock
 
 # 4. Django Framework (Tệp tĩnh, Tệp tải lên & Cấu hình cục bộ)
-media/
-web/media/
 staticfiles/
 web/staticfiles/
 local_settings.py
