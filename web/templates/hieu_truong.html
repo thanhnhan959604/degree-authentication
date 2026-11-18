@@ -244,9 +244,19 @@
               </td>
               <td>{{ cert.issue_date|date:"d/m/Y"|default:"-" }}</td>
               <td style="text-align: right; white-space: nowrap;">
-                <button class="btn-gov-danger" onclick="openRevokeModal('{{ cert.id }}', '{{ cert.serial_number|escapejs }}', '{{ cert.student_name|escapejs }}')">
-                  Thu hồi văn bằng
-                </button>
+                {% if cert.rector_revoke %}
+                  <span class="admin-badge admin-badge-warning" style="background: #FEF3C7; color: #B45309; border: 1px solid #FCD34D; font-weight: 600; padding: 4px 10px; border-radius: 4px;">
+                    Hiệu trưởng đã ký thu hồi
+                  </span>
+                {% elif cert.student_affairs_revoke or cert.academic_affairs_revoke %}
+                  <button class="btn-gov-danger" onclick="openRevokeModal('{{ cert.id }}', '{{ cert.serial_number|escapejs }}', '{{ cert.student_name|escapejs }}')">
+                    Ký xác nhận thu hồi
+                  </button>
+                {% else %}
+                  <button class="btn-gov-danger" onclick="openRevokeModal('{{ cert.id }}', '{{ cert.serial_number|escapejs }}', '{{ cert.student_name|escapejs }}')">
+                    Thu hồi văn bằng
+                  </button>
+                {% endif %}
               </td>
             </tr>
             {% empty %}
@@ -552,11 +562,15 @@
       };
 
       tabs.forEach(t => {
-        const btn = document.getElementById('tab-btn-' + t);
+        const btn = document.getElementById('nav-tab-' + t);
         const panel = document.getElementById('panel-' + t);
         if (btn) btn.classList.toggle('active', t === tabName);
         if (panel) panel.style.display = (t === tabName) ? 'block' : 'none';
       });
+
+      if (history.pushState) {
+        history.pushState(null, null, '#' + tabName);
+      }
 
       const summaryEl = document.getElementById('portal-pending-summary');
       if (summaryEl) {
@@ -571,6 +585,13 @@
       const titleEl = document.getElementById('queue-card-title');
       if (titleEl) titleEl.innerText = titles[tabName] || '';
     }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const hash = window.location.hash.replace('#', '');
+      if (['pending', 'issued', 'revoked', 'returned'].includes(hash)) {
+        switchQueueTab(hash);
+      }
+    });
 
     function openModal(id) {
       const el = document.getElementById(id);
@@ -702,6 +723,7 @@
       .then(data => {
         closeModal('modalRevoke');
         if (data.success) {
+          window.location.hash = 'revoked';
           showToastAndReload(data.message || `Đã hoàn tất thu hồi văn bằng ${serial}!`, 'success');
         } else {
           showToast('Lỗi: ' + (data.error || 'Không thể thu hồi văn bằng.'), 'error');

@@ -409,13 +409,16 @@ def hieutruong_portal(request):
 
     pending_certs = Certificate.objects.filter(status='PENDING', is_rejected=False, student_affairs_approved=True, academic_affairs_approved=True, rector_approved=False)
     issued_certs = Certificate.objects.filter(status='ISSUED')
-    revoked_certs = Certificate.objects.filter(status='REVOKED')
+    revoked_certs = Certificate.objects.filter(
+        Q(status='REVOKED') | Q(student_affairs_revoke=True) | Q(academic_affairs_revoke=True) | Q(rector_revoke=True)
+    ).distinct().order_by('-id')
     returned_certs = Certificate.objects.filter(is_rejected=True, rejected_by='hieutruong')
 
     total_count = Certificate.objects.count()
     pending_count = pending_certs.count()
     issued_count = issued_certs.count()
     revoked_count = revoked_certs.count()
+    returned_count = returned_certs.count()
 
     return render(request, 'hieu_truong.html', {
         'pending_certs': pending_certs,
@@ -426,6 +429,7 @@ def hieutruong_portal(request):
         'pending_count': pending_count,
         'issued_count': issued_count,
         'revoked_count': revoked_count,
+        'returned_count': returned_count,
     })
 
 @login_required(login_url='login')

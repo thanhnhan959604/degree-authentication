@@ -127,7 +127,6 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',             # Khai báo thư mục chứa CSS/JS
-    ('media', BASE_DIR / 'media'),   # Thư mục media cùng cấp với static và templates
 ]
 
 MEDIA_URL = '/media/'

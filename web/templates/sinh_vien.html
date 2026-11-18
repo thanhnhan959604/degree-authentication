@@ -37,8 +37,8 @@
       <!-- Thông tin tài khoản sinh viên đăng nhập -->
       <div style="display: flex; align-items: center; gap: 14px;">
         <div style="text-align: right;">
-          <div style="font-size: 13.5px; font-weight: 700; color: #1E293B;">{{ request.user.profile.full_name|default:cert.student_name|default:request.user.username }}</div>
-          <div style="font-size: 11.5px; color: #64748B;">Mã SV: {{ cert.student_id|default:request.user.username }} - Cổng Sinh viên</div>
+          <div style="font-size: 13.5px; font-weight: 700; color: #1E293B;">{% if cert.student_name %}{{ cert.student_name }}{% elif request.user.profile.full_name %}{{ request.user.profile.full_name }}{% else %}{{ request.user.username }}{% endif %}</div>
+          <div style="font-size: 11.5px; color: #64748B;">Mã SV: {% if cert.student_id %}{{ cert.student_id }}{% else %}{{ request.user.username }}{% endif %} - Cổng Sinh viên</div>
         </div>
         <button type="button" onclick="openModal('modalLogout')" class="sp-btn-single" title="Đăng xuất khỏi hệ thống" style="cursor: pointer; font-family: inherit;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -136,7 +136,7 @@
         <div class="sp-cert-title-group">
           <h3 id="cert-title">{% if cert %}{{ cert.degree_type|upper }} - {{ cert.major|upper }}{% else %}VĂN BẰNG ĐIỆN TỬ{% endif %}</h3>
           <div class="sp-cert-meta">
-            Số hiệu văn bằng: <strong id="cert-serial" style="color: #26457F; font-family: monospace;">{{ cert.serial_number|default:"-" }}</strong> - Cấp ngày <span id="cert-date">{{ cert.issue_date|default:cert.created_at|date:"d/m/Y"|default:"-" }}</span>
+            Số hiệu văn bằng: <strong id="cert-serial" style="color: #26457F; font-family: monospace;">{{ cert.serial_number|default:"-" }}</strong> - Cấp ngày <span id="cert-date">{% if cert.issue_date %}{{ cert.issue_date|date:"d/m/Y" }}{% elif cert.created_at %}{{ cert.created_at|date:"d/m/Y" }}{% else %}-{% endif %}</span>
             <span id="cert-status-badge" style="{% if cert.status == 'REVOKED' %}display: inline-block;{% else %}display: none;{% endif %} margin-left: 8px; font-size: 11.5px; padding: 2px 8px; border-radius: 4px; font-weight: 700; background: #FEE2E2; color: #DC2626; border: 1px solid #FECACA;">ĐÃ THU HỒI</span>
           </div>
         </div>
@@ -960,7 +960,7 @@
         {{ forloop.counter }}: {
           title: '{{ c.degree_type|upper }} - {{ c.major|upper }}',
           serial: '{{ c.serial_number }}',
-          date: '{{ c.issue_date|default:c.created_at|date:"d/m/Y" }}',
+          date: '{% if c.issue_date %}{{ c.issue_date|date:"d/m/Y" }}{% elif c.created_at %}{{ c.created_at|date:"d/m/Y" }}{% endif %}',
           rank: '{{ c.classification|default:"-" }}',
           code: '{{ c.serial_number }}',
           status: '{{ c.status }}',
@@ -994,7 +994,7 @@
         1: {
           title: '{{ cert.degree_type|upper }} - {{ cert.major|upper }}',
           serial: '{{ cert.serial_number }}',
-          date: '{{ cert.issue_date|default:cert.created_at|date:"d/m/Y" }}',
+          date: '{% if cert.issue_date %}{{ cert.issue_date|date:"d/m/Y" }}{% elif cert.created_at %}{{ cert.created_at|date:"d/m/Y" }}{% endif %}',
           rank: '{{ cert.classification|default:"-" }}',
           code: '{{ cert.serial_number }}',
           status: '{{ cert.status }}',

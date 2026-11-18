@@ -76,13 +76,13 @@
         <!-- Danh sách menu -->
         <ul class="dvc-nav-list">
           <li class="dvc-nav-item">
-            <a href="{% url 'search' %}" class="dvc-nav-link active">
+            <a href="{% url 'search' %}" id="nav-tab-info" class="dvc-nav-link active" onclick="switchPublicNav('info')">
               Thông tin và dịch vụ
               <svg class="dvc-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
             </a>
           </li>
           <li class="dvc-nav-item">
-            <a href="#" class="dvc-nav-link">
+            <a href="javascript:void(0)" id="nav-tab-support" class="dvc-nav-link" onclick="switchPublicNav('support')">
               Hỗ trợ
               <svg class="dvc-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
             </a>
@@ -438,6 +438,17 @@
 
   <script src="{% static 'toast.js' %}"></script>
   <script>
+    function switchPublicNav(tab) {
+      const infoBtn = document.getElementById('nav-tab-info');
+      const supBtn = document.getElementById('nav-tab-support');
+      if (infoBtn) infoBtn.classList.toggle('active', tab === 'info');
+      if (supBtn) supBtn.classList.toggle('active', tab === 'support');
+      if (tab === 'support') {
+        const ft = document.querySelector('footer');
+        if (ft) ft.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
     function openAdvancedModal() {
       document.getElementById('advancedSearchModal').classList.add('active');
     }

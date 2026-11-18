@@ -10,7 +10,11 @@ from django.conf import settings
 from django.utils import timezone
 from PIL import Image, ImageDraw, ImageFont, ImageOps, UnidentifiedImageError
 
-FONT_DIR = Path(__file__).resolve().parent / 'assets' / 'fonts'   # font Noticia Text (SIL OFL, xem OFL.txt)
+FONT_DIR = Path(settings.BASE_DIR) / 'assets' / 'fonts'
+if not FONT_DIR.exists():
+    FONT_DIR = Path(__file__).resolve().parent.parent / 'assets' / 'fonts'
+if not FONT_DIR.exists():
+    FONT_DIR = Path(__file__).resolve().parent / 'assets' / 'fonts'
 W, H = 2200, 1556                                                  # tỉ lệ ~ A4 nằm ngang (√2)
 PAPER, GOLD, GOLD_SOFT = (251, 247, 236), (176, 128, 52), (222, 190, 128)
 RED, INK, MUTED, REDACT = (158, 27, 32), (28, 35, 48), (120, 113, 100), (17, 24, 39)
